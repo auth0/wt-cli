@@ -10,20 +10,13 @@ var program = require('commander')
 program
     .command('init')
     .description('ready, set, go!')
-    .option('-t --token <webtask_token>', 'webtask token')
-    .option('-c --container <webtask_container>', 'default webtask container')
-    .option('-p --profile <profile_name>', 'name of the profile to set up', 'default')
-    .option('-q --quiet', 'non-interactive use')
+    .option('-t --token <token>', 'webtask token')
+    .option('-c --container <container>', 'default webtask container')
+    .option('-u --url <url>', 'webtask service URL')
+    .option('-p --profile <name>', 'name of the profile to set up', 'default')
     .action(init_action);
 
 function init_action(options) {
-    // logger.info({ 
-    //     token: options.token,
-    //     container: options.container,
-    //     profile: options.profile,
-    //     quiet: options.quiet
-    // }, 'init');
-
     var phone, verification_code, profile;
     async.series([
         function (cb) {

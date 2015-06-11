@@ -26,14 +26,73 @@ program.wt = {
       process.env[(process.platform == 'win32') ? 'USERPROFILE' : 'HOME'],
       '.webtask'),
     logger: logger,
-    parseInt: function (val, def) {
-        return isNaN(val) ? def : +val;
+    parse_positive_int: function (name) {
+        return function (val, def) {
+          if (val === undefined) return def;
+          if (!isNaN(val)) {
+            val = +val;
+            if (Math.floor(val) === val && val >= 0)
+              return val;
+          }
+          console.log(('The `' + name + '` parameter must be a non-negative integer.').red);
+          process.exit(1);
+        }
+    },
+    collect_hash: function (prefix) {
+      return function(val, memo) {
+        var i = val.indexOf('=');
+        if (i < 1) {
+          console.log(('Unsupported ' + prefix + ' `' + val + '`. All ' + prefix + 's must be in the <key>=<value> format.').red);
+          process.exit(1);
+        }
+        memo[val.substring(0, i)] = val.substring(i + 1);
+        return memo;
+      }
+    },
+    parse_regex: function(name, regex) {
+        return function (val, def) {
+            if (!val) return def;
+            if (!regex.exec(val)) {
+                console.log(('Invalid argument: `' + name + '` must match ' + regex + '.').red);
+                process.exit(1);
+            }
+            return val;
+        }
+    },
+    parse_time: function (name) {
+        return function (val, def) {
+            if (!val) return def;
+            if (val[0] === '+')
+              val = Date.now() + +val.substring(1) * 60 * 1000;
+            else
+              val = Date.parse(val);
+
+            if (!isNaN(val)) {
+              val = Math.floor(val / 1000);
+              return val;
+            }
+            console.log(('Invalid value of `' + name + '`. Use RFC2822 format (e.g. Mon, 25 Dec 1995 13:30:00 GMT) or ISO 8601 format (e.g. 2011-10-10T14:48:00). You can also say +10 to indicate "ten minutes from now".').red);
+            process.exit(1);
+        }
     },
     print_profile: function (name, profile) {
       console.log('Profile:   '.blue, name);
       console.log('URL:       '.blue, profile.url);
       console.log('Container: '.blue, profile.container);
       console.log('Token:     '.blue, profile.token);
+    },
+    ensure_profile: function (name) {
+      var profiles = Object.keys(program.wt.config);
+      if (profiles.length === 0) {
+        console.log('No webtask profiles are configured. Did you run `wt init`?'.red);
+        process.exit(1);
+      }
+      for (var i = 0; i < profiles.length; i++)
+        if (profiles[i] === name)
+          return program.wt.config[profiles[i]];
+      console.log(('Profile `' + name + '` does not exist. Available profiles are: ' + 
+        profiles.join(', ').red + '.').red);
+      process.exit(1);
     }
 };
 
@@ -59,6 +118,7 @@ else {
 // Register commands
 
 require('./command_init.js');
+require('./command_create.js');
 
 // Run
 
