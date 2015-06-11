@@ -83,9 +83,9 @@ function create_action(file_or_url, options) {
         dd: options.issuanceDepth,
     }
 
-    if (Object.keys(options.secret).length > 0)
+    if (options.secret && Object.keys(options.secret).length > 0)
         params.ectx = options.secret;
-    if (Object.keys(options.param).length > 0)
+    if (options.param && Object.keys(options.param).length > 0)
         params.pctx = options.param;
     if (options.nbf !== undefined)
         params.nbf = options.nbf;
@@ -98,8 +98,10 @@ function create_action(file_or_url, options) {
     if (!options.selfRevoke)
         params.dr = 1;
 
-    add_limits(options.tokenLimit, token_limits);
-    add_limits(options.containerLimit, container_limits);
+    if (options.tokenLimit)
+        add_limits(options.tokenLimit, token_limits);
+    if (options.containerLimit)
+        add_limits(options.containerLimit, container_limits);
 
     function add_limits(limits, spec) {
         for (var l in limits) {
