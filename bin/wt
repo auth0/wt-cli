@@ -1,0 +1,70 @@
+#!/usr/bin/env node
+
+var program = require('commander')
+    , async = require('async')
+    , path = require('path')
+    , fs = require('fs')
+    , bunyan = require('bunyan')
+    , colors = require('colors')
+    , PrettyStream = require('bunyan-prettystream');
+
+var prettyStdOut = new PrettyStream({ mode: 'short' });
+prettyStdOut.pipe(process.stdout);
+var logger = bunyan.createLogger({
+      name: 'wt',
+      streams: [{
+          level: 'debug',
+          type: 'raw',
+          stream: prettyStdOut
+      }]
+});
+
+// Common utilities
+
+program.wt = {
+    config_file: path.join(
+      process.env[(process.platform == 'win32') ? 'USERPROFILE' : 'HOME'],
+      '.webtask'),
+    logger: logger,
+    parseInt: function (val, def) {
+        return isNaN(val) ? def : +val;
+    },
+    print_profile: function (name, profile) {
+      console.log('Profile:   '.blue, name);
+      console.log('URL:       '.blue, profile.url);
+      console.log('Container: '.blue, profile.container);
+      console.log('Token:     '.blue, profile.token);
+    }
+};
+
+// Load confguration
+
+
+if (fs.existsSync(program.wt.config_file)) {
+  try {
+    program.wt.config = JSON.parse(fs.readFileSync(program.wt.config_file, 'utf8'));
+  }
+  catch (e) {
+    logger.error({ 
+      file: program.wt.config_file, 
+      error: e.message || e 
+    }, 'Unable to read wt configuration file. Please fix it or remote it.');
+    process.exit(1);
+  }
+}
+else {
+  program.wt.config = {};
+}
+
+// Register commands
+
+require('./command_init.js');
+
+// Run
+
+program.parse(process.argv);
+
+if (!process.argv.slice(2).length) {
+    program.outputHelp();
+    process.exit(1);
+}
