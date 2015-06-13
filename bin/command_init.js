@@ -31,61 +31,76 @@ function init_action(options) {
             });
         },
         function (cb) {
-            console.log('Please enter your phone number, we will send you an SMS verification code.');
-            promptly.prompt('Phone number:', {
-                validator: function (value) {
-                    value = value.replace(/ /g, '');
-                    if (!value.match(/^\+?[0-9]{1,15}$/))
-                        throw new Error('The phone number must start with + followed by country code, area code, and local number.');
-                    if (value.indexOf('+') !== 0)
-                        value = '+1' + value; // default to US
-                    return value;
-                }
-            }, function (error, data) {
-                if (error) return cb(error);
-                phone = data;
+            if (options.token && options.container && options.url) {
                 cb();
-            })
+            }
+            else {
+                async.series([
+                    function (cb) {
+                        console.log('Please enter your phone number, we will send you an SMS verification code.');
+                        promptly.prompt('Phone number:', {
+                            validator: function (value) {
+                                value = value.replace(/ /g, '');
+                                if (!value.match(/^\+?[0-9]{1,15}$/))
+                                    throw new Error('The phone number must start with + followed by country code, area code, and local number.');
+                                if (value.indexOf('+') !== 0)
+                                    value = '+1' + value; // default to US
+                                return value;
+                            }
+                        }, function (error, data) {
+                            if (error) return cb(error);
+                            phone = data;
+                            cb();
+                        })
+                    },
+                    function (cb) {
+                        run_sms_webtask({
+                            phone: phone
+                        }, cb);
+                    },
+                    function (cb) {
+                        console.log('Please enter the verification code we sent to ' + phone + ' below.');
+                        promptly.prompt('Verification code:', function (error, data) {
+                            if (error) return cb(error);
+                            verification_code = data;
+                            cb();
+                        });
+                    },
+                    function (cb) {
+                        run_sms_webtask({
+                            phone: phone,
+                            verification_code: verification_code
+                        }, function (error, user) {
+                            if (error) return cb(error);
+                            var webtask;
+                            try {
+                                webtask = jws.decode(user.id_token).payload.webtask;
+                                if (!webtask) throw "No webtask";
+                            }
+                            catch (e) {
+                                return cb(new Error('Unexpected response from server.'));
+                            }
+                            options.token = options.token || webtask.token;
+                            options.container = options.container || webtask.tenant;
+                            options.url = options.url || webtask.url;
+                            cb();
+                        });
+                    }
+                ], cb);
+            }
         },
         function (cb) {
-            run_sms_webtask({
-                phone: phone
-            }, cb);
-        },
-        function (cb) {
-            console.log('Please enter the verification code we sent to ' + phone + ' below.');
-            promptly.prompt('Verification code:', function (error, data) {
-                if (error) return cb(error);
-                verification_code = data;
-                cb();
-            });
-        },
-        function (cb) {
-            run_sms_webtask({
-                phone: phone,
-                verification_code: verification_code
-            }, function (error, user) {
-                if (error) return cb(error);
-                var webtask;
-                try {
-                    webtask = jws.decode(user.id_token).payload.webtask;
-                    if (!webtask) throw "No webtask";
-                }
-                catch (e) {
-                    return cb(new Error('Unexpected response from server.'));
-                }
-                var profile = program.wt.config[options.profile] = {
-                    url: webtask.url,
-                    token: webtask.token,
-                    container: webtask.tenant
-                };
-                fs.writeFileSync(
-                    program.wt.config_file, 
-                    JSON.stringify(program.wt.config, null, 2),
-                    'utf8');
-                program.wt.print_profile(options.profile, profile);
-                cb();
-            });
+            var profile = program.wt.config[options.profile] = {
+                url: options.url,
+                token: options.token,
+                container: options.container
+            };
+            fs.writeFileSync(
+                program.wt.config_file, 
+                JSON.stringify(program.wt.config, null, 2),
+                'utf8');
+            program.wt.print_profile(options.profile, profile);
+            cb();
         }
     ], function (error) {
         if (error) {
