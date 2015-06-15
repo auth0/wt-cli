@@ -3,6 +3,8 @@ var program = require('commander')
     , async = require('async')
     , url = require('url')
     , jws = require('jws')
+    , fs = require('fs')
+    , path = require('path')
     , request = require('request');
 
 var types = /^(all|token|url|)$/;
@@ -71,18 +73,23 @@ function create_action(file_or_url, options) {
         options.code_url = file_or_url;
     }
     else {
-        console.log(('Support for local files is coming soon. ' +
-            'Until then please upload your file to the cloud (e.g. S3, GitHub, or Dropbox) and ' +
-            'provide a URL here.').red);
-        process.exit(1);
+        file_or_url = path.resolve(process.cwd(), file_or_url);
+        if (!fs.existsSync(file_or_url)) {
+            console.log(('File ' + file_or_url + ' not found.').red);
+            process.exit(1);
+        }
+        options.code = fs.readFileSync(file_or_url, 'utf8');
     }
 
     var params = {
-        url: options.code_url,
         ten: options.container,
         dd: options.issuanceDepth,
     }
 
+    if (options.code_url)
+        params.url = options.code_url;
+    if (options.code) 
+        params.code = options.code;
     if (options.secret && Object.keys(options.secret).length > 0)
         params.ectx = options.secret;
     if (options.param && Object.keys(options.param).length > 0)
