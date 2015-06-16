@@ -31,7 +31,11 @@ program
     .option('-s --secret <key_value>', 'secret(s) to provide to code at runtime', program.wt.collect_hash('secret'), {})
     .option('-t --type <all|url|token>', 'what to output', program.wt.parse_regex('type', types), 'all')
     .option('-p --profile <name>', 'config profile to use', 'default')
-    .action(create_action);
+    .action(function (file_or_url, options) {
+        options.merge = true;
+        options.parse = true;
+        return create_action(file_or_url, options);
+    });
 
 program
     .command('create2 <file_or_url>')
