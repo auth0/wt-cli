@@ -6,6 +6,7 @@ var program = require('commander')
     , fs = require('fs')
     , bunyan = require('bunyan')
     , colors = require('colors')
+    , jwt = require('jws')
     , PrettyStream = require('bunyan-prettystream');
 
 var prettyStdOut = new PrettyStream({ mode: 'short' });
@@ -18,6 +19,7 @@ var logger = bunyan.createLogger({
           stream: prettyStdOut
       }]
 });
+logger.prettyStdOut = prettyStdOut;
 
 // Common utilities
 
@@ -75,11 +77,20 @@ program.wt = {
             process.exit(1);
         }
     },
-    print_profile: function (name, profile) {
-      console.log('Profile:   '.blue, name);
+    print_profile: function (name, profile, details) {
+      console.log('Profile:   '.blue, name.green);
       console.log('URL:       '.blue, profile.url);
       console.log('Container: '.blue, profile.container);
       console.log('Token:     '.blue, profile.token);
+      if (details) {
+        var json = JSON.parse(jwt.decode(profile.token).payload);
+        var keys = Object.keys(json).sort();
+        keys.forEach(function (key) {
+          var name = 'Token.' + key + ':';
+          while (name.length < 11) name += ' ';
+          console.log(name.blue, json[key]);
+        });
+      }
     },
     ensure_profile: function (name) {
       var profiles = Object.keys(program.wt.config);
@@ -119,6 +130,9 @@ else {
 
 require('./command_init.js');
 require('./command_create.js');
+require('./command_logs.js');
+require('./command_profile.js');
+require('./command_nuke.js');
 
 // Run
 

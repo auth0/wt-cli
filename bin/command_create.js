@@ -31,6 +31,7 @@ program
     .option('-s --secret <key_value>', 'secret(s) to provide to code at runtime', program.wt.collect_hash('secret'), {})
     .option('-t --type <all|url|token>', 'what to output', program.wt.parse_regex('type', types), 'all')
     .option('-p --profile <name>', 'config profile to use', 'default')
+    .option('-w --watch', 'watch for file changes')
     .action(function (file_or_url, options) {
         options.merge = true;
         options.parse = true;
@@ -43,6 +44,7 @@ program
     .option('-s --secret <key_value>', 'secret(s) to provide to code at runtime', program.wt.collect_hash('secret'), {})
     .option('-t --type <all|url|token>', 'what to output', program.wt.parse_regex('type', types), 'all')
     .option('-p --profile <name>', 'config profile to use', 'default')
+    .option('-w --watch', 'watch for file changes')
     .option('--nbf <time>', 'webtask cannot be used before this time', program.wt.parse_time('not_before'))
     .option('--exp <time>', 'webtask cannot be used after this time', program.wt.parse_time('expires'))
     .option('--no-parse', 'do not parse JSON and urlencoded request body')
@@ -75,94 +77,123 @@ function create_action(file_or_url, options) {
     var fol = file_or_url.toLowerCase();
     if (fol.indexOf('http://') === 0 || fol.indexOf('https://') === 0) {
         options.code_url = file_or_url;
+        if (options.watch) {
+            console.log(('The --watch option can only be used when a file name is specified.').red);
+            process.exit(1);
+        }
     }
     else {
-        file_or_url = path.resolve(process.cwd(), file_or_url);
-        if (!fs.existsSync(file_or_url)) {
-            console.log(('File ' + file_or_url + ' not found.').red);
+        options.file_name = path.resolve(process.cwd(), file_or_url);
+        if (!fs.existsSync(options.file_name)) {
+            console.log(('File ' + options.file_name + ' not found.').red);
             process.exit(1);
         }
-        options.code = fs.readFileSync(file_or_url, 'utf8');
+        options.code = fs.readFileSync(options.file_name, 'utf8');
     }
 
-    var params = {
-        ten: options.container,
-        dd: options.issuanceDepth,
+    var dirty, pending, generation = 1;
+    if (options.watch) {
+        fs.watch(options.file_name, function () {
+            logger.info({ generation: generation }, 'file changed detected');
+            options.code = fs.readFileSync(options.file_name, 'utf8');
+            if (pending)
+                dirty = true;
+            else
+                create_one();
+        });
     }
 
-    if (options.code_url)
-        params.url = options.code_url;
-    if (options.code) 
-        params.code = options.code;
-    if (options.secret && Object.keys(options.secret).length > 0)
-        params.ectx = options.secret;
-    if (options.param && Object.keys(options.param).length > 0)
-        params.pctx = options.param;
-    if (options.nbf !== undefined)
-        params.nbf = options.nbf;
-    if (options.exp !== undefined)
-        params.exp = options.exp;
-    if (options.merge)
-        params.mb = 1;
-    if (options.parse)
-        params.pb = 1;
-    if (!options.selfRevoke)
-        params.dr = 1;
+    create_one();
 
-    if (options.tokenLimit)
-        add_limits(options.tokenLimit, token_limits);
-    if (options.containerLimit)
-        add_limits(options.containerLimit, container_limits);
+    function create_one() {
+        dirty = false;
 
-    function add_limits(limits, spec) {
-        for (var l in limits) {
-            if (!spec[l]) {
-                console.log(('Unsupported limit type `' + l + '`. Supported limits are: ' + Object.keys(spec).join(', ') + '.').red);
+        var params = {
+            ten: options.container,
+            dd: options.issuanceDepth,
+        }
+
+        if (options.code_url)
+            params.url = options.code_url;
+        if (options.code) 
+            params.code = options.code;
+        if (options.secret && Object.keys(options.secret).length > 0)
+            params.ectx = options.secret;
+        if (options.param && Object.keys(options.param).length > 0)
+            params.pctx = options.param;
+        if (options.nbf !== undefined)
+            params.nbf = options.nbf;
+        if (options.exp !== undefined)
+            params.exp = options.exp;
+        if (options.merge)
+            params.mb = 1;
+        if (options.parse)
+            params.pb = 1;
+        if (!options.selfRevoke)
+            params.dr = 1;
+
+        if (options.tokenLimit)
+            add_limits(options.tokenLimit, token_limits);
+        if (options.containerLimit)
+            add_limits(options.containerLimit, container_limits);
+
+        function add_limits(limits, spec) {
+            for (var l in limits) {
+                if (!spec[l]) {
+                    console.log(('Unsupported limit type `' + l + '`. Supported limits are: ' + Object.keys(spec).join(', ') + '.').red);
+                    process.exit(1);
+                }
+                if (isNaN(limits[l]) || Math.floor(+limits[l]) !== +limits[l] || +limits[l] < 1) {
+                    console.log(('Unsupported limit value for `' + l + '` limit. All limits must be positive integers.').red);
+                    process.exit(1);
+                }
+                params[spec[l]] = +limits[l];
+            }
+        }
+
+        pending = true;
+        request({
+            url: options.url + '/api/tokens/issue',
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer ' + options.token
+            },
+            body: JSON.stringify(params)
+        }, function (error, res, body) {
+            pending = false;
+            if (error) {
+                console.log(('Failed to create a webtask: ' + error.message).red);
                 process.exit(1);
             }
-            if (isNaN(limits[l]) || Math.floor(+limits[l]) !== +limits[l] || +limits[l] < 1) {
-                console.log(('Unsupported limit value for `' + l + '` limit. All limits must be positive integers.').red);
+            if (res.statusCode !== 200) {
+                console.log(('Failed to create a webtask. HTTP ' + res.statusCode + ':').red);
+                try {
+                    body = JSON.stringify(JSON.parse(body), null, 2);
+                }
+                catch (e) {}
+                console.log(body.red);
                 process.exit(1);
             }
-            params[spec[l]] = +limits[l];
-        }
-    }
 
-    request({
-        url: options.url + '/api/tokens/issue',
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'Authorization': 'Bearer ' + options.token
-        },
-        body: JSON.stringify(params)
-    }, function (error, res, body) {
-        if (error) {
-            console.log(('Failed to create a webtask: ' + error.message).red);
-            process.exit(1);
-        }
-        if (res.statusCode !== 200) {
-            console.log(('Failed to create a webtask. HTTP ' + res.statusCode + ':').red);
-            try {
-                body = JSON.stringify(JSON.parse(body), null, 2);
+            if (options.watch) {
+                logger.info({ generation: generation++ }, 'webtask created');
             }
-            catch (e) {}
-            console.log(body.red);
-            process.exit(1);
-        }
-
-        var webtask_url = options.url + '/api/run/' + options.container + '?key=' + body;
-        if (options.type === 'token') {
-            console.log(body);
-        }
-        else if (options.type === 'url') {
-            console.log(webtask_url);
-        }
-        else {
-            console.log('Webtask token:'.green);
-            console.log(body);
-            console.log('Webtask URL:'.green);
-            console.log(webtask_url);
-        }
-    });
+            var webtask_url = options.url + '/api/run/' + options.container + '?key=' + body;
+            if (options.type === 'token') {
+                console.log(body);
+            }
+            else if (options.type === 'url') {
+                console.log(webtask_url);
+            }
+            else {
+                console.log('Webtask token:'.green);
+                console.log(body);
+                console.log('Webtask URL:'.green);
+                console.log(webtask_url);
+            }
+            if (dirty)
+                create_one();
+        });
+    }
 }
