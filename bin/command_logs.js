@@ -75,7 +75,10 @@ function logs_action(container, options) {
                 if (res.statusCode === 403 && !data) {
                     data = 'No permission to access logs of container `' + container + '`.';
                 }
-                logger.error({ container: container, status: res.statusCode, details: data }, 'error connecting');
+                var msg = (res.statusCode === 500 || res.statusCode === 429)
+                    ? 'error connecting; please try again'
+                    : 'error connecting';
+                logger.error({ container: container, status: res.statusCode, details: data }, msg);
                 process.exit(1);
             }
         });
