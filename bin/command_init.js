@@ -17,7 +17,7 @@ program
     .action(init_action);
 
 function init_action(options) {
-    var phone, verification_code, profile;
+    var phone_or_email, type, verification_code, profile;
     async.series([
         function (cb) {
             if (!program.wt.config[options.profile])
@@ -37,29 +37,33 @@ function init_action(options) {
             else {
                 async.series([
                     function (cb) {
-                        console.log('Please enter your phone number, we will send you an SMS verification code.');
-                        promptly.prompt('Phone number:', {
+                        console.log('Please enter your e-mail or phone number, we will send you a verification code.');
+                        promptly.prompt('E-mail or phone number:', {
                             validator: function (value) {
                                 value = value.replace(/ /g, '');
-                                if (!value.match(/^\+?[0-9]{1,15}$/))
-                                    throw new Error('The phone number must start with + followed by country code, area code, and local number.');
-                                if (value.indexOf('+') !== 0)
-                                    value = '+1' + value; // default to US
+                                if (is_phone(value)) {
+                                    if (value.indexOf('+') !== 0)
+                                        value = '+1' + value; // default to US                                    
+                                }
+                                else if (!is_email(value)) {
+                                    throw new Error('You must specify a valid e-mail address or a phone number. The phone number must start with + followed by country code, area code, and local number.');
+                                }
                                 return value;
                             }
                         }, function (error, data) {
                             if (error) return cb(error);
-                            phone = data;
+                            phone_or_email = data;
+                            type = is_phone(data) ? 'phone' : 'email';
                             cb();
                         })
                     },
                     function (cb) {
-                        run_sms_webtask({
-                            phone: phone
-                        }, cb);
+                        var opts = {};
+                        opts[type] = phone_or_email;
+                        run_sms_webtask(opts, cb);
                     },
                     function (cb) {
-                        console.log('Please enter the verification code we sent to ' + phone + ' below.');
+                        console.log('Please enter the verification code we sent to ' + phone_or_email + ' below.');
                         promptly.prompt('Verification code:', function (error, data) {
                             if (error) return cb(error);
                             verification_code = data;
@@ -67,10 +71,9 @@ function init_action(options) {
                         });
                     },
                     function (cb) {
-                        run_sms_webtask({
-                            phone: phone,
-                            verification_code: verification_code
-                        }, function (error, user) {
+                        var opts = { verification_code: verification_code };
+                        opts[type] = phone_or_email;
+                        run_sms_webtask(opts, function (error, user) {
                             if (error) return cb(error);
                             var webtask;
                             try {
@@ -149,4 +152,12 @@ function run_sms_webtask(payload, cb) {
         }
         cb(null, body);
     });
+}
+
+function is_phone(value) {
+    return !!value.match(/^\+?[0-9]{1,15}$/);
+}
+
+function is_email(value) {
+    return !!value.match(/^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,4}$/i);
 }
