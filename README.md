@@ -3,7 +3,7 @@ Simple command line interface for using [Webtasks](https://webtask.io)
 
 ## Setup
 ```
-$ npm i -g wt-cli
+$ npm i -g auth0/wt-cli
 $ wt init
 ```
 
