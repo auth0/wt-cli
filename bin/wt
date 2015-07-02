@@ -232,7 +232,7 @@ require('./command_create.js');
 require('./command_logs.js');
 require('./command_profile.js');
 require('./command_nuke.js');
-require('./command_schedule.js')
+require('./command_cron.js')
 
 // Run
 
