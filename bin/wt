@@ -7,6 +7,7 @@ var program = require('commander')
     , bunyan = require('bunyan')
     , colors = require('colors')
     , jwt = require('jws')
+    , request = require('request')
     , PrettyStream = require('bunyan-prettystream');
 
 var prettyStdOut = new PrettyStream({ mode: 'short' });
@@ -21,6 +22,9 @@ var logger = bunyan.createLogger({
 });
 logger.prettyStdOut = prettyStdOut;
 
+// Place where ultimate actions can be stored for re-use
+program.actions = {};
+
 // Common utilities
 
 program.wt = {
@@ -28,6 +32,22 @@ program.wt = {
       process.env[(process.platform == 'win32') ? 'USERPROFILE' : 'HOME'],
       '.webtask'),
     logger: logger,
+    container_limits: {
+        second: 'ls',
+        minute: 'lm',
+        hour: 'lh',
+        day: 'ld',
+        week: 'lw',
+        month: 'lo'
+    },
+    token_limits: {
+        second: 'lts',
+        minute: 'ltm',
+        hour: 'lth',
+        day: 'ltd',
+        week: 'ltw',
+        month: 'lto'
+    },
     parse_positive_int: function (name) {
         return function (val, def) {
           if (val === undefined) return def;
@@ -104,7 +124,86 @@ program.wt = {
       console.log(('Profile `' + name + '` does not exist. Available profiles are: ' + 
         profiles.join(', ').red + '.').red);
       process.exit(1);
-    }
+    },
+    create_token: function (options, cb) {
+      var params = {
+        ten: options.container,
+        dd: options.issuanceDepth,
+      }
+
+      if (options.exp !== undefined && options.nbf !== undefined
+        && options.exp <= options.nbf) {
+        return cb('The `nbf` parameter cannot be set to a later time than `exp`.');
+      }
+
+      if (options.code_url)
+        params.url = options.code_url;
+      if (options.code) 
+        params.code = options.code;
+      if (options.secret && Object.keys(options.secret).length > 0)
+        params.ectx = options.secret;
+      if (options.param && Object.keys(options.param).length > 0)
+        params.pctx = options.param;
+      if (options.nbf !== undefined)
+        params.nbf = options.nbf;
+      if (options.exp !== undefined)
+        params.exp = options.exp;
+      if (options.merge)
+        params.mb = 1;
+      if (options.parse)
+        params.pb = 1;
+      if (!options.selfRevoke)
+        params.dr = 1;
+
+      try {
+        if (options.tokenLimit)
+          add_limits(options.tokenLimit, program.wt.token_limits);
+        if (options.containerLimit)
+          add_limits(options.containerLimit, program.wt.container_limits);
+      } catch (e) {
+        return cb(e.message);
+      }
+
+      function add_limits(limits, spec) {
+        for (var l in limits) {
+          if (!spec[l]) {
+            throw new Error('Unsupported limit type `' + l + '`. Supported limits are: ' + Object.keys(spec).join(', ') + '.');
+          }
+          if (isNaN(limits[l]) || Math.floor(+limits[l]) !== +limits[l] || +limits[l] < 1) {
+            throw new Error('Unsupported limit value for `' + l + '` limit. All limits must be positive integers.');
+          }
+          params[spec[l]] = +limits[l];
+        }
+      }
+
+      request({
+        url: options.url + '/api/tokens/issue',
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer ' + options.token
+        },
+        body: JSON.stringify(params)
+      }, function (error, res, body) {
+        if (error) {
+          return cb('Failed to create a webtask: ' + error.message);
+        }
+        if (res.statusCode !== 200) {
+          var msg = 'Failed to create a webtask. HTTP ' + res.statusCode;
+          try {
+            msg += ':\n' + JSON.stringify(JSON.parse(body), null, 2);
+          }
+          catch (__) {}
+          return cb(msg);
+        }
+        var webtask_url = options.url + '/api/run/' + options.container + '?key=' + body;
+
+        cb(null, {
+          token: body,
+          webtask_url: webtask_url,
+        });
+      });
+    },
 };
 
 // Load confguration
@@ -133,6 +232,7 @@ require('./command_create.js');
 require('./command_logs.js');
 require('./command_profile.js');
 require('./command_nuke.js');
+require('./command_schedule.js')
 
 // Run
 

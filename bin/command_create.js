@@ -1,29 +1,15 @@
 var program = require('commander')
     , logger = program.wt.logger
     , async = require('async')
+    , cron = require('cron-parser')
     , url = require('url')
     , jws = require('jws')
     , fs = require('fs')
     , path = require('path')
-    , request = require('request');
+    , request = require('request')
+    , url = require('url');
 
 var types = /^(all|token|url|)$/;
-var container_limits = {
-    second: 'ls',
-    minute: 'lm',
-    hour: 'lh',
-    day: 'ld',
-    week: 'lw',
-    month: 'lo'
-};
-var token_limits = {
-    second: 'lts',
-    minute: 'ltm',
-    hour: 'lth',
-    day: 'ltd',
-    week: 'ltw',
-    month: 'lto'
-};
 
 program
     .command('create <file_or_url>')
@@ -32,6 +18,7 @@ program
     .option('-t --type <all|url|token>', 'what to output', program.wt.parse_regex('type', types), 'all')
     .option('-p --profile <name>', 'config profile to use', 'default')
     .option('-w --watch', 'watch for file changes')
+    .option('--job <name>', 'name of the scheduled webtask job')
     .action(function (file_or_url, options) {
         options.merge = true;
         options.parse = true;
@@ -45,6 +32,7 @@ program
     .option('-t --type <all|url|token>', 'what to output', program.wt.parse_regex('type', types), 'all')
     .option('-p --profile <name>', 'config profile to use', 'default')
     .option('-w --watch', 'watch for file changes')
+    .option('--job <name>', 'name of the scheduled webtask job')
     .option('--nbf <time>', 'webtask cannot be used before this time', program.wt.parse_time('not_before'))
     .option('--exp <time>', 'webtask cannot be used after this time', program.wt.parse_time('expires'))
     .option('--no-parse', 'do not parse JSON and urlencoded request body')
@@ -56,11 +44,16 @@ program
     .option('--container-limit <key_value>', 'container rate limit(s)', program.wt.collect_hash('token-limit'), {})
     .option('--token <token>', 'authorization webtask token')
     .option('--url <url>', 'webtask service URL')
-    .option('--container <name>', 'webtask container to run the code in')    
+    .option('--container <name>', 'webtask container to run the code in')
+    .option('--schedule <cron_string>', 'schedule (in quotes) on which to run the webtask')
     .action(create_action);
 
-function create_action(file_or_url, options) {
+program.actions.create_token = create_action;
+
+function create_action (file_or_url, options) {
     var profile;
+    var fullpath;
+    var filename;
     if (!options.url || !options.container || !options.token)
         profile = program.wt.ensure_profile(options.profile);    
 
@@ -68,15 +61,24 @@ function create_action(file_or_url, options) {
     options.container = options.container || profile.container;
     options.token = options.token || profile.token;
 
-    if (options.exp !== undefined && options.nbf !== undefined
-        && options.exp <= options.nbf) {
-        console.log('The `nbf` parameter cannot be set to a later time than `exp`.'.red);
-        process.exit(1);
+    var fol = file_or_url.toLowerCase();
+
+    // Early exit for invalid schedules
+    if (options.schedule) {
+        try {
+            cron.parseExpression(options.schedule);
+        } catch (__) {
+            console.log(('Invalid cron expression: ' + options.schedule).red);
+            console.log(__);
+            process.exit(1);
+        }
     }
 
-    var fol = file_or_url.toLowerCase();
     if (fol.indexOf('http://') === 0 || fol.indexOf('https://') === 0) {
         options.code_url = file_or_url;
+
+        fullpath = url.parse(file_or_url).pathname;
+
         if (options.watch) {
             console.log(('The --watch option can only be used when a file name is specified.').red);
             process.exit(1);
@@ -84,12 +86,19 @@ function create_action(file_or_url, options) {
     }
     else {
         options.file_name = path.resolve(process.cwd(), file_or_url);
+
+        fullpath = options.file_name;
+        
         if (!fs.existsSync(options.file_name)) {
             console.log(('File ' + options.file_name + ' not found.').red);
             process.exit(1);
         }
         options.code = fs.readFileSync(options.file_name, 'utf8');
     }
+    
+    // Set an intelligent default job name that is either the --job param
+    // or the filename of the webtask file / url, stripped of its extension.
+    options.job_name = options.job || path.basename(fullpath, path.extname(fullpath));
 
     var dirty, pending, generation = 1;
     if (options.watch) {
@@ -99,101 +108,67 @@ function create_action(file_or_url, options) {
             if (pending)
                 dirty = true;
             else
-                create_one();
+                create_one(options);
         });
     }
 
-    create_one();
+    create_one(options);
 
-    function create_one() {
+    function create_one (options) {
         dirty = false;
-
-        var params = {
-            ten: options.container,
-            dd: options.issuanceDepth,
-        }
-
-        if (options.code_url)
-            params.url = options.code_url;
-        if (options.code) 
-            params.code = options.code;
-        if (options.secret && Object.keys(options.secret).length > 0)
-            params.ectx = options.secret;
-        if (options.param && Object.keys(options.param).length > 0)
-            params.pctx = options.param;
-        if (options.nbf !== undefined)
-            params.nbf = options.nbf;
-        if (options.exp !== undefined)
-            params.exp = options.exp;
-        if (options.merge)
-            params.mb = 1;
-        if (options.parse)
-            params.pb = 1;
-        if (!options.selfRevoke)
-            params.dr = 1;
-
-        if (options.tokenLimit)
-            add_limits(options.tokenLimit, token_limits);
-        if (options.containerLimit)
-            add_limits(options.containerLimit, container_limits);
-
-        function add_limits(limits, spec) {
-            for (var l in limits) {
-                if (!spec[l]) {
-                    console.log(('Unsupported limit type `' + l + '`. Supported limits are: ' + Object.keys(spec).join(', ') + '.').red);
-                    process.exit(1);
-                }
-                if (isNaN(limits[l]) || Math.floor(+limits[l]) !== +limits[l] || +limits[l] < 1) {
-                    console.log(('Unsupported limit value for `' + l + '` limit. All limits must be positive integers.').red);
-                    process.exit(1);
-                }
-                params[spec[l]] = +limits[l];
-            }
-        }
-
         pending = true;
-        request({
-            url: options.url + '/api/tokens/issue',
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': 'Bearer ' + options.token
-            },
-            body: JSON.stringify(params)
-        }, function (error, res, body) {
+
+        program.wt.create_token(options, function (err, data) {
             pending = false;
-            if (error) {
-                console.log(('Failed to create a webtask: ' + error.message).red);
-                process.exit(1);
-            }
-            if (res.statusCode !== 200) {
-                console.log(('Failed to create a webtask. HTTP ' + res.statusCode + ':').red);
-                try {
-                    body = JSON.stringify(JSON.parse(body), null, 2);
-                }
-                catch (e) {}
-                console.log(body.red);
+
+            if (err) {
+                console.log(err.red);
                 process.exit(1);
             }
 
             if (options.watch) {
                 logger.info({ generation: generation++ }, 'webtask created');
             }
-            var webtask_url = options.url + '/api/run/' + options.container + '?key=' + body;
+
             if (options.type === 'token') {
-                console.log(body);
+                console.log(data.token);
             }
             else if (options.type === 'url') {
-                console.log(webtask_url);
+                console.log(data.webtask_url);
             }
             else {
                 console.log('Webtask token:'.green);
-                console.log(body);
+                console.log(data.token);
                 console.log('Webtask URL:'.green);
-                console.log(webtask_url);
+                console.log(data.webtask_url);
             }
-            if (dirty)
-                create_one();
-        });
+
+            if (options.schedule) {
+                console.log('Assigning schedule...');
+
+                options.cron_token = data.token;
+
+                program.cron.schedule(options, function (err, job) {
+                    if (err) {
+                        console.log(('Error scheduling webtask: ' + err).red);
+                        process.exit(1);
+                    }
+
+                    console.log(('Job ' + job.name.bold + ' scheduled to run on container '
+                        + job.container.bold + ' using schedule ' + job.schedule.bold).green);
+
+                    try {
+                        var interval = cron.parseExpression(job.schedule, {
+                            currentDate: new Date(job.last_scheduled_at),
+                        });
+                        var nextRunAt = interval.next();
+
+                        console.log(('Next scheduled run at:' + nextRunAt.toLocaleString().bold).green);
+                    } catch (__) {}
+                });
+            } 
+
+            if (dirty) create_one(options);
+        })
     }
 }
