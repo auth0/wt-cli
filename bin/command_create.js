@@ -18,6 +18,7 @@ program
     .option('-t --type <all|url|token>', 'what to output', program.wt.parse_regex('type', types), 'all')
     .option('-p --profile <name>', 'config profile to use', 'default')
     .option('-w --watch', 'watch for file changes')
+    .option('--schedule <cron_string>', 'schedule (in quotes) on which to run the webtask')
     .option('--job <name>', 'name of the scheduled webtask job')
     .action(function (file_or_url, options) {
         options.merge = true;
@@ -32,7 +33,6 @@ program
     .option('-t --type <all|url|token>', 'what to output', program.wt.parse_regex('type', types), 'all')
     .option('-p --profile <name>', 'config profile to use', 'default')
     .option('-w --watch', 'watch for file changes')
-    .option('--job <name>', 'name of the scheduled webtask job')
     .option('--nbf <time>', 'webtask cannot be used before this time', program.wt.parse_time('not_before'))
     .option('--exp <time>', 'webtask cannot be used after this time', program.wt.parse_time('expires'))
     .option('--no-parse', 'do not parse JSON and urlencoded request body')
@@ -46,6 +46,7 @@ program
     .option('--url <url>', 'webtask service URL')
     .option('--container <name>', 'webtask container to run the code in')
     .option('--schedule <cron_string>', 'schedule (in quotes) on which to run the webtask')
+    .option('--job <name>', 'name of the scheduled webtask job')
     .action(create_action);
 
 program.actions.create_token = create_action;
