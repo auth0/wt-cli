@@ -165,7 +165,7 @@ function handleCreate (yargs) {
         .argv;
     
 
-    var fileOrUrl = argv._[2];
+    var fileOrUrl = argv._[1];
     var fol = fileOrUrl.toLowerCase();
 
     if (fol.indexOf('http://') === 0 || fol.indexOf('https://') === 0) {
