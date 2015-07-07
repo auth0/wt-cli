@@ -116,7 +116,7 @@ module.exports = handleCreate;/*function (yargs) {
   
 function handleCreate (yargs) {
     var advanced = false;
-    
+
     // We want to only show advanced options if requested or if at least one
     // is already being used (that is not also a basic option)
     if (yargs.argv.advanced || yargs.argv.a
@@ -154,7 +154,7 @@ function handleCreate (yargs) {
             if (argv.param) parseHash(argv, 'param');
             if (argv.tokenLimit) parseHash(argv, 'tokenLimit');
             if (argv.containerLimit) parseHash(argv, 'containerLimit');
-            
+
             return true;
         })
         .fail(function (msg) {
@@ -165,7 +165,7 @@ function handleCreate (yargs) {
         .argv;
     
 
-    var fileOrUrl = argv._[2];
+    var fileOrUrl = argv._[1];
     var fol = fileOrUrl.toLowerCase();
 
     if (fol.indexOf('http://') === 0 || fol.indexOf('https://') === 0) {
