@@ -1,5 +1,6 @@
 var Bluebird = require('bluebird');
 var Boom = require('boom');
+var Bunyan = require('bunyan');
 var Colors = require('colors');
 var PrettyStream = require('bunyan-prettystream');
 var Webtask = require('../');
@@ -10,9 +11,18 @@ module.exports = handleStream;
 
   
 function handleStream (yargs) {
-    var log = new PrettyStream({ mode: 'short' });
-    
-    log.pipe(process.stdout);
+    var prettyStdOut = new PrettyStream({ mode: 'short' });
+
+    var logger = Bunyan.createLogger({
+          name: 'wt',
+          streams: [{
+              level: 'debug',
+              type: 'raw',
+              stream: prettyStdOut
+          }]
+    });
+
+    prettyStdOut.pipe(process.stdout);
 
     var argv = yargs.usage('Usage: $0 logs [options] [container]')
         .options({
@@ -48,16 +58,28 @@ function handleStream (yargs) {
             
             return config.getProfile(argv.profile);
         })
-        .call('createLogStream', argv)
-        .then(function (stream) {
+        .then(function (profile) {
+            // Get a handle to both the profile and the log stream
+            return Promise.all([
+                profile,
+                profile.createLogStream(argv)
+            ]);
+        })
+        .spread(function (profile, stream) {
+            if (!argv.raw) {
+                logger.info({container: argv.container || profile.container}
+                    , 'connected to streaming logs.');
+            }
+            
             stream.on('data', function (event) {
                 if (event.type === 'data') {
                     try {
                         var data = JSON.parse(event.data);
                     } catch (__) { return; }
                     
-                    if (typeof data === 'string') console.log(data);
-                    else log.write(data);
+                    if (argv.raw) console.log(event.data);
+                    else if (typeof data === 'string') logger.info(data);
+                    else logger.info(data);
                 }
             });
         })
