@@ -119,7 +119,9 @@ function handleCreate (yargs) {
     
     // We want to only show advanced options if requested or if at least one
     // is already being used (that is not also a basic option)
-    if (yargs.argv.advanced || _.find(yargs.argv, function (val, key) {
+    if (yargs.argv.advanced || yargs.argv.a
+        || _.find(yargs.argv, function (val, key) {
+            
         return advancedTokenOptions[key] && !tokenOptions[key];
     })) {
         _.extend(tokenOptions, advancedTokenOptions);
@@ -145,10 +147,15 @@ function handleCreate (yargs) {
                     + '`all`, `url` or `token`.');
             }
             
-            if (argv.secret) checkHash(argv, 'secret');
-            if (argv.param) checkHash(argv, 'param');
-            if (argv.tokenLimit) checkHash(argv, 'tokenLimit');
-            if (argv.containerLimit) checkHash(argv, 'containerLimit');
+            if (argv.nbf) parseDate(argv, 'nbf');
+            if (argv.exp) parseDate(argv, 'exp');
+            
+            if (argv.secret) parseHash(argv, 'secret');
+            if (argv.param) parseHash(argv, 'param');
+            if (argv.tokenLimit) parseHash(argv, 'tokenLimit');
+            if (argv.containerLimit) parseHash(argv, 'containerLimit');
+            
+            return true;
         })
         .fail(function (msg) {
             yargs.showHelp();
@@ -260,7 +267,23 @@ function logError (e) {
     process.exit(1);
 }
 
-function checkHash (argv, field) {
+function parseDate (argv, field) {
+    var value = argv[field];
+    var date = (value[0] === '+')
+        ? Date.now() + parseInt(value.substring(1), 10) * 60 * 1000
+        : Date.parse(value);
+    
+    if (isNaN(date)) {
+        throw new Error('Invalid value of `' + field + '`. Use RFC2822 format '
+            + '(e.g. Mon, 25 Dec 1995 13:30:00 GMT) or ISO 8601 format '
+            + '(e.g. 2011-10-10T14:48:00). You can also say +10 to indicate '
+            + '"ten minutes from now".');
+    }
+    
+    argv[field] = Math.floor(date.valueOf() / 1000);
+}
+
+function parseHash (argv, field) {
     var param = argv[field];
     
     if (!_.isArray(param)) argv[field] = [param];

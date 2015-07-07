@@ -34,7 +34,7 @@ _.forEach(commands, function (commandDef, command) {
     yargs.command(command, commandDef.description, commandDef.handler);
 });
 
-var argv = yargs.usage('Usage: $0 profile <command> [options]')
+var argv = yargs.usage('Usage: $0 <command> [options]')
     .option('profile', {
         alias: 'p',
         type: 'string',
