@@ -14,6 +14,11 @@ var commands = {
 };
 
 var tokenOptions = {
+    name: {
+        alias: 'n',
+        description: 'name of the webtask',
+        type: 'string',
+    },
     secret: {
         alias: 's',
         description: 'secret(s) to provide to code at runtime',
@@ -23,7 +28,7 @@ var tokenOptions = {
         alias: 'o',
         description: 'what to output <all|url|token>',
         type: 'string',
-        'default': 'all',
+        'default': 'url',
     },
     profile: {
         alias: 'p',
@@ -229,11 +234,18 @@ function handleCreate (yargs) {
             .then(function (profile) {
                 return profile.createToken(argv)
                     .then(function (token) {
-                        return {
+                        var result = {
                             token: token,
                             webtask_url: profile.url + '/api/run/'
                                 + profile.container + '?key=' + token,
                         };
+                        if (argv.name) {
+                            result.named_webtask_url = profile.url
+                                + '/api/run/'
+                                + profile.container
+                                + '/' + argv.name;
+                        }
+                        return result;
                     });
             })
             .then(function (data) {
@@ -243,8 +255,8 @@ function handleCreate (yargs) {
                         : data.token);
                 } else if (argv.output === 'url') {
                     console.log(argv.json
-                        ? JSON.stringify(data.webtask_url)
-                        : data.webtask_url);
+                        ? JSON.stringify(data.named_webtask_url || data.webtask_url)
+                        : (data.named_webtask_url || data.webtask_url));
                 } else if (argv.json) {
                     console.log(data);
                 } else {
@@ -252,6 +264,10 @@ function handleCreate (yargs) {
                     console.log(data.token);
                     console.log('Webtask URL:'.green);
                     console.log(data.webtask_url);
+                    if (data.named_webtask_url) {
+                        console.log('Named webtask URL:'.green);
+                        console.log(data.named_webtask_url);
+                    }
                 }
                 
                 return data.token;

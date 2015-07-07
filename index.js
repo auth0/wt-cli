@@ -135,8 +135,8 @@ function WebtaskProfile (options) {
 
 WebtaskProfile.prototype.createToken = Bluebird.method(function (options, cb) {
     var params = {
-        ten: options.container,
-        dd: options.issuanceDepth,
+        ten: this.container,
+        dd: options.issuanceDepth || 0,
     };
 
     if (options.exp !== undefined && options.nbf !== undefined
@@ -162,12 +162,14 @@ WebtaskProfile.prototype.createToken = Bluebird.method(function (options, cb) {
         params.pb = 1;
     if (!options.selfRevoke)
         params.dr = 1;
+    if (options.name)
+        params.jtn = options.name;
 
     if (options.tokenLimit)
         addLimits(options.tokenLimit, limits.token);
     if (options.containerLimit)
         addLimits(options.containerLimit, limits.container);
-    
+
     var promise = request(this._wreck, 'post', '/api/tokens/issue', {}, params)
         .spread(function (res, token) {
             return token.toString('utf8');

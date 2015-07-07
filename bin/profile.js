@@ -157,6 +157,7 @@ function handleList (yargs) {
             else {
                 _.forEach(profiles, function (profile, profileName) {
                     printProfile(profileName, profile, argv.details);
+                    console.log();
                 });
             }
         })
