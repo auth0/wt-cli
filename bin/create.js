@@ -95,7 +95,7 @@ var advancedTokenOptions = {
     },
 };
 
-module.exports = function (yargs) {
+module.exports = handleCreate;/*function (yargs) {
     _.forEach(commands, function (commandDef, command) {
         yargs.command(command, commandDef.description, commandDef.handler);
     });
@@ -111,7 +111,7 @@ module.exports = function (yargs) {
                 + '`');
         })
         .argv;
-};
+};*/
 
   
 function handleCreate (yargs) {
@@ -129,10 +129,10 @@ function handleCreate (yargs) {
         advanced = true;
     }
     
-    var argv = yargs.usage('Usage: $0 token create [options] <file_or_url>')
+    var argv = yargs.usage('Usage: $0 create [options] <file_or_url>')
         .options(tokenOptions)
         .help('help')
-        .demand(3, 'Please indicate the file or url of the code for the webtask')
+        .demand(2, 'Please indicate the file or url of the code for the webtask')
         .check(function (argv) {
             if (argv.issuanceDepth
                 && (Math.floor(argv.issuanceDepth) !== argv.issuanceDepth

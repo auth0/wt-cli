@@ -1,3 +1,19 @@
+var Cli = require('./cli');
+
+var cron = Cli.createCategory('cron', 'Manage scheduled webtasks');
+
+var schedule = Cli.createCommand('schedule', 'Schedule a webtask to run periodically.', {
+	params: '<schedule> <file_or_url>',
+	setup: function (yargs) {
+	
+	},
+	handler: function (yargs, argv) {
+	},
+});
+
+module.exports = cron;
+return;
+
 module.exports = function (yargs) {
 	console.log(yargs.argv);
 
@@ -16,6 +32,12 @@ module.exports = function (yargs) {
 function handleListCron (argv) {
 	console.log('listing cron jobs');
 }
+
+var wt = require('./wt.js');
+
+module.exports = wt.createCategory('cron', function (yargs) {
+		
+});
 
 /// Preserve legacy cron logic to re-integrate:
 

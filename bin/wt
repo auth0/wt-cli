@@ -18,9 +18,9 @@ var commands = {
         description: 'Manage webtask profiles',
         handler: require('./profile'),
     },
-    token: {
-        description: 'Manage webtask tokens',
-        handler: require('./token'),
+    create: {
+        description: 'Create webtasks',
+        handler: require('./create'),
     },
     logs: {
         description: 'Streaming, real-time logs',
