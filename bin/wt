@@ -1,5 +1,85 @@
 #!/usr/bin/env node
 
+var Bluebird = require('bluebird');
+var Boom = require('boom');
+var Colors = require('colors');
+var Jws = require('jws');
+var Promptly = require('promptly');
+var Webtask = require('../');
+var Yargs = require('yargs');
+var _ = require('lodash');
+
+Bluebird.longStackTraces();
+Bluebird.promisifyAll(Promptly);
+
+
+var commands = {
+    profile: {
+        description: 'Manage webtask profiles',
+        handler: require('./profile'),
+    },
+    token: {
+        description: 'Manage webtask tokens',
+        handler: require('./token'),
+    },
+    logs: {
+        description: 'Streaming, real-time logs',
+        handler: require('./logs'),
+    },
+};
+
+var yargs = Yargs.usage('Usage: $0 <command>');
+
+_.forEach(commands, function (commandDef, command) {
+    yargs.command(command, commandDef.description, commandDef.handler);
+});
+
+var argv = yargs.usage('Usage: $0 profile <command> [options]')
+    .option('profile', {
+        alias: 'p',
+        type: 'string',
+    })
+    .help('help')
+    .version(require('../package.json').version)
+    .check(function (argv) {
+        var commandName = argv._[1];
+        var command = commands[commandName];
+        
+        if (!commandName) throw new Error('Please enter a valid command.');
+        if (!command) throw new Error('No such command `' + commandName + '`');
+    })
+    .argv;
+
+
+// var argv = Yargs.usage('Usage: $0 <command>')
+//     .command('token', 'create webtask tokens')
+//     .command('log', 'streaming, real-time logs')
+//     .command('profile', 'manage profiles', require('./profile'))
+//     .command('cron', 'manage scheduled webtasks')
+//     .command('nuke', 'nuke all secrets and credentials')
+//     .demand(1, 'Please indicate the command that you would like to invoke.')
+//     .help('help')
+//     .argv;
+
+return;
+
+
+// var argv = Yargs
+//   .usage('Usage: $0 [options] <command>')
+//   .option('p', {
+//     alias: 'profile',
+//     description: 'config profile to use',
+//     default: 'default',
+//     type: 'string',
+//   })
+//   .command('cron', 'create and manage scheduled webtasks', require('./cron'))
+//   .help('help')
+//   .argv;
+
+// console.log(argv);
+
+// return;
+
 var program = require('commander')
     , async = require('async')
     , path = require('path')
