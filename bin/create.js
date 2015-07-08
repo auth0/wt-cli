@@ -222,7 +222,7 @@ function handleCreate (yargs) {
     function createToken () {
         var config = Webtask.configFile();
         
-        config.load()
+        return config.load()
             .then(function (profiles) {
                 if (_.isEmpty(profiles)) {
                     throw new Error('You must create a profile to begin using '
@@ -269,7 +269,7 @@ function handleCreate (yargs) {
                         console.log(data.named_webtask_url);
                     }
                 }
-                
+
                 return data.token;
             })
             .catch(logError);
