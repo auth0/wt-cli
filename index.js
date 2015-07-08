@@ -162,6 +162,8 @@ WebtaskProfile.prototype.createToken = Bluebird.method(function (options, cb) {
         params.pb = 1;
     if (!options.selfRevoke)
         params.dr = 1;
+    if (options.name)
+        params.jtn = options.name;
 
     if (options.tokenLimit)
         addLimits(options.tokenLimit, limits.token);
