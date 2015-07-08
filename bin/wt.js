@@ -9,4 +9,4 @@ wt.command(require('./cron'));
     
 // })
 
-wt.run();
+console.log(wt.run());

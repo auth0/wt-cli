@@ -1,3 +1,4 @@
+var Cli = require('./cli');
 var Colors = require('colors');
 var Fs = require('fs');
 var Path = require('path');
@@ -5,15 +6,12 @@ var Watcher = require('filewatcher');
 var Webtask = require('../');
 var _ = require('lodash');
 
-
-var commands = {
-    create: {
-        description: 'Create a webtask token from code',
-        handler: handleCreate,
-    },
-};
-
 var tokenOptions = {
+    name: {
+        alias: 'n',
+        description: 'name of the webtask',
+        type: 'string'
+    },
     secret: {
         alias: 's',
         description: 'secret(s) to provide to code at runtime',
@@ -21,9 +19,9 @@ var tokenOptions = {
     },
     output: {
         alias: 'o',
-        description: 'what to output <all|url|token>',
+        description: 'what to output <all|url|token|none>',
         type: 'string',
-        'default': 'all',
+        'default': 'url',
     },
     profile: {
         alias: 'p',
@@ -95,85 +93,66 @@ var advancedTokenOptions = {
     },
 };
 
-module.exports = handleCreate;/*function (yargs) {
-    _.forEach(commands, function (commandDef, command) {
-        yargs.command(command, commandDef.description, commandDef.handler);
-    });
-    
-    var argv = yargs.usage('Usage: $0 token <command> [options]')
-        .help('help')
-        .check(function (argv) {
-            var commandName = argv._[1];
-            var command = commands[commandName];
+
+module.exports = Cli.createCommand('create', 'Create webtasks.', {
+	params: '<file_or_url>',
+	setup: function (yargs) {
+        var advanced = false;
+        
+        // We want to only show advanced options if requested or if at least one
+        // is already being used (that is not also a basic option)
+        if (yargs.argv.advanced || yargs.argv.a
+            || _.find(yargs.argv, function (val, key) {
+                
+                return advancedTokenOptions[key] && !tokenOptions[key];
+        })) {
+            _.extend(tokenOptions, advancedTokenOptions);
             
-            if (!commandName) throw new Error('Please enter a valid command.');
-            if (!command) throw new Error('No such command `' + commandName 
-                + '`');
-        })
-        .argv;
-};*/
+            advanced = true;
+        }
+
+        yargs
+            .options(tokenOptions)
+            .check(function (argv) {
+                if (argv.issuanceDepth
+                    && (Math.floor(argv.issuanceDepth) !== argv.issuanceDepth
+                    || argv.issuanceDepth < 0)) {
+                    
+                    throw new Error('The `issuance-depth` parameter must be a '
+                        + 'non-negative integer.');
+                }
+                
+                if (['all', 'url', 'token', 'none'].indexOf(argv.output) < 0) {
+                    throw new Error('The `output` parameter must be one of: '
+                        + '`all`, `url`, `token` or `none`.');
+                }
+                
+                if (argv.nbf) parseDate(argv, 'nbf');
+                if (argv.exp) parseDate(argv, 'exp');
+                
+                if (argv.secret) parseHash(argv, 'secret');
+                if (argv.param) parseHash(argv, 'param');
+                if (argv.tokenLimit) parseHash(argv, 'tokenLimit');
+                if (argv.containerLimit) parseHash(argv, 'containerLimit');
+                
+                return true;
+            });
+    },
+	handler: handleCreate,
+});
+
 
   
-function handleCreate (yargs) {
-    var advanced = false;
-    
-    // We want to only show advanced options if requested or if at least one
-    // is already being used (that is not also a basic option)
-    if (yargs.argv.advanced || yargs.argv.a
-        || _.find(yargs.argv, function (val, key) {
-            
-        return advancedTokenOptions[key] && !tokenOptions[key];
-    })) {
-        _.extend(tokenOptions, advancedTokenOptions);
-        
-        advanced = true;
-    }
-    
-    var argv = yargs.usage('Usage: $0 create [options] <file_or_url>')
-        .options(tokenOptions)
-        .help('help')
-        .demand(2, 'Please indicate the file or url of the code for the webtask')
-        .check(function (argv) {
-            if (argv.issuanceDepth
-                && (Math.floor(argv.issuanceDepth) !== argv.issuanceDepth
-                || argv.issuanceDepth < 0)) {
-                
-                throw new Error('The `issuance-depth` parameter must be a '
-                    + 'non-negative integer.');
-            }
-            
-            if (['all', 'url', 'token'].indexOf(argv.output) < 0) {
-                throw new Error('The `output` parameter must be one of: '
-                    + '`all`, `url` or `token`.');
-            }
-            
-            if (argv.nbf) parseDate(argv, 'nbf');
-            if (argv.exp) parseDate(argv, 'exp');
-            
-            if (argv.secret) parseHash(argv, 'secret');
-            if (argv.param) parseHash(argv, 'param');
-            if (argv.tokenLimit) parseHash(argv, 'tokenLimit');
-            if (argv.containerLimit) parseHash(argv, 'containerLimit');
-            
-            return true;
-        })
-        .fail(function (msg) {
-            yargs.showHelp();
-            console.log(msg.red);
-            process.exit(1);
-        })
-        .argv;
-    
-
-    var fileOrUrl = argv._[2];
+function handleCreate (argv) {
+    var fileOrUrl = argv.params.file_or_url;
     var fol = fileOrUrl.toLowerCase();
 
     if (fol.indexOf('http://') === 0 || fol.indexOf('https://') === 0) {
         argv.code_url = fileOrUrl;
 
         if (argv.watch) {
-            return logError(new Error('The --watch option can only be used '
-                + 'when a file name is specified.'));
+            throw new Error('The --watch option can only be used '
+                + 'when a file name is specified.');
         }
     } else {
         argv.file_name = Path.resolve(process.cwd(), fileOrUrl);
@@ -181,8 +160,8 @@ function handleCreate (yargs) {
         try {
             argv.code = Fs.readFileSync(argv.file_name, 'utf8');
         } catch (e) {
-            return logError(new Error('Unable to read the file `'
-                + argv.file_name + '`.'));
+            throw new Error('Unable to read the file `'
+                + argv.file_name + '`.');
         }
     }
 
@@ -203,21 +182,19 @@ function handleCreate (yargs) {
                     , generation);
             }
             
-            try {
-                argv.code = Fs.readFileSync(argv.file_name, 'utf8');
-            } catch (e) {
-                logError(e);
-            }
+            argv.code = Fs.readFileSync(argv.file_name, 'utf8');
             
             pending = pending
                 .then(createToken);
         });
     }
     
+    return pending;
+    
     function createToken () {
         var config = Webtask.configFile();
         
-        config.load()
+        return config.load()
             .then(function (profiles) {
                 if (_.isEmpty(profiles)) {
                     throw new Error('You must create a profile to begin using '
@@ -229,22 +206,31 @@ function handleCreate (yargs) {
             .then(function (profile) {
                 return profile.createToken(argv)
                     .then(function (token) {
-                        return {
+                        var result = {
                             token: token,
                             webtask_url: profile.url + '/api/run/'
                                 + profile.container + '?key=' + token,
                         };
+                        if (argv.name) {
+                            result.named_webtask_url = profile.url
+                                + '/api/run/'
+                                + profile.container
+                                + '/' + argv.name;
+                        }
+                        return result;
                     });
             })
             .then(function (data) {
-                if (argv.output === 'token') {
+                if (argv.output === 'none') {
+                    // Do nothing
+                } else if (argv.output === 'token') {
                     console.log(argv.json
                         ? JSON.stringify(data.token)
                         : data.token);
                 } else if (argv.output === 'url') {
                     console.log(argv.json
-                        ? JSON.stringify(data.webtask_url)
-                        : data.webtask_url);
+                        ? JSON.stringify(data.named_webtask_url || data.webtask_url)
+                        : (data.named_webtask_url || data.webtask_url));
                 } else if (argv.json) {
                     console.log(data);
                 } else {
@@ -252,19 +238,15 @@ function handleCreate (yargs) {
                     console.log(data.token);
                     console.log('Webtask URL:'.green);
                     console.log(data.webtask_url);
+                    if (data.named_webtask_url) {
+                        console.log('Named webtask URL:'.green);
+                        console.log(data.named_webtask_url);
+                    }
                 }
                 
-                return data.token;
-            })
-            .catch(logError);
+                return data;
+            });
     }
-}
-
-function logError (e) {
-    console.error(e);
-    console.log(e.message.red);
-    if (e.trace) console.log(e.trace);
-    process.exit(1);
 }
 
 function parseDate (argv, field) {

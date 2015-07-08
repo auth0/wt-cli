@@ -1,3 +1,4 @@
+var Bluebird = require('bluebird');
 var Colors = require('colors');
 var Yargs = require('yargs');
 var _ = require('lodash');
@@ -28,39 +29,37 @@ Category.prototype.command = function (command) {
 };
 
 Category.prototype.run = function (yargs) {
-    return this.setup(yargs || Yargs())
-        .version(require('../package.json').version)
-        .parse(process.argv)
-        .argv;
-};
-
-Category.prototype.setup = function (yargs) {
     var self = this;
+    var errorHandler = createErrorHandler(yargs);
     
-    _.forEach(this.commands, function (command, name) {
-        yargs.command(name, command.description, command.setup.bind(command));
+    _.forEach(this.commands, function (command) {
+        yargs.command(command.name, command.description, command.run.bind(command));
     });
+        
+    if (this.options.setup) this.options.setup(yargs);
+    if (this.options.options) yargs.options(this.options.options);
     
     yargs
-        .help('help')
+        .usage('Usage: ' + this.path.join(' ') + ' <command>')
         .check(function (argv) {
-            var commandName = argv._[self.path.length + 1];
+            var commandName = argv._[self.path.length - 1];
             var command = self.commands[commandName];
             
             if (!commandName) throw new Error('Please enter a valid command.');
-            if (!command) throw new Error('No such command `' + commandName + '`');
+            if (!command) throw new Error('No such command `' 
+                + self.path.slice(1).join(' ')+ ' '
+                + commandName + '`');
 
             return true;
         })
-        .fail(function (err) {
-            yargs.showHelp();
-            
-            console.log((err.message || err).red);
-        })
-        // .fail(this.errorHandler)
-        .usage('Usage: ' + this.path.join(' ') + ' <command>');
+        .demand(self.path.length, 'Please enter a valid command.')
+        .fail(errorHandler);
     
-    return yargs;
+    yargs.help('help');
+        
+    var argv = yargs.argv;
+    
+    return argv;
 };
 
 
@@ -82,28 +81,68 @@ function Command (name, description, options) {
     });
 }
 
-Command.prototype.setup = function (yargs) {
+Command.prototype.run = function (yargs) {
     var self = this;
+    var errorHandler = createErrorHandler(yargs);
     
-    console.log('yargs', yargs);
+    if (this.options.setup) this.options.setup(yargs);
+    if (this.options.options) yargs.options(this.options.options);
     
     yargs
-        .help('help')
         .check(function (argv) {
+            if (self.options.params) {
+                var required = 0;
+                var optional = 0;
+                
+                argv.params = {};
+                
+                self.options.params.replace(/(<[^>]+>|\[[^\]]+\])/g,
+                    function (match) {
+                        var isRequired = match[0] === '<';
+                        var param = match.slice(1, -1);
+                        
+                        if (isRequired && optional > 0)
+                            throw new Error('Optional parameters must be specified last');
+                        
+                        if (isRequired) required++;
+                        else optional++;
+                        
+                        var value = argv._[self.path.length - 2 + required + optional];
+                        
+                        if (isRequired && !value) throw new Error('Parameter '
+                            + '`' + param + '` is required.');
+                        
+                        argv.params[param] = value;
+                    });
+            }
+            
             return true;
         })
-        .fail(function (err) {
-            yargs.showHelp();
-            
-            console.log((err.message || err).red);
-        })
-        // .fail(this.errorHandler)
+        .fail(errorHandler)
         .usage('Usage: ' + this.path.join(' ')
             + ' [options]'
-            + (this.params ? ' ' + this.params : ''));
+            + (this.options.params ? ' ' + this.options.params : ''));
     
-    return yargs;
+    yargs.help('help');
+        
+    var argv = yargs.argv;
+    
+    if (this.options.handler)
+        Bluebird.try(this.options.handler.bind(this, argv))
+            .catch(errorHandler);
+    
+    return argv;
 };
+
+
+function createErrorHandler (yargs) {
+    return function (err) {
+        yargs.showHelp();
+        
+        console.log((err.message || err).red);
+        process.exit(1);
+    };
+}
 
 
 
@@ -113,4 +152,11 @@ exports.createCategory = function (name, description, options) {
 
 exports.createCommand = function (name, description, options) {
     return new Command(name, description, options);
+};
+
+
+exports.run = function (command, yargs) {
+    var argv = command.run(yargs || Yargs);
+    
+    return argv;
 };

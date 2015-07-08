@@ -5,8 +5,9 @@ var Cli = require('./cli');
 var wt = Cli.createCategory();
 
 wt.command(require('./cron'));
-// wt.setErrorHandler(function (err, argv) {
-    
-// })
+wt.command(require('./create'));
+wt.command(require('./init'));
+wt.command(require('./profile'));
+wt.command(require('./logs'));
 
-wt.run();
+var argv = Cli.run(wt);

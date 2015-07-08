@@ -1,33 +1,90 @@
+var Bluebird = require('bluebird');
 var Boom = require('boom');
 var Colors = require('colors');
+var Cli = require('./cli');
 var Jws = require('jws');
 var Promptly = require('promptly');
 var Webtask = require('../');
 var _ = require('lodash');
 
+Bluebird.promisifyAll(Promptly);
 
-var commands = {
-    init: {
-        description: 'Create or update an existing webtask profile',
-        handler: handleInit,
+
+var profile = module.exports = Cli.createCategory('profile',
+    'Manage webtask profiles');
+    
+profile.command(Cli.createCommand('init', 'Create or update an existing webtask profile.', {
+    options: {
+        token: {
+            alias: 't',
+            description: 'webtask token used to issue new tokens',
+            type: 'string',
+        },
+        container: {
+            alias: 'c',
+            description: 'default webtask container',
+            type: 'string',
+        },
+        url: {
+            alias: 'u',
+            description: 'webtask service URL',
+            type: 'string',
+        },
+        profile: {
+            alias: 'p',
+            description: 'name of the profile to set up',
+            'default': 'default',
+            type: 'string',
+        },
     },
-    ls: {
-        description: 'List existing webtask profiles',
-        handler: handleList,
+    handler: handleInit,
+}));
+    
+profile.command(Cli.createCommand('ls', 'List existing webtask profiles.', {
+    options: infoOptions,
+    handler: handleList,
+}));
+    
+profile.command(Cli.createCommand('get', 'Get information about an existing webtask profile.', {
+    params: '[profile]',
+    options: _.extend({}, infoOptions, {
+        field: {
+            description: 'return only this field',
+            type: 'string',
+        },
+    }),
+    handler: handleGet,
+}));
+    
+profile.command(Cli.createCommand('rm', 'Remove an existing webtask profile.', {
+    params: '<profile>',
+    options: {
+        json: {
+            alias: 'j',
+            description: 'json output',
+            type: 'boolean',
+        },
     },
-    get: {
-        description: 'Get information about an existing webtask profile',
-        handler: handleGet,
+    handler: handleRemove,
+}));
+    
+profile.command(Cli.createCommand('nuke', 'Destroys all existing profiles and their secrets.', {
+    options: {
+        force: {
+            alias: 'f',
+            description: 'do not prompt',
+            type: 'boolean',
+        },
+        json: {
+            alias: 'j',
+            description: 'json output',
+            type: 'boolean',
+        },
     },
-    rm: {
-        description: 'Remove an existing webtask profile',
-        handler: handleRemove,
-    },
-    nuke: {
-        description: 'Destroys all existing profiles and their secrets',
-        handler: handleNuke,
-    },
-};
+    handler: handleNuke,
+}));
+
+
 
 var infoOptions = {
     json: {
@@ -42,57 +99,11 @@ var infoOptions = {
     },
 };
 
-
-module.exports = function (yargs) {
-    _.forEach(commands, function (commandDef, command) {
-        yargs.command(command, commandDef.description, commandDef.handler);
-    });
-    
-    var argv = yargs.usage('Usage: $0 profile <command> [options]')
-        .help('help')
-        .check(function (argv) {
-            var commandName = argv._[1];
-            var command = commands[commandName];
-            
-            if (!commandName) throw new Error('Please enter a valid command.');
-            if (!command) throw new Error('No such command `' + commandName 
-                + '`');
-        })
-        .argv;
-};
-
   
-function handleInit (yargs) {
-    var argv = yargs.usage('Usage: $0 profile create [options]')
-        .options({
-            token: {
-                alias: 't',
-                description: 'webtask token used to issue new tokens',
-                type: 'string',
-            },
-            container: {
-                alias: 'c',
-                description: 'default webtask container',
-                type: 'string',
-            },
-            url: {
-                alias: 'u',
-                description: 'webtask service URL',
-                type: 'string',
-            },
-            profile: {
-                alias: 'p',
-                description: 'name of the profile to set up',
-                'default': 'default',
-                type: 'string',
-            },
-        })
-        .help('help')
-        .argv;
-        
+function handleInit (argv) {
     var config = Webtask.configFile();
     
-    config.getProfile(argv.profile)
+    return config.getProfile(argv.profile)
         .then(function (profile) {
             console.log('You already have the `' + argv.profile
                 + '` profile:');
@@ -135,18 +146,16 @@ function handleInit (yargs) {
                         + '`wt token create`.'.green);
                 });
         })
-        .catch(logError);
+        .catch(function (e) {
+            // Handle cancellation silently (don't trigger help)
+            if (e.isBoom && e.output.statusCode === 409) return;
+        });
 }
   
-function handleList (yargs) {
-    var argv = yargs.usage('Usage: $0 profile ls')
-        .options(infoOptions)
-        .help('help')
-        .argv;
-        
+function handleList (argv) {
     var config = Webtask.configFile();
 
-    config.load()
+    return config.load()
         .then(function (profiles) {
             if (argv.json) {
                 console.log(profiles);
@@ -157,94 +166,46 @@ function handleList (yargs) {
             else {
                 _.forEach(profiles, function (profile, profileName) {
                     printProfile(profileName, profile, argv.details);
+                    console.log();
                 });
             }
-        })
-        .catch(logError);
+        });
 }
   
-function handleGet (yargs) {
-    var argv = yargs.usage('Usage: $0 profile get [field]')
-        .options(_.extend(infoOptions, {
-            profile: {
-                alias: 'p',
-                description: 'name of the profile to use',
-                'default': 'default',
-                type: 'string',
-            },
-        }))
-        .help('help')
-        .argv;
-        
+function handleGet (argv) {
     var config = Webtask.configFile();
-    var field = argv._[2];
 
-    config.getProfile(argv.profile)
+    return config.getProfile(argv.params.profile)
         .then(function (profile) {
-            if (field) {
-                var value = profile[field.toLowerCase()];
+            if (argv.field) {
+                var value = profile[argv.field.toLowerCase()];
                 
-                if (!value) throw new Error('Field `' + field + '` does not '
+                if (!value) throw new Error('Field `' + argv.field + '` does not '
                     + 'exist');
                     
                 console.log(argv.json ? JSON.stringify(value) : value);
             } else {
                 if (argv.json) console.log(profile);
-                else printProfile(argv.profile, profile, argv.details);
+                else printProfile(argv.params.profile, profile, argv.details);
             }
-        })
-        .catch(logError);
+        });
 }
   
-function handleRemove (yargs) {
-    var argv = yargs.usage('Usage: $0 profile rm -p <profile>')
-        .options({
-            profile: {
-                alias: 'p',
-                description: 'name of the profile to remove',
-                demand: true,
-                type: 'string',
-            },
-            json: {
-                alias: 'j',
-                description: 'json output',
-                type: 'boolean',
-            },
-        })
-        .help('help')
-        .argv;
-        
+function handleRemove (argv) {
     var config = Webtask.configFile();
     
-    config.removeProfile(argv.profile)
+    return config.removeProfile(argv.profile)
         .then(config.save.bind(config))
         .then(function () {
             if (argv.json) console.log(true);
             else console.log('Profile `' + argv.profile + '` removed.');
-        })
-        .catch(logError);
+        });
 }
   
-function handleNuke (yargs) {
-    var argv = yargs.usage('Usage: $0 profile nuke')
-        .options({
-            force: {
-                alias: 'f',
-                description: 'do not prompt',
-                type: 'boolean',
-            },
-            json: {
-                alias: 'j',
-                description: 'json output',
-                type: 'boolean',
-            },
-        })
-        .help('help')
-        .argv;
-        
+function handleNuke (argv) {
     var config = Webtask.configFile();
     
-    config.load()
+    return config.load()
         .then(function () {
             return argv.force
                 ? true
@@ -265,7 +226,10 @@ function handleNuke (yargs) {
             else console.log('All secrets and profiles deleted. Initialize '
                 + 'again with `wt init`.');
         })
-        .catch(logError);
+        .catch(function (e) {
+            // Handle cancellation silently (don't trigger help)
+            if (e.isBoom && e.output.statusCode === 409) return;
+        });
 }
 
 function getVerifiedProfile () {
@@ -308,10 +272,4 @@ function printProfile (name, profile, details) {
             console.log(name.blue, json[key]);
         });
     }
-}
-
-function logError (e) {
-    console.log(e.message.red);
-    if (e.trace) console.log(e.trace);
-    process.exit(1);
 }

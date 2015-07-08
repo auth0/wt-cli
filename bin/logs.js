@@ -1,37 +1,46 @@
 var Bluebird = require('bluebird');
 var Boom = require('boom');
+var Bunyan = require('bunyan');
+var Cli = require('./cli');
 var Colors = require('colors');
 var PrettyStream = require('bunyan-prettystream');
 var Webtask = require('../');
 var _ = require('lodash');
 
 
-module.exports = handleStream;
+module.exports = Cli.createCommand('logs', 'Streaming, real-time logs.', {
+    params: '[container]',
+    options: {
+        raw: {
+            alias: 'r',
+            description: 'do not pretty print',
+            type: 'boolean',
+        },
+        profile: {
+            alias: 'p',
+            description: 'name of the profile to set up',
+            'default': 'default',
+            type: 'string',
+        },
+    },
+    handler: handleStream,
+});
 
   
-function handleStream (yargs) {
-    var log = new PrettyStream({ mode: 'short' });
-    
-    log.pipe(process.stdout);
+function handleStream (argv) {
+    var prettyStdOut = new PrettyStream({ mode: 'short' });
+    var logger = Bunyan.createLogger({
+          name: 'wt',
+          streams: [{
+              level: 'debug',
+              type: 'raw',
+              stream: prettyStdOut
+          }]
+    });    
 
-    var argv = yargs.usage('Usage: $0 logs [options] [container]')
-        .options({
-            raw: {
-                alias: 'r',
-                description: 'do not pretty print',
-                type: 'boolean',
-            },
-            profile: {
-                alias: 'p',
-                description: 'name of the profile to set up',
-                'default': 'default',
-                type: 'string',
-            },
-        })
-        .help('help')
-        .argv;
+    prettyStdOut.pipe(process.stdout);
     
-    var container = argv._[2];
+    var container = argv.params.container;
     
     if (container) {
         argv.container = container;
@@ -48,8 +57,16 @@ function handleStream (yargs) {
             
             return config.getProfile(argv.profile);
         })
-        .call('createLogStream', argv)
-        .then(function (stream) {
+        .then(function (profile) {
+            return Bluebird.all([
+                profile,
+                profile.createLogStream(argv)
+            ]);
+        })
+        .spread(function (profile, stream) {
+            logger.info({ container: profile.container },
+                'connected to streaming logs');
+            
             stream.on('data', function (event) {
                 if (event.type === 'data') {
                     try {
@@ -57,7 +74,7 @@ function handleStream (yargs) {
                     } catch (__) { return; }
                     
                     if (typeof data === 'string') console.log(data);
-                    else log.write(data);
+                    else logger.info(data);
                 }
             });
         })

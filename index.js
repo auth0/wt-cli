@@ -277,6 +277,54 @@ WebtaskProfile.prototype.createLogStream = function (options, cb) {
     return cb ? promise.nodify(cb) : promise;
 };
 
+WebtaskProfile.prototype.createCronJob = function (options, cb) {
+    var url = '/api/cron/' + options.container + '/' + options.name;
+    var promise = request(this._wreck, 'put', url, {}, {
+        token: options.token,
+        schedule: options.schedule,
+    })
+        .get(1); // Return the job
+    
+    return cb ? promise.nodeify(cb) : promise;
+};
+
+WebtaskProfile.prototype.removeCronJob = function (options, cb) {
+    var url = '/api/cron/' + options.container + '/' + options.name;
+    var promise = request(this._wreck, 'delete', url)
+        .get(1); // Return the job
+    
+    return cb ? promise.nodeify(cb) : promise;
+};
+
+WebtaskProfile.prototype.listCronJobs = function (options, cb) {
+    var url = '/api/cron/' + options.container;
+    var promise = request(this._wreck, 'get', url)
+        .get(1); // Return the job array
+    
+    return cb ? promise.nodeify(cb) : promise;
+};
+
+WebtaskProfile.prototype.getCronJob = function (options, cb) {
+    var url = '/api/cron/' + options.container + '/' + options.name;
+    var promise = request(this._wreck, 'get', url)
+        .get(1); // Return the job
+    
+    return cb ? promise.nodeify(cb) : promise;
+};
+
+WebtaskProfile.prototype.getCronJobHistory = function (options, cb) {
+    var url = '/api/cron/' + options.container + '/' + options.name + '/history';
+    var query = {};
+    
+    if (options.offset) query.offset = options.offset;
+    if (options.limit) query.limit = options.limit;
+    
+    var promise = request(this._wreck, 'get', url, query)
+        .get(1); // Return the job history
+    
+    return cb ? promise.nodeify(cb) : promise;
+};
+
 function request (wreck, method, path, query, payload, options) {
     if (!options) options = {};
     
@@ -311,7 +359,7 @@ function request (wreck, method, path, query, payload, options) {
             if (res.statusCode >= 400) {
                 // Error response from webtask cluster
                 return reject(Boom.create(res.statusCode,
-                    'Error returned by webtask cluster: ' + err.message),
+                    'Error returned by webtask cluster: ' + JSON.stringify(body, null, 2)),
                     Buffer.isBuffer(body) ? body.toString() : body);
             } else if (res.statusCode >= 300) {
                 // Unresolved redirect from webtask cluster
