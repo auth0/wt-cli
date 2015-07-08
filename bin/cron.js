@@ -284,10 +284,10 @@ function handleCronHistory (argv) {
             if (argv.json) {
                 console.log(json);
             } else {
-                _.forEach(json, function (result) {
+                _(json).reverse().forEach(function (result) {
                     printCronResult(result);
                     console.log(); // Blank line
-                });
+                }).value();
             }
         });
     
