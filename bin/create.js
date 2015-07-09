@@ -34,16 +34,6 @@ var tokenOptions = {
         description: 'watch for file changes',
         type: 'boolean',
     },
-    parse: {
-        type: 'boolean',
-        description: 'parse JSON and urlencoded request body',
-        'default': true,
-    },
-    merge: {
-        type: 'boolean',
-        description: 'merge body data into `context.data`',
-        'default': true,
-    },
     json: {
         alias: 'j',
         description: 'json output',
@@ -61,14 +51,14 @@ var tokenOptions = {
 };
 
 var advancedTokenOptions = {
-    parse: {
+    'no-parse': {
         type: 'boolean',
-        description: 'parse JSON and urlencoded request body',
+        description: 'prevent the parsing JSON and urlencoded request body',
         'default': false,
     },
-    merge: {
+    'no-merge': {
         type: 'boolean',
-        description: 'merge body data into `context.data`',
+        description: 'prevent the merging of body data into `context.data`',
         'default': false,
     },
     nbf: {
@@ -97,8 +87,6 @@ var advancedTokenOptions = {
 module.exports = Cli.createCommand('create', 'Create webtasks.', {
 	params: '<file_or_url>',
 	setup: function (yargs) {
-        var advanced = false;
-        
         // We want to only show advanced options if requested or if at least one
         // is already being used (that is not also a basic option)
         if (yargs.argv.advanced || yargs.argv.a
@@ -108,7 +96,9 @@ module.exports = Cli.createCommand('create', 'Create webtasks.', {
         })) {
             _.extend(tokenOptions, advancedTokenOptions);
             
-            advanced = true;
+            // We have detected advanced options, turn on advanced to signal
+            // advanced mode to handler
+            yargs.argv.advanced = true;
         }
 
         yargs
@@ -164,8 +154,10 @@ function handleCreate (argv) {
                 + argv.file_name + '`.');
         }
     }
-
-
+    
+    argv.merge = typeof argv.merge === 'undefined' ? true : !!argv.merge;
+    argv.parse = typeof argv.parse === 'undefined' ? true : !!argv.parse;
+    
     var generation = 0;
     var pending = createToken();
     
