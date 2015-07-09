@@ -201,13 +201,15 @@ function handleCreate (argv) {
                         var result = {
                             token: token,
                             webtask_url: profile.url + '/api/run/'
-                                + profile.container + '?key=' + token,
+                                + profile.container + '?key=' + token
+                                + '?webtask_no_cache=1',
                         };
                         if (argv.name) {
                             result.named_webtask_url = profile.url
                                 + '/api/run/'
                                 + profile.container
-                                + '/' + argv.name;
+                                + '/' + argv.name
+                                + '?webtask_no_cache=1';
                         }
                         return result;
                     });
