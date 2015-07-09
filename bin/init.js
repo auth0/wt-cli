@@ -1,4 +1,4 @@
-var Cli = require('./cli');
+var Cli = require('nested-yargs');
 var Profile = require('./profile');
 
 // Init is actually just an alias to `wt profile init`.

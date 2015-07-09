@@ -1,4 +1,4 @@
-var Cli = require('./cli');
+var Cli = require('nested-yargs');
 var Colors = require('colors');
 var Fs = require('fs');
 var Path = require('path');

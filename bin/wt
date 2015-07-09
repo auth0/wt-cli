@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-var Cli = require('./cli');
+var Cli = require('nested-yargs');
 
 var wt = Cli.createCategory();
 
