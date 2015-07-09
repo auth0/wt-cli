@@ -202,7 +202,7 @@ function handleCreate (argv) {
                             token: token,
                             webtask_url: profile.url + '/api/run/'
                                 + profile.container + '?key=' + token
-                                + '?webtask_no_cache=1',
+                                + '&webtask_no_cache=1',
                         };
                         if (argv.name) {
                             result.named_webtask_url = profile.url
