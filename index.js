@@ -206,7 +206,6 @@ WebtaskProfile.prototype.createLogStream = function (options, cb) {
         var url = '/api/logs/tenant/' + (options.container || self.container);
         var reqOptions = { 
             headers: { 'accept': 'text/event-stream' },
-            timeout: 30 * 60 * 1000, // Time-out after 30 min
         };
         
         self._wreck.request('get', url, reqOptions, function (err, res) {

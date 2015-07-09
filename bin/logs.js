@@ -66,6 +66,12 @@ function handleStream (argv) {
         .spread(function (profile, stream) {
             logger.info({ container: profile.container },
                 'connected to streaming logs');
+
+            setTimeout(function () {
+                logger.warn('reached maximum connection time of 30min, '
+                    +'disconnecting');
+                process.exit(1);
+            }, 30 * 60 * 1000).unref();
             
             stream.on('data', function (event) {
                 if (event.type === 'data') {
@@ -74,7 +80,6 @@ function handleStream (argv) {
                     } catch (__) { return; }
                     
                     if (argv.raw) console.log(data);
-                    else if (typeof data === 'string') console.log(data);
                     else if (typeof data === 'string') prettyStdOut.write(data);
                     else prettyStdOut.write(data);
                 }
