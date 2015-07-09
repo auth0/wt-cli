@@ -73,7 +73,8 @@ function handleStream (argv) {
                         var data = JSON.parse(event.data);
                     } catch (__) { return; }
                     
-                    if (typeof data === 'string') console.log(data);
+                    if (argv.raw) console.log(data);
+                    else if (typeof data === 'string') console.log(data);
                     else logger.info(data);
                 }
             });
