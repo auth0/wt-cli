@@ -194,11 +194,11 @@ function handleGet (argv) {
 function handleRemove (argv) {
     var config = Webtask.configFile();
     
-    return config.removeProfile(argv.profile)
+    return config.removeProfile(argv.params.profile)
         .then(config.save.bind(config))
         .then(function () {
             if (argv.json) console.log(true);
-            else console.log('Profile `' + argv.profile + '` removed.');
+            else console.log(('Profile `' + argv.params.profile + '` removed.').green);
         });
 }
   
