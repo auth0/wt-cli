@@ -90,31 +90,14 @@ Command.prototype.run = function (yargs) {
     
     yargs
         .check(function (argv) {
-            if (self.options.params) {
-                var required = 0;
-                var optional = 0;
-                
-                argv.params = {};
-                
-                self.options.params.replace(/(<[^>]+>|\[[^\]]+\])/g,
-                    function (match) {
-                        var isRequired = match[0] === '<';
-                        var param = match.slice(1, -1);
-                        
-                        if (isRequired && optional > 0)
-                            throw new Error('Optional parameters must be specified last');
-                        
-                        if (isRequired) required++;
-                        else optional++;
-                        
-                        var value = argv._[self.path.length - 2 + required + optional];
-                        
-                        if (isRequired && !value) throw new Error('Parameter '
-                            + '`' + param + '` is required.');
-                        
-                        argv.params[param] = value;
-                    });
-            }
+            // We can't use `yargs.strict()` because it is possible that
+            // `options.setup` changes the options during execution and this
+            // seems to interfere with the timing for strict mode.
+            // Additionally, `yargs.strict()` does not seem to handle pre-
+            // negated params like `--no-parse`.
+            checkForUnknownArguments(yargs, argv);
+            
+            if (self.options.params) parseParams(yargs, argv, self);
             
             return true;
         })
@@ -144,7 +127,61 @@ function createErrorHandler (yargs) {
     };
 }
 
+// Adapted from: https://github.com/bcoe/yargs/blob/master/lib/validation.js#L83-L110
+function checkForUnknownArguments (yargs, argv) {
+    var aliasLookup = {};
+    var descriptions = yargs.getUsageInstance().getDescriptions();
+    var demanded = yargs.getDemanded();
+    var unknown = [];
+    
+    Object.keys(yargs.parsed.aliases).forEach(function (key) {
+        yargs.parsed.aliases[key].forEach(function (alias) {
+            aliasLookup[alias] = key;
+        });
+    });
+    
+    Object.keys(argv).forEach(function (key) {
+        if (key !== '$0' && key !== '_' && key !== 'params' &&
+            !descriptions.hasOwnProperty(key) &&
+            !demanded.hasOwnProperty(key) &&
+            !aliasLookup.hasOwnProperty('no-' + key) &&
+            !aliasLookup.hasOwnProperty(key)) {
+                unknown.push(key);
+        }
+    });
+    
+    if (unknown.length === 1) {
+        throw new Error('Unknown argument: ' + unknown[0]);
+    } else if (unknown.length > 1) {
+        throw new Error('Unknown arguments: ' + unknown.join(', '));
+    }
+}
 
+function parseParams (yargs, argv, command) {
+    var required = 0;
+    var optional = 0;
+    
+    argv.params = {};
+    
+    command.options.params.replace(/(<[^>]+>|\[[^\]]+\])/g,
+        function (match) {
+            var isRequired = match[0] === '<';
+            var param = match.slice(1, -1);
+            
+            if (isRequired && optional > 0)
+                throw new Error('Optional parameters must be specified last');
+            
+            if (isRequired) required++;
+            else optional++;
+            
+            var value = argv._[command.path.length - 2 + required + optional];
+            
+            if (isRequired && !value) throw new Error('Parameter '
+                + '`' + param + '` is required.');
+            
+            argv.params[param] = value;
+        });
+}
 
 exports.createCategory = function (name, description, options) {
     return new Category(name, description, options);

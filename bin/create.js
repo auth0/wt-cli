@@ -90,9 +90,9 @@ module.exports = Cli.createCommand('create', 'Create webtasks.', {
         // We want to only show advanced options if requested or if at least one
         // is already being used (that is not also a basic option)
         if (yargs.argv.advanced || yargs.argv.a
-            || _.find(yargs.argv, function (val, key) {
-                
-                return advancedTokenOptions[key] && !tokenOptions[key];
+            || _.findKey(yargs.argv, function (val, key) {
+                return (advancedTokenOptions[key] || advancedTokenOptions['no-' + key])
+                    && (!tokenOptions[key] || !tokenOptions['no-' + key]);
         })) {
             _.extend(tokenOptions, advancedTokenOptions);
             
