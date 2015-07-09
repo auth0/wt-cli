@@ -74,8 +74,8 @@ function handleStream (argv) {
                     } catch (__) { return; }
                     
                     if (argv.raw) console.log(data);
-                    else if (typeof data === 'string') console.log(data);
-                    else logger.info(data);
+                    else if (typeof data === 'string') prettyStdOut.write(data);
+                    else prettyStdOut.write(data);
                 }
             });
         })
