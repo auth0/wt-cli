@@ -19,7 +19,7 @@ var tokenOptions = {
     },
     output: {
         alias: 'o',
-        description: 'what to output <all|url|token|none>',
+        description: 'what to output <all|url|token>',
         type: 'string',
         'default': 'url',
     },
