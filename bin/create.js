@@ -95,7 +95,7 @@ module.exports = Cli.createCommand('create', 'Create webtasks.', {
                     && (!tokenOptions[key] || !tokenOptions['no-' + key]);
         })) {
             _.extend(tokenOptions, advancedTokenOptions);
-            
+
             // We have detected advanced options, turn on advanced to signal
             // advanced mode to handler
             yargs.argv.advanced = true;
@@ -107,11 +107,11 @@ module.exports = Cli.createCommand('create', 'Create webtasks.', {
                 if (argv.issuanceDepth
                     && (Math.floor(argv.issuanceDepth) !== argv.issuanceDepth
                     || argv.issuanceDepth < 0)) {
-                    
+
                     throw new Error('The `issuance-depth` parameter must be a '
                         + 'non-negative integer.');
                 }
-                
+               
                 if (['all', 'url', 'token', 'none'].indexOf(argv.output) < 0) {
                     throw new Error('The `output` parameter must be one of: '
                         + '`all`, `url`, `token` or `none`.');
@@ -124,11 +124,12 @@ module.exports = Cli.createCommand('create', 'Create webtasks.', {
                 if (argv.param) parseHash(argv, 'param');
                 if (argv.tokenLimit) parseHash(argv, 'tokenLimit');
                 if (argv.containerLimit) parseHash(argv, 'containerLimit');
-                
+
+
                 return true;
             });
     },
-	handler: handleCreate,
+	handler: handleCreate
 });
 
 
@@ -185,7 +186,9 @@ function handleCreate (argv) {
     
     function createToken () {
         var config = Webtask.configFile();
-        
+
+        var createTokenOptions = _.merge({}, argv, parseLocalConfig(argv.name));
+
         return config.load()
             .then(function (profiles) {
                 if (_.isEmpty(profiles)) {
@@ -196,7 +199,7 @@ function handleCreate (argv) {
                 return config.getProfile(argv.profile);
             })
             .then(function (profile) {
-                return profile.createToken(argv)
+                return profile.createToken(createTokenOptions)
                     .then(function (token) {
                         var result = {
                             token: token,
@@ -277,4 +280,103 @@ function parseHash (argv, field) {
         
         return hash;
     }, {});
+}
+
+//
+// Load params and secrets from local config files (package.json & .env)
+//
+
+function getParamsFromConfig(obj) {
+    var params = {};
+
+    Object
+        .keys(obj)
+        .forEach(function (key) {
+             params[key] = obj[key];
+        });
+
+    return params;
+}
+
+function getSecretsFromConfig(array) {
+    var secrets = {};
+
+    var dotEnv;
+
+    try {
+        dotEnv = Fs.readFileSync('./.env');
+    } catch(e) {
+        throw new Error('Secrets must be specified in a .env file, eg: SECRET="shhh"');
+    }
+
+    array
+        .forEach(function (key) {
+            dotEnv
+                .toString()
+                .split('\n')
+                .filter(function (secret) {
+                    return secret.length;
+                })
+                .map(function (secret) {
+                    return secret.split('=');
+                })
+                .forEach(function (secret) {
+                    if(secret[0] === key) secrets[key] = secret[1];
+                });
+        });
+
+    return secrets;
+}
+
+function getTasks(config) {
+    return Object
+        .keys(config)
+        .filter(function (key) {
+            return key !== 'global';
+        });
+}
+
+function parseLocalConfig (taskName) {
+    var options = {
+        param:  {},
+        secret: {}
+    };
+
+    try {
+        var configFile = Fs.readFileSync('./package.json');
+    } catch(e) {
+        return options;
+    }
+
+    var config = 
+        JSON.parse(
+            configFile.toString()
+        )
+        .webtasks;
+
+    if(!config) return;
+
+    // Global params and secrets for every task
+    if(config.global) {
+            if(config.global.params)
+                _.assign(options.param, getParamsFromConfig(config.global.params));
+
+            if(config.global.secrets)
+                _.assign(options.secret, getSecretsFromConfig(config.global.secrets));
+    }
+
+    // Per-task
+    getTasks(config)
+        .forEach(function (key) {
+            if(key === taskName) {
+                if(config[key].params)
+                    _.assign(options.param, getParamsFromConfig(config[key].params));
+
+                if(config[key].secrets)
+                    _.assign(options.secret, getSecretsFromConfig(config[key].secrets));
+            }
+        });
+
+    return options;
+
 }
