@@ -132,8 +132,23 @@ module.exports = Cli.createCommand('create', 'Create webtasks.', {
 	handler: handleCreate
 });
 
+function walk(dir, list) {
+    var files = Fs.readdirSync(dir);
 
-  
+    if(!list) list = [];
+
+    files.forEach(function (file) {
+        var joined    = Path.join(dir, file);
+        var fileOrDir = Fs.statSync(joined);
+
+
+        if(fileOrDir.isDirectory()) walk(joined, list);
+        else                        list.push(joined);
+    });
+
+    return list;
+}
+
 function handleCreate (argv) {
     var fileOrUrl = argv.params.file_or_url;
     var fol = fileOrUrl.toLowerCase();
@@ -149,7 +164,13 @@ function handleCreate (argv) {
         argv.file_name = Path.resolve(process.cwd(), fileOrUrl);
         
         try {
-            argv.code = Fs.readFileSync(argv.file_name, 'utf8');
+            var fileOrDirectory = Fs.lstatSync(argv.file_name);
+
+            if(fileOrDirectory.isFile()) {
+                argv.code = Fs.readFileSync(argv.file_name, 'utf8');
+            } else {
+                argv.code = walk(argv.file_name);
+            }
         } catch (e) {
             throw new Error('Unable to read the file `'
                 + argv.file_name + '`.');
@@ -158,36 +179,48 @@ function handleCreate (argv) {
     
     argv.merge = typeof argv.merge === 'undefined' ? true : !!argv.merge;
     argv.parse = typeof argv.parse === 'undefined' ? true : !!argv.parse;
-    
-    var generation = 0;
-    var pending = createToken();
-    
-    if (argv.watch) {
-        var watcher = Watcher();
-        
-        watcher.add(argv.file_name);
-        
-        watcher.on('change', function (file, stat) {
-            generation++;
-            
-            if (!argv.json) {
-                console.log('File change detected, creating generation'
+
+    function createWebtask(pathToCode) {
+        var generation = 0;
+        var code       = Fs.readFileSync(pathToCode).toString();
+
+        var pending = createToken(code);
+
+        if (argv.watch) {
+            var watcher = Watcher();
+
+            watcher.add(pathToCode);
+
+            watcher.on('change', function (file, stat) {
+                generation++;
+
+                if (!argv.json) {
+                    console.log('File change detected, creating generation'
                     , generation);
-            }
-            
-            argv.code = Fs.readFileSync(argv.file_name, 'utf8');
-            
-            pending = pending
-                .then(createToken);
-        });
+                }
+
+                code = Fs.readFileSync(pathToCode, 'utf8');
+
+                pending = pending
+                    .then(createToken.bind({}, code));
+            });
+
+            return pending;
+        }
     }
+
+    if(argv.code instanceof Array) {
+        return argv.code
+            .forEach(createWebtask);
+    } else {
+        return createWebtask(argv.code);
+    }
+
     
-    return pending;
-    
-    function createToken () {
+    function createToken (code) {
         var config = Webtask.configFile();
 
-        var createTokenOptions = _.merge({}, argv, parseLocalConfig(argv.name));
+        var createTokenOptions = _.merge({}, argv, parseLocalConfig(argv.name), { code: code });
 
         return config.load()
             .then(function (profiles) {
