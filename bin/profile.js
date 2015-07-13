@@ -142,13 +142,15 @@ function handleInit (argv) {
                 .then(function () {
                     printProfile(argv.profile, profile);
                     
-                    console.log('Welcome to webtasks! You can create one with '
-                        + '`wt token create`.'.green);
+                    console.log(('Welcome to webtasks! Create one with '
+                        + '`wt token create`'.bold + '.').green);
                 });
         })
         .catch(function (e) {
             // Handle cancellation silently (don't trigger help)
             if (e.isBoom && e.output.statusCode === 409) return;
+            
+            throw e;
         });
 }
   
@@ -161,7 +163,7 @@ function handleList (argv) {
                 console.log(profiles);
             } else if (_.isEmpty(profiles)) {
                 throw new Error('No profiles are configured. Create one with '
-                    + '`wt profile init`.');
+                    + '`wt init`.');
             }
             else {
                 _.forEach(profiles, function (profile, profileName) {

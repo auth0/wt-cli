@@ -190,7 +190,7 @@ function handleCreate (argv) {
             .then(function (profiles) {
                 if (_.isEmpty(profiles)) {
                     throw new Error('You must create a profile to begin using '
-                        + 'this tool: `wt profile init`.');
+                        + 'this tool: `wt init`.');
                 }
                 
                 return config.getProfile(argv.profile);
