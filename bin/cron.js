@@ -7,7 +7,7 @@ var _ = require('lodash');
 var cron = module.exports =
     Cli.createCategory('cron', 'Manage scheduled webtasks');
 
-cron.command(Cli.createCommand('schedule', 'Schedule a webtask to run periodically.', {
+cron.command(Cli.createCommand('schedule', 'Schedule a webtask to run periodically', {
 	params: '<schedule> <file_or_url>',
 	setup: function (yargs) {
 	    Create.options.setup(yargs);
@@ -27,7 +27,7 @@ cron.command(Cli.createCommand('schedule', 'Schedule a webtask to run periodical
 	handler: handleCronSchedule,
 }));
 
-cron.command(Cli.createCommand('rm', 'Remove a scheduled webtask.', {
+cron.command(Cli.createCommand('rm', 'Remove a scheduled webtask', {
     params: '<job_name>',
 	options: {
         profile: {
@@ -50,7 +50,7 @@ cron.command(Cli.createCommand('rm', 'Remove a scheduled webtask.', {
 	handler: handleCronRemove,
 }));
 
-cron.command(Cli.createCommand('ls', 'List scheduled webtasks.', {
+cron.command(Cli.createCommand('ls', 'List scheduled webtasks', {
 	options: {
         profile: {
             alias: 'p',
@@ -72,12 +72,12 @@ cron.command(Cli.createCommand('ls', 'List scheduled webtasks.', {
 	handler: handleCronList,
 }));
 
-cron.command(Cli.createCommand('get', 'Get information about a scheduled webtask.', {
+cron.command(Cli.createCommand('get', 'Get information about a scheduled webtask', {
     params: '<job_name> [field]',
 	options: {
         profile: {
             alias: 'p',
-            description: 'name of the profile to use',
+            description: 'name of the webtask profile to use',
             'default': 'default',
             type: 'string',
         },
@@ -95,7 +95,7 @@ cron.command(Cli.createCommand('get', 'Get information about a scheduled webtask
 	handler: handleCronGet,
 }));
 
-cron.command(Cli.createCommand('history', 'Get information about a scheduled webtask.', {
+cron.command(Cli.createCommand('history', 'Get information about a scheduled webtask', {
     params: '<job_name>',
 	options: {
         profile: {

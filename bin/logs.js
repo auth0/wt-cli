@@ -8,7 +8,7 @@ var Webtask = require('../');
 var _ = require('lodash');
 
 
-module.exports = Cli.createCommand('logs', 'Streaming, real-time logs.', {
+module.exports = Cli.createCommand('logs', 'Streaming, real-time logs', {
     params: '[container]',
     options: {
         raw: {
@@ -18,7 +18,7 @@ module.exports = Cli.createCommand('logs', 'Streaming, real-time logs.', {
         },
         profile: {
             alias: 'p',
-            description: 'name of the profile to set up',
+            description: 'name of the webtask profile to use',
             'default': 'default',
             type: 'string',
         },

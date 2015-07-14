@@ -5,13 +5,9 @@ var Path = require('path');
 var Watcher = require('filewatcher');
 var Webtask = require('../');
 var _ = require('lodash');
+var crypto = require('crypto');
 
 var tokenOptions = {
-    name: {
-        alias: 'n',
-        description: 'name of the webtask',
-        type: 'string'
-    },
     secret: {
         alias: 's',
         description: 'secret(s) to provide to code at runtime',
@@ -19,13 +15,23 @@ var tokenOptions = {
     },
     output: {
         alias: 'o',
-        description: 'what to output <all|url|token>',
+        description: 'what to output <url|token|token-url>',
         type: 'string',
         'default': 'url',
     },
+    name: {
+        alias: 'n',
+        description: 'name of the webtask',
+        type: 'string'
+    },
+    prod: {
+        alias: 'r',
+        description: 'enable production optimizations',
+        type: 'boolean'
+    },
     profile: {
         alias: 'p',
-        description: 'name of the profile to set up',
+        description: 'name of the webtask profile to use',
         'default': 'default',
         type: 'string',
     },
@@ -84,7 +90,7 @@ var advancedTokenOptions = {
 };
 
 
-module.exports = Cli.createCommand('create', 'Create webtasks.', {
+module.exports = Cli.createCommand('create', 'Create webtasks', {
 	params: '<file_or_url>',
 	setup: function (yargs) {
         // We want to only show advanced options if requested or if at least one
@@ -112,9 +118,9 @@ module.exports = Cli.createCommand('create', 'Create webtasks.', {
                         + 'non-negative integer.');
                 }
                 
-                if (['all', 'url', 'token', 'none'].indexOf(argv.output) < 0) {
+                if (['url', 'token', 'token-url', 'none'].indexOf(argv.output) < 0) {
                     throw new Error('The `output` parameter must be one of: '
-                        + '`all`, `url`, `token` or `none`.');
+                        + '`url`, `token`, `token-url` or `none`.');
                 }
                 
                 if (argv.nbf) parseDate(argv, 'nbf');
@@ -153,6 +159,21 @@ function handleCreate (argv) {
             throw new Error('Unable to read the file `'
                 + argv.file_name + '`.');
         }
+    }
+
+    if (argv.output === 'url') {
+        if (!argv.name) {
+            if (argv.file_name) {
+                argv.name = Path.basename(fol, Path.extname(fol));
+            }
+            if (!argv.name) {
+                var md5 = crypto.createHash('md5');
+                argv.name = md5.update(fol, 'utf8').digest('hex');
+            }
+        }
+    }
+    else if (argv.name) {
+        throw new Error('The `name` option can only be specified when --output is set to `url`.');
     }
     
     argv.merge = typeof argv.merge === 'undefined' ? true : !!argv.merge;
@@ -202,40 +223,33 @@ function handleCreate (argv) {
                             token: token,
                             webtask_url: profile.url + '/api/run/'
                                 + profile.container + '?key=' + token
-                                + '&webtask_no_cache=1',
+                                + (argv.prod ? '': '&webtask_no_cache=1')
                         };
                         if (argv.name) {
                             result.named_webtask_url = profile.url
                                 + '/api/run/'
                                 + profile.container
                                 + '/' + argv.name
-                                + '?webtask_no_cache=1';
+                                + (argv.prod ? '': '&webtask_no_cache=1');
                         }
                         return result;
                     });
             })
             .then(function (data) {
-                if (argv.output === 'none') {
-                    // Do nothing
-                } else if (argv.output === 'token') {
+                if (argv.output === 'token') {
                     console.log(argv.json
                         ? JSON.stringify(data.token)
                         : data.token);
                 } else if (argv.output === 'url') {
                     console.log(argv.json
-                        ? JSON.stringify(data.named_webtask_url || data.webtask_url)
-                        : (data.named_webtask_url || data.webtask_url));
+                        ? JSON.stringify(data.named_webtask_url)
+                        : data.named_webtask_url);
+                } else if (argv.output === 'token-url') {
+                    console.log(argv.json
+                        ? JSON.stringify(data.webtask_url)
+                        : data.webtask_url);
                 } else if (argv.json) {
                     console.log(data);
-                } else {
-                    console.log('Webtask token:'.green);
-                    console.log(data.token);
-                    console.log('Webtask URL:'.green);
-                    console.log(data.webtask_url);
-                    if (data.named_webtask_url) {
-                        console.log('Named webtask URL:'.green);
-                        console.log(data.named_webtask_url);
-                    }
                 }
                 
                 return data;
