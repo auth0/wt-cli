@@ -95,33 +95,33 @@ cron.command(Cli.createCommand('get', 'Get information about a scheduled webtask
 	handler: handleCronGet,
 }));
 
-cron.command(Cli.createCommand('history', 'Get information about a scheduled webtask.', {
-    params: '<job_name>',
-	options: {
-        profile: {
-            alias: 'p',
-            description: 'name of the profile to use',
-            'default': 'default',
-            type: 'string',
-        },
-        json: {
-            alias: 'j',
-            description: 'json output',
-            type: 'boolean',
-        },
-        fields: {
-            description: 'only print the indicated fields (comma-separated list)',
-            'default': 'created_at,type,statusCode,body',
-            type: 'string',
-        }
-        // container: {
-        //     alias: 'c',
-        //     description: 'webtask container where the job is running',
-        //     type: 'string',
-        // },
-    },
-	handler: handleCronHistory,
-}));
+// cron.command(Cli.createCommand('history', 'Get information about a scheduled webtask.', {
+//     params: '<job_name>',
+// 	options: {
+//         profile: {
+//             alias: 'p',
+//             description: 'name of the profile to use',
+//             'default': 'default',
+//             type: 'string',
+//         },
+//         json: {
+//             alias: 'j',
+//             description: 'json output',
+//             type: 'boolean',
+//         },
+//         fields: {
+//             description: 'only print the indicated fields (comma-separated list)',
+//             'default': 'created_at,type,statusCode,body',
+//             type: 'string',
+//         }
+//         // container: {
+//         //     alias: 'c',
+//         //     description: 'webtask container where the job is running',
+//         //     type: 'string',
+//         // },
+//     },
+// 	handler: handleCronHistory,
+// }));
 
 
 module.exports = cron;
