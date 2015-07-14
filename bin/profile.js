@@ -143,7 +143,7 @@ function handleInit (argv) {
                     printProfile(argv.profile, profile);
                     
                     console.log(('Welcome to webtasks! Create one with '
-                        + '`wt token create`'.bold + '.').green);
+                        + '`wt create hello-world.js`'.bold + '.').green);
                 });
         })
         .catch(function (e) {
