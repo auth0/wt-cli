@@ -13,7 +13,7 @@ Bluebird.promisifyAll(Promptly);
 var profile = module.exports = Cli.createCategory('profile',
     'Manage webtask profiles');
     
-profile.command(Cli.createCommand('init', 'Create or update an existing webtask profile.', {
+profile.command(Cli.createCommand('init', 'Manage webtask profiles', {
     options: {
         token: {
             alias: 't',
@@ -40,12 +40,12 @@ profile.command(Cli.createCommand('init', 'Create or update an existing webtask 
     handler: handleInit,
 }));
     
-profile.command(Cli.createCommand('ls', 'List existing webtask profiles.', {
+profile.command(Cli.createCommand('ls', 'List existing webtask profiles', {
     options: infoOptions,
     handler: handleList,
 }));
     
-profile.command(Cli.createCommand('get', 'Get information about an existing webtask profile.', {
+profile.command(Cli.createCommand('get', 'Get information about an existing webtask profile', {
     params: '[profile]',
     options: _.extend({}, infoOptions, {
         field: {
@@ -56,7 +56,7 @@ profile.command(Cli.createCommand('get', 'Get information about an existing webt
     handler: handleGet,
 }));
     
-profile.command(Cli.createCommand('rm', 'Remove an existing webtask profile.', {
+profile.command(Cli.createCommand('rm', 'Remove an existing webtask profile', {
     params: '<profile>',
     options: {
         json: {
@@ -68,7 +68,7 @@ profile.command(Cli.createCommand('rm', 'Remove an existing webtask profile.', {
     handler: handleRemove,
 }));
     
-profile.command(Cli.createCommand('nuke', 'Destroys all existing profiles and their secrets.', {
+profile.command(Cli.createCommand('nuke', 'Destroys all existing profiles and their secrets', {
     options: {
         force: {
             alias: 'f',
@@ -142,13 +142,15 @@ function handleInit (argv) {
                 .then(function () {
                     printProfile(argv.profile, profile);
                     
-                    console.log('Welcome to webtasks! You can create one with '
-                        + '`wt token create`.'.green);
+                    console.log(('Welcome to webtasks! Create one with '
+                        + '`wt token create`'.bold + '.').green);
                 });
         })
         .catch(function (e) {
             // Handle cancellation silently (don't trigger help)
             if (e.isBoom && e.output.statusCode === 409) return;
+            
+            throw e;
         });
 }
   
@@ -161,7 +163,7 @@ function handleList (argv) {
                 console.log(profiles);
             } else if (_.isEmpty(profiles)) {
                 throw new Error('No profiles are configured. Create one with '
-                    + '`wt profile init`.');
+                    + '`wt init`.');
             }
             else {
                 _.forEach(profiles, function (profile, profileName) {

@@ -5,13 +5,9 @@ var Path = require('path');
 var Watcher = require('filewatcher');
 var Webtask = require('../');
 var _ = require('lodash');
+var crypto = require('crypto');
 
 var tokenOptions = {
-    name: {
-        alias: 'n',
-        description: 'name of the webtask',
-        type: 'string'
-    },
     secret: {
         alias: 's',
         description: 'secret(s) to provide to code at runtime',
@@ -19,13 +15,23 @@ var tokenOptions = {
     },
     output: {
         alias: 'o',
-        description: 'what to output <all|url|token>',
+        description: 'what to output <url|token|token-url>',
         type: 'string',
         'default': 'url',
     },
+    name: {
+        alias: 'n',
+        description: 'name of the webtask',
+        type: 'string'
+    },
+    prod: {
+        alias: 'r',
+        description: 'enable production optimizations',
+        type: 'boolean'
+    },
     profile: {
         alias: 'p',
-        description: 'name of the profile to set up',
+        description: 'name of the webtask profile to use',
         'default': 'default',
         type: 'string',
     },
@@ -84,7 +90,7 @@ var advancedTokenOptions = {
 };
 
 
-module.exports = Cli.createCommand('create', 'Create webtasks.', {
+module.exports = Cli.createCommand('create', 'Create webtasks', {
 	params: '<file_or_url>',
 	setup: function (yargs) {
         // We want to only show advanced options if requested or if at least one
@@ -111,10 +117,10 @@ module.exports = Cli.createCommand('create', 'Create webtasks.', {
                     throw new Error('The `issuance-depth` parameter must be a '
                         + 'non-negative integer.');
                 }
-               
-                if (['all', 'url', 'token', 'none'].indexOf(argv.output) < 0) {
+                
+                if (['url', 'token', 'token-url', 'none'].indexOf(argv.output) < 0) {
                     throw new Error('The `output` parameter must be one of: '
-                        + '`all`, `url`, `token` or `none`.');
+                        + '`url`, `token`, `token-url` or `none`.');
                 }
                 
                 if (argv.nbf) parseDate(argv, 'nbf');
@@ -169,12 +175,30 @@ function handleCreate (argv) {
             if(fileOrDirectory.isFile()) {
                 argv.code = Fs.readFileSync(argv.file_name, 'utf8');
             } else {
-                argv.code = walk(argv.file_name);
+                argv.code = walk(argv.file_name)
+                    .filter(function (file) {
+                      return Path.extname(file) === '.js';
+                    });
             }
         } catch (e) {
             throw new Error('Unable to read the file `'
                 + argv.file_name + '`.');
         }
+    }
+
+    if (argv.output === 'url') {
+        if (!argv.name) {
+            if (argv.file_name) {
+                argv.name = Path.basename(fol, Path.extname(fol));
+            }
+            if (!argv.name) {
+                var md5 = crypto.createHash('md5');
+                argv.name = md5.update(fol, 'utf8').digest('hex');
+            }
+        }
+    }
+    else if (argv.name) {
+        throw new Error('The `name` option can only be specified when --output is set to `url`.');
     }
     
     argv.merge = typeof argv.merge === 'undefined' ? true : !!argv.merge;
@@ -183,8 +207,9 @@ function handleCreate (argv) {
     function createWebtask(pathToCode) {
         var generation = 0;
         var code       = Fs.readFileSync(pathToCode).toString();
+        var name       = Path.basename(pathToCode, '.js');
 
-        var pending = createToken(code);
+        var pending = createToken(code, name);
 
         if (argv.watch) {
             var watcher = Watcher();
@@ -195,14 +220,14 @@ function handleCreate (argv) {
                 generation++;
 
                 if (!argv.json) {
-                    console.log('File change detected, creating generation'
-                    , generation);
+                    console.log('%s changed, creating generation %s'
+                    , name, generation);
                 }
 
                 code = Fs.readFileSync(pathToCode, 'utf8');
 
                 pending = pending
-                    .then(createToken.bind({}, code));
+                    .then(createToken.bind(null, code, name));
             });
 
             return pending;
@@ -217,61 +242,54 @@ function handleCreate (argv) {
     }
 
     
-    function createToken (code) {
+    function createToken (code, name) {
         var config = Webtask.configFile();
 
-        var createTokenOptions = _.merge({}, argv, parseLocalConfig(argv.name), { code: code });
+        var tokenOpts = _.merge({}, argv, parseLocalConfig(argv.name), { code: code, name: name });
 
         return config.load()
             .then(function (profiles) {
                 if (_.isEmpty(profiles)) {
                     throw new Error('You must create a profile to begin using '
-                        + 'this tool: `wt profile init`.');
+                        + 'this tool: `wt init`.');
                 }
                 
                 return config.getProfile(argv.profile);
             })
             .then(function (profile) {
-                return profile.createToken(createTokenOptions)
+                return profile.createToken(tokenOpts)
                     .then(function (token) {
                         var result = {
                             token: token,
                             webtask_url: profile.url + '/api/run/'
                                 + profile.container + '?key=' + token
-                                + '&webtask_no_cache=1',
+                                + (argv.prod ? '': '&webtask_no_cache=1')
                         };
-                        if (argv.name) {
+                        if (tokenOpts.name) {
                             result.named_webtask_url = profile.url
                                 + '/api/run/'
                                 + profile.container
-                                + '/' + argv.name
-                                + '?webtask_no_cache=1';
+                                + '/' + tokenOpts.name
+                                + (argv.prod ? '': '&webtask_no_cache=1');
                         }
                         return result;
                     });
             })
             .then(function (data) {
-                if (argv.output === 'none') {
-                    // Do nothing
-                } else if (argv.output === 'token') {
+                if (argv.output === 'token') {
                     console.log(argv.json
                         ? JSON.stringify(data.token)
                         : data.token);
                 } else if (argv.output === 'url') {
                     console.log(argv.json
-                        ? JSON.stringify(data.named_webtask_url || data.webtask_url)
-                        : (data.named_webtask_url || data.webtask_url));
+                        ? JSON.stringify(data.named_webtask_url)
+                        : data.named_webtask_url);
+                } else if (argv.output === 'token-url') {
+                    console.log(argv.json
+                        ? JSON.stringify(data.webtask_url)
+                        : data.webtask_url);
                 } else if (argv.json) {
                     console.log(data);
-                } else {
-                    console.log('Webtask token:'.green);
-                    console.log(data.token);
-                    console.log('Webtask URL:'.green);
-                    console.log(data.webtask_url);
-                    if (data.named_webtask_url) {
-                        console.log('Named webtask URL:'.green);
-                        console.log(data.named_webtask_url);
-                    }
                 }
                 
                 return data;
