@@ -257,6 +257,20 @@ function getVerifiedProfile () {
                 container: data.tenant,
                 token: data.token,
             };
+        })
+        .catch(function (err) {
+            console.log(('We were unable to verify your identity.').red);
+            
+            return Promptly.confirmAsync('Would you like to try again? [Yn]', {
+                'default': true,
+            })
+                .then(function (tryAgain) {
+                    if (!tryAgain)
+                        throw Boom.unauthorized('Failed to verify user\'s '
+                            + 'identity.', err);
+                    
+                    return getVerifiedProfile();
+                });
         });
 }
 

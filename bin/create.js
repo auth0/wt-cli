@@ -92,6 +92,10 @@ var advancedTokenOptions = {
 
 module.exports = Cli.createCommand('create', 'Create webtasks', {
 	params: '<file_or_url>',
+	examples: {
+	  'create a webtask named "foo"': '$0 create --name foo file.js',
+	  'create an express-based webtask named "express"': '$0 create --no-parse --no-merge --name express file.js',
+	},
 	setup: function (yargs) {
         // We want to only show advanced options if requested or if at least one
         // is already being used (that is not also a basic option)

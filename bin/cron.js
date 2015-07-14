@@ -13,11 +13,11 @@ cron.command(Cli.createCommand('schedule', 'Schedule a webtask to run periodical
 	    Create.options.setup(yargs);
 	},
 	options: _.extend({}, Create.options.options, {
-        // container: {
-        //     alias: 'c',
-        //     description: 'webtask container where the job is running',
-        //     type: 'string',
-        // },
+        container: {
+            alias: 'c',
+            description: 'webtask container where the job is running',
+            type: 'string',
+        },
         json: {
             alias: 'j',
             description: 'json output',
@@ -41,11 +41,11 @@ cron.command(Cli.createCommand('rm', 'Remove a scheduled webtask', {
             description: 'json output',
             type: 'boolean',
         },
-        // container: {
-        //     alias: 'c',
-        //     description: 'webtask container where the job is running',
-        //     type: 'string',
-        // },
+        container: {
+            alias: 'c',
+            description: 'webtask container where the job is running',
+            type: 'string',
+        },
     },
 	handler: handleCronRemove,
 }));
@@ -58,11 +58,11 @@ cron.command(Cli.createCommand('ls', 'List scheduled webtasks', {
             'default': 'default',
             type: 'string',
         },
-        // container: {
-        //     alias: 'c',
-        //     description: 'webtask container where the job is running',
-        //     type: 'string',
-        // },
+        container: {
+            alias: 'c',
+            description: 'webtask container where the job is running',
+            type: 'string',
+        },
         json: {
             alias: 'j',
             description: 'json output',
@@ -81,16 +81,16 @@ cron.command(Cli.createCommand('get', 'Get information about a scheduled webtask
             'default': 'default',
             type: 'string',
         },
+        container: {
+            alias: 'c',
+            description: 'webtask container where the job is running',
+            type: 'string',
+        },
         json: {
             alias: 'j',
             description: 'json output',
             type: 'boolean',
         },
-        // container: {
-        //     alias: 'c',
-        //     description: 'webtask container where the job is running',
-        //     type: 'string',
-        // },
     },
 	handler: handleCronGet,
 }));
@@ -104,6 +104,11 @@ cron.command(Cli.createCommand('history', 'Get information about a scheduled web
             'default': 'default',
             type: 'string',
         },
+        container: {
+            alias: 'c',
+            description: 'webtask container where the job is running',
+            type: 'string',
+        },
         json: {
             alias: 'j',
             description: 'json output',
@@ -113,12 +118,15 @@ cron.command(Cli.createCommand('history', 'Get information about a scheduled web
             description: 'only print the indicated fields (comma-separated list)',
             'default': 'created_at,type,statusCode,body',
             type: 'string',
-        }
-        // container: {
-        //     alias: 'c',
-        //     description: 'webtask container where the job is running',
-        //     type: 'string',
-        // },
+        },
+        offset: {
+            description: 'skip this many history entries',
+            type: 'number',
+        },
+        limit: {
+            description: 'limit the result-set to this many entries',
+            type: 'number',
+        },
     },
 	handler: handleCronHistory,
 }));
@@ -241,6 +249,9 @@ function handleCronGet (argv) {
             });
         })
         .tap(function (job) {
+            if (!job) throw new Error('No such job `' + argv.params.job_name
+                + '`.');
+                
             if (argv.json) {
                 var json = argv.params.field
                     ? job[argv.params.field]
