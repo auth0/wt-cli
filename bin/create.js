@@ -227,7 +227,7 @@ function handleCreate (argv) {
         return argv.code
             .map(createWebtask);
     } else {
-        return createWebtask(argv.code);
+        return createWebtask(argv.file_name);
     }
 
     function createWebtask(pathToCode) {
