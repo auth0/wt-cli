@@ -101,7 +101,7 @@ module.exports = Cli.createCommand('create', 'Create webtasks', {
                     && (!tokenOptions[key] || !tokenOptions['no-' + key]);
         })) {
             _.extend(tokenOptions, advancedTokenOptions);
-            
+
             // We have detected advanced options, turn on advanced to signal
             // advanced mode to handler
             yargs.argv.advanced = true;
@@ -113,7 +113,7 @@ module.exports = Cli.createCommand('create', 'Create webtasks', {
                 if (argv.issuanceDepth
                     && (Math.floor(argv.issuanceDepth) !== argv.issuanceDepth
                     || argv.issuanceDepth < 0)) {
-                    
+
                     throw new Error('The `issuance-depth` parameter must be a '
                         + 'non-negative integer.');
                 }
@@ -130,15 +130,31 @@ module.exports = Cli.createCommand('create', 'Create webtasks', {
                 if (argv.param) parseHash(argv, 'param');
                 if (argv.tokenLimit) parseHash(argv, 'tokenLimit');
                 if (argv.containerLimit) parseHash(argv, 'containerLimit');
-                
+
+
                 return true;
             });
     },
-	handler: handleCreate,
+	handler: handleCreate
 });
 
+function walk(dir, list) {
+    var files = Fs.readdirSync(dir);
 
-  
+    if(!list) list = [];
+
+    files.forEach(function (file) {
+        var joined    = Path.join(dir, file);
+        var fileOrDir = Fs.statSync(joined);
+
+
+        if(fileOrDir.isDirectory()) walk(joined, list);
+        else                        list.push(joined);
+    });
+
+    return list;
+}
+
 function handleCreate (argv) {
     var fileOrUrl = argv.params.file_or_url;
     var fol = fileOrUrl.toLowerCase();
@@ -154,7 +170,16 @@ function handleCreate (argv) {
         argv.file_name = Path.resolve(process.cwd(), fileOrUrl);
         
         try {
-            argv.code = Fs.readFileSync(argv.file_name, 'utf8');
+            var fileOrDirectory = Fs.lstatSync(argv.file_name);
+
+            if(fileOrDirectory.isFile()) {
+                argv.code = Fs.readFileSync(argv.file_name, 'utf8');
+            } else {
+                argv.code = walk(argv.file_name)
+                    .filter(function (file) {
+                      return Path.extname(file) === '.js';
+                    });
+            }
         } catch (e) {
             throw new Error('Unable to read the file `'
                 + argv.file_name + '`.');
@@ -178,35 +203,70 @@ function handleCreate (argv) {
     
     argv.merge = typeof argv.merge === 'undefined' ? true : !!argv.merge;
     argv.parse = typeof argv.parse === 'undefined' ? true : !!argv.parse;
-    
-    var generation = 0;
-    var pending = createToken();
-    
-    if (argv.watch) {
-        var watcher = Watcher();
-        
-        watcher.add(argv.file_name);
-        
-        watcher.on('change', function (file, stat) {
-            generation++;
-            
-            if (!argv.json) {
-                console.log('File change detected, creating generation'
-                    , generation);
-            }
-            
-            argv.code = Fs.readFileSync(argv.file_name, 'utf8');
-            
-            pending = pending
-                .then(createToken);
+
+    if(argv.watch) {
+        var config_watcher = Watcher();
+        config_watcher.add('./package.json');
+        config_watcher.add('./.env');
+
+        config_watcher.on('change', function () {
+            console.log('Config changed, reloading webtasks.');
+
+            argv.code
+                .forEach(function (pathToCode) {
+                    var code       = Fs.readFileSync(pathToCode).toString();
+                    var name       = Path.basename(pathToCode, '.js');
+
+                    createToken(code, name);
+                });
+
         });
     }
-    
-    return pending;
-    
-    function createToken () {
+
+    if(argv.code instanceof Array) {
+        return argv.code
+            .map(createWebtask);
+    } else {
+        return createWebtask(argv.file_name);
+    }
+
+    function createWebtask(pathToCode) {
+        var generation = 0;
+        var code       = Fs.readFileSync(pathToCode).toString();
+        var name       = Path.basename(pathToCode, '.js');
+
+        var pending = createToken(code, name);
+
+        if (argv.watch) {
+            var code_watcher   = Watcher();
+
+            code_watcher.add(pathToCode);
+
+            code_watcher.on('change', function (file) {
+                generation++;
+
+                if (!argv.json) {
+                    console.log('%s changed, creating generation %s'
+                    , name, generation);
+                }
+
+                code = Fs.readFileSync(pathToCode, 'utf8');
+
+                pending = pending
+                    .then(createToken.bind(null, code, name));
+            });
+
+
+            return pending;
+        }
+    }
+
+
+    function createToken (code, name) {
         var config = Webtask.configFile();
-        
+
+        var tokenOpts = _.merge({}, argv, parseLocalConfig(name), { code: code, name: name });
+
         return config.load()
             .then(function (profiles) {
                 if (_.isEmpty(profiles)) {
@@ -217,7 +277,7 @@ function handleCreate (argv) {
                 return config.getProfile(argv.profile);
             })
             .then(function (profile) {
-                return profile.createToken(argv)
+                return profile.createToken(tokenOpts)
                     .then(function (token) {
                         var result = {
                             token: token,
@@ -225,11 +285,11 @@ function handleCreate (argv) {
                                 + profile.container + '?key=' + token
                                 + (argv.prod ? '': '&webtask_no_cache=1')
                         };
-                        if (argv.name) {
+                        if (tokenOpts.name) {
                             result.named_webtask_url = profile.url
                                 + '/api/run/'
                                 + profile.container
-                                + '/' + argv.name
+                                + '/' + tokenOpts.name
                                 + (argv.prod ? '': '?webtask_no_cache=1');
                         }
                         return result;
@@ -291,4 +351,103 @@ function parseHash (argv, field) {
         
         return hash;
     }, {});
+}
+
+//
+// Load params and secrets from local config files (package.json & .env)
+//
+
+function getParamsFromConfig(obj) {
+    var params = {};
+
+    Object
+        .keys(obj)
+        .forEach(function (key) {
+             params[key] = obj[key];
+        });
+
+    return params;
+}
+
+function getSecretsFromConfig(array) {
+    var secrets = {};
+
+    var dotEnv;
+
+    try {
+        dotEnv = Fs.readFileSync('./.env');
+    } catch(e) {
+        throw new Error('Secrets must be specified in a .env file, eg: SECRET="shhh"');
+    }
+
+    array
+        .forEach(function (key) {
+            dotEnv
+                .toString()
+                .split('\n')
+                .filter(function (secret) {
+                    return secret.length;
+                })
+                .map(function (secret) {
+                    return secret.split('=');
+                })
+                .forEach(function (secret) {
+                    if(secret[0] === key) secrets[key] = secret[1];
+                });
+        });
+
+    return secrets;
+}
+
+function getTasks(config) {
+    return Object
+        .keys(config)
+        .filter(function (key) {
+            return key !== 'global';
+        });
+}
+
+function parseLocalConfig (taskName) {
+    var options = {
+        param:  {},
+        secret: {}
+    };
+
+    try {
+        var configFile = Fs.readFileSync('./package.json');
+    } catch(e) {
+        return options;
+    }
+
+    var config = 
+        JSON.parse(
+            configFile.toString()
+        )
+        .webtasks;
+
+    if(!config) return;
+
+    // Global params and secrets for every task
+    if(config.global) {
+            if(config.global.params)
+                _.assign(options.param, getParamsFromConfig(config.global.params));
+
+            if(config.global.secrets)
+                _.assign(options.secret, getSecretsFromConfig(config.global.secrets));
+    }
+
+    // Per-task
+    getTasks(config)
+        .forEach(function (key) {
+            if(key === taskName) {
+                if(config[key].params)
+                    _.assign(options.param, getParamsFromConfig(config[key].params));
+
+                if(config[key].secrets)
+                    _.assign(options.secret, getSecretsFromConfig(config[key].secrets));
+            }
+        });
+
+    return options;
+
 }
