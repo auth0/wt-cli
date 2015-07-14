@@ -245,7 +245,7 @@ function handleCreate (argv) {
     function createToken (code, name) {
         var config = Webtask.configFile();
 
-        var tokenOpts = _.merge({}, argv, parseLocalConfig(argv.name), { code: code, name: name });
+        var tokenOpts = _.merge({}, argv, parseLocalConfig(name), { code: code, name: name });
 
         return config.load()
             .then(function (profiles) {
@@ -346,6 +346,7 @@ function getParamsFromConfig(obj) {
              params[key] = obj[key];
         });
 
+        console.log(params);
     return params;
 }
 
@@ -422,6 +423,8 @@ function parseLocalConfig (taskName) {
             if(key === taskName) {
                 if(config[key].params)
                     _.assign(options.param, getParamsFromConfig(config[key].params));
+
+                console.log(config[key]);
 
                 if(config[key].secrets)
                     _.assign(options.secret, getSecretsFromConfig(config[key].secrets));
