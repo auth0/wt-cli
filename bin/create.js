@@ -204,6 +204,27 @@ function handleCreate (argv) {
     argv.merge = typeof argv.merge === 'undefined' ? true : !!argv.merge;
     argv.parse = typeof argv.parse === 'undefined' ? true : !!argv.parse;
 
+    if(argv.watch) {
+        var config_watcher = Watcher();
+        config_watcher.add('./package.json');
+        config_watcher.add('./.env');
+
+        config_watcher.on('change', function () {
+            console.log('Config changed, reloading webtasks.');
+
+            argv.code
+                .forEach(createWebtask)
+
+        });
+    }
+
+    if(argv.code instanceof Array) {
+        return argv.code
+            .map(createWebtask);
+    } else {
+        return createWebtask(argv.code);
+    }
+
     function createWebtask(pathToCode) {
         var generation = 0;
         var code       = Fs.readFileSync(pathToCode).toString();
@@ -212,11 +233,11 @@ function handleCreate (argv) {
         var pending = createToken(code, name);
 
         if (argv.watch) {
-            var watcher = Watcher();
+            var code_watcher   = Watcher();
 
-            watcher.add(pathToCode);
+            code_watcher.add(pathToCode);
 
-            watcher.on('change', function (file, stat) {
+            code_watcher.on('change', function (file) {
                 generation++;
 
                 if (!argv.json) {
@@ -230,18 +251,12 @@ function handleCreate (argv) {
                     .then(createToken.bind(null, code, name));
             });
 
+
             return pending;
         }
     }
 
-    if(argv.code instanceof Array) {
-        return argv.code
-            .forEach(createWebtask);
-    } else {
-        return createWebtask(argv.code);
-    }
 
-    
     function createToken (code, name) {
         var config = Webtask.configFile();
 
@@ -346,7 +361,6 @@ function getParamsFromConfig(obj) {
              params[key] = obj[key];
         });
 
-        console.log(params);
     return params;
 }
 
@@ -423,8 +437,6 @@ function parseLocalConfig (taskName) {
             if(key === taskName) {
                 if(config[key].params)
                     _.assign(options.param, getParamsFromConfig(config[key].params));
-
-                console.log(config[key]);
 
                 if(config[key].secrets)
                     _.assign(options.secret, getSecretsFromConfig(config[key].secrets));
