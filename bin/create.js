@@ -87,6 +87,11 @@ var advancedTokenOptions = {
         description: 'nonsecret param(s) to provide to code at runtime',
         type: 'string',
     },
+    container: {
+        alias: 'c',
+        description: 'webtask container where the job will run',
+        type: 'string',
+    },
 };
 
 
