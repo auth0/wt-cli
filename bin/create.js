@@ -213,7 +213,12 @@ function handleCreate (argv) {
             console.log('Config changed, reloading webtasks.');
 
             argv.code
-                .forEach(createWebtask)
+                .forEach(function (pathToCode) {
+                    var code       = Fs.readFileSync(pathToCode).toString();
+                    var name       = Path.basename(pathToCode, '.js');
+
+                    createToken(code, name);
+                });
 
         });
     }
