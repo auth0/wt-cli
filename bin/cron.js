@@ -95,7 +95,7 @@ cron.command(Cli.createCommand('get', 'Get information about a scheduled webtask
 	handler: handleCronGet,
 }));
 
-cron.command(Cli.createCommand('history', 'Get information about a scheduled webtask', {
+cron.command(Cli.createCommand('history', 'Get information about a scheduled webtask.', {
     params: '<job_name>',
 	options: {
         profile: {

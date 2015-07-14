@@ -79,9 +79,11 @@ function handleStream (argv) {
                         var data = JSON.parse(event.data);
                     } catch (__) { return; }
                     
-                    if (argv.raw) console.log(data);
-                    else if (typeof data === 'string') prettyStdOut.write(data);
-                    else prettyStdOut.write(data);
+                    if (!data || data.name !== 'sandbox-kafka') return;
+                    
+                    if (argv.raw) console.log(data.msg);
+                    else if (typeof data === 'string') logger.info(data);
+                    else logger.info(data.msg);
                 }
             });
         })
