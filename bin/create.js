@@ -8,6 +8,8 @@ var Path = require('path');
 var Watcher = require('filewatcher');
 var Webtask = require('../');
 var _ = require('lodash');
+var Parse = require('comment-parser');
+var Dotenv = require('dotenv');
 
 var tokenOptions = {
     secret: {
@@ -161,8 +163,6 @@ module.exports = Cli.createCommand('create', 'Create webtasks', {
 	handler: handleCreate
 });
 
-
-  
 function handleCreate (argv) {
     var fileOrUrl = argv.params.file_or_url;
     var fol = fileOrUrl.toLowerCase();
@@ -228,7 +228,7 @@ function handleCreate (argv) {
     
     function createWebtask(pathToCode) {
         var generation = 0;
-        var code       = Fs.readFileSync(pathToCode).toString();
+        var code       = Fs.readFileSync(pathToCode, 'utf8');
         var name       = Path.basename(pathToCode, '.js');
 
         var pending = createToken(code, name);
@@ -285,8 +285,7 @@ function handleCreate (argv) {
     function createToken (code, name) {
         var config = Webtask.configFile();
         var firstTime = false;
-        var createTokenOptions = _.merge({}, argv, parseLocalConfig(argv.name));
-
+        var createTokenOptions = _.merge({}, argv, parseLocalConfig(argv.name), { code: code, name: name });
 
         return config.load()
             .then(function (profiles) {
@@ -415,31 +414,35 @@ function getParamsFromConfig(obj) {
 function getSecretsFromConfig(array) {
     var secrets = {};
 
-    var dotEnv;
+    // Source from .env
+    var dotenvFile;
 
     try {
-        dotEnv = Fs.readFileSync('./.env');
+        dotenvFile = Fs.readFileSync('./.env');
     } catch(e) {
         throw new Error('Secrets must be specified in a .env file, eg: SECRET="shhh"');
     }
 
-    array
-        .forEach(function (key) {
-            dotEnv
-                .toString()
-                .split('\n')
-                .filter(function (secret) {
-                    return secret.length;
-                })
-                .map(function (secret) {
-                    return secret.split('=');
-                })
-                .forEach(function (secret) {
-                    if(secret[0] === key) secrets[key] = secret[1];
-                });
+    var dotenvObj = Dotenv.parse(dotenvFile);
+
+    Object.keys(dotenvObj)
+        .forEach(function (secret) {
+            if(!key) {
+                // Then supply *all* the secrets
+                secrets[secret] = dotenvObj[secret];
+            }
+            else if(secret === key) {
+                value = dotenvObj[secret];
+            }
         });
 
-    return secrets;
+    if(key) {
+        if(typeof value === 'undefined') throw noKeyErr;
+
+        return value;
+    } else {
+        return secrets;
+    }
 }
 
 function getTasks(config) {
@@ -450,11 +453,20 @@ function getTasks(config) {
         });
 }
 
-function parseLocalConfig (taskName) {
+function parseTaskConfig (argv, code) {
     var options = {
         param:  {},
         secret: {}
     };
+
+    var parsers = [
+        function get_tag(str, data) {
+            var tag          = str.match(/^\@[a-z]+\s/)[0].replace(/\@|\s/, '');
+            var defaultValue = str.match('\[.+\]')[0];
+
+            console.log(defaultValue);
+        }
+    ];
 
     try {
         var configFile = Fs.readFileSync('./package.json');
@@ -492,5 +504,4 @@ function parseLocalConfig (taskName) {
         });
 
     return options;
-
 }
