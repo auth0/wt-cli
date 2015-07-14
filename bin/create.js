@@ -290,7 +290,7 @@ function handleCreate (argv) {
                                 + '/api/run/'
                                 + profile.container
                                 + '/' + tokenOpts.name
-                                + (argv.prod ? '': '&webtask_no_cache=1');
+                                + (argv.prod ? '': '?webtask_no_cache=1');
                         }
                         return result;
                     });
