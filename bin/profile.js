@@ -14,6 +14,7 @@ var profile = module.exports = Cli.createCategory('profile',
     'Manage webtask profiles');
 
 profile.command(Cli.createCommand('init', 'Manage webtask profiles', {
+    params: '[email_or_phone]',
     options: {
         token: {
             alias: 't',
@@ -28,11 +29,6 @@ profile.command(Cli.createCommand('init', 'Manage webtask profiles', {
         url: {
             alias: 'u',
             description: 'webtask service URL',
-            type: 'string',
-        },
-        email: {
-            alias: 'e',
-            description: 'email of the profile to set up',
             type: 'string',
         },
         profile: {
@@ -242,8 +238,8 @@ function handleNuke (argv) {
 function getVerifiedProfile (argv) {
     var profile;
 
-    if (argv.email) {
-        profile = sendVerificationCode(argv.email);
+    if (argv.params.email_or_phone) {
+        profile = sendVerificationCode(argv.params.email_or_phone);
     } else {
         console.log('Please enter your e-mail or phone number, we will send you a verification code.');
 
