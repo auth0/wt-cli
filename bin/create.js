@@ -215,6 +215,7 @@ function handleCreate (argv) {
     
     function createToken () {
         var config = Webtask.configFile();
+        var firstTime = false;
         
         return config.load()
             .then(function (profiles) {
@@ -224,6 +225,19 @@ function handleCreate (argv) {
                 }
                 
                 return config.getProfile(argv.profile);
+            })
+            .then(function (profile) {
+                if(!profile.hasCreated) {
+                    firstTime = true;
+
+                    config.setProfile(argv.profile, _.assign(profile, { hasCreated: true }))
+                        .then(config.save.bind(config))
+                        .catch(function (e) {
+                            throw new Error('Unable to save new config: ' + e.message);
+                        });
+                } 
+
+                return profile;
             })
             .then(function (profile) {
                 return profile.createToken(argv)
@@ -260,6 +274,8 @@ function handleCreate (argv) {
                 } else if (argv.json) {
                     console.log(data);
                 }
+
+                if(firstTime) console.log('\nRun your new webtask like so:\n\t$ curl %s'.green, data.named_webtask_url || data.webtask_url)
                 
                 return data;
             });
@@ -301,3 +317,4 @@ function parseHash (argv, field) {
         return hash;
     }, {});
 }
+

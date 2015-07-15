@@ -121,6 +121,8 @@ function WebtaskProfile (options) {
     this.url = options.url;
     this.container = options.container;
     this.token = options.token;
+
+    this.hasCreated = options.hasCreated;
     
     Object.defineProperty(this, '_wreck', {
         value: Wreck.defaults({
