@@ -275,6 +275,7 @@ function getVerifiedProfile (argv) {
 
 function sendVerificationCode (phoneOrEmail) {
     var verifier = Webtask.createUserVerifier();
+    var FIVE_MINUTES = 1000 * 60 * 5;
 
     return verifier.requestVerificationCode(phoneOrEmail)
         .then(function (verifyFunc) {
@@ -282,8 +283,12 @@ function sendVerificationCode (phoneOrEmail) {
                 + phoneOrEmail + ' below.');
 
             return Promptly.promptAsync('Verification code:')
-                .then(verifyFunc);
-        })
+                .then(verifyFunc)
+                .timeout(FIVE_MINUTES, 'Verification code expired.')
+                .catch(function (e) {
+                    console.log('\n' + e.message.red + '\n');
+                });
+        });
 }
 
 function printProfile (name, profile, details) {
