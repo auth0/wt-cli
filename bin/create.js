@@ -230,14 +230,17 @@ function handleCreate (argv) {
                 if(!profile.hasCreated) {
                     firstTime = true;
 
-                    config.setProfile(argv.profile, _.assign(profile, { hasCreated: true }))
+                    return config.setProfile(argv.profile, _.assign(profile, { hasCreated: true }))
                         .then(config.save.bind(config))
+                        .then(function () {
+                            return profile;
+                        })
                         .catch(function (e) {
                             throw new Error('Unable to save new config: ' + e.message);
                         });
-                } 
-
-                return profile;
+                } else {
+                    return profile;
+                }
             })
             .then(function (profile) {
                 return profile.createToken(argv)
