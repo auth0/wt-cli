@@ -111,7 +111,7 @@ function handleInit (argv) {
 
             printProfile(argv.profile, profile);
 
-            return Promptly.confirmAsync('Do you want to override it? [yN]', {
+            return Promptly.confirmAsync('Do you want to override it? [y/N]', {
                 'default': false,
             })
                 .then(function (override) {
@@ -141,10 +141,9 @@ function handleInit (argv) {
         .then(function (profile) {
             return config.save()
                 .then(function () {
-                    printProfile(argv.profile, profile);
-
-                    console.log(('Welcome to webtasks! Create one with '
-                        + '`wt create hello-world.js`'.bold + '.').green);
+                    console.log(('Welcome to webtasks! Create your first one as follows:\n\n'
+                        + '$ echo "module.exports = function (cb) { cb(null, \'Hello\'); }" > hello.js\n'.bold
+                        + '$ wt create hello-world.js\n'.bold).green);
                 });
         })
         .catch(function (e) {
@@ -260,7 +259,7 @@ function getVerifiedProfile (argv) {
         .catch(function (err) {
             console.log(('We were unable to verify your identity.').red);
 
-            return Promptly.confirmAsync('Would you like to try again? [Yn]', {
+            return Promptly.confirmAsync('Would you like to try again? [Y/n]', {
                 'default': true,
             })
                 .then(function (tryAgain) {
