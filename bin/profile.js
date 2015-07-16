@@ -143,7 +143,7 @@ function handleInit (argv) {
                 .then(function () {
                     console.log(('Welcome to webtasks! Create your first one as follows:\n\n'
                         + '$ echo "module.exports = function (cb) { cb(null, \'Hello\'); }" > hello.js\n'.bold
-                        + '$ wt create hello.js\n'.bold).green);
+                        + '$ wt create hello-world.js\n'.bold).green);
                 });
         })
         .catch(function (e) {
