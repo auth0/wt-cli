@@ -181,7 +181,7 @@ function handleCreate (argv) {
             }
         }
     }
-    else if (argv.name) {
+    else if (argv.name && argv.output !== 'none') {
         throw new Error('The `name` option can only be specified when --output is set to `url`.');
     }
     
