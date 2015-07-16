@@ -207,11 +207,11 @@ WebtaskProfile.prototype.createLogStream = function (options, cb) {
     var self = this;
     
     var promise = new Bluebird(function (resolve, reject) {
-        var url = '/api/logs/tenant/' + (options.container || self.container);
+        var url = '/api/logs/tenant/' + (options.container || self.container) + '?backlog=' + options.lines;
         var reqOptions = { 
-            headers: { 'accept': 'text/event-stream' },
+            headers: { 'accept': 'text/event-stream' }
         };
-        
+
         self._wreck.request('get', url, reqOptions, function (err, res) {
             if (err) return reject(err.isBoom ? err : Boom.wrap(err, 502,
                 'Error communicating with webtask cluster: ' + err.message));
