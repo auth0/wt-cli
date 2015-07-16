@@ -19,8 +19,8 @@ app.put('*', function (req, res) {
     res.json({ id: 1 });
 });
 
-// DEL
-app.del('*', function (req, res) {
+// DELETE
+app.delete('*', function (req, res) {
     res.json({ id: 1 })
 });
 
