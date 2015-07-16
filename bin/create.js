@@ -248,13 +248,14 @@ function handleCreate (argv) {
                         var result = {
                             token: token,
                             webtask_url: profile.url + '/api/run/'
-                                + profile.container + '?key=' + token
+                                + (argv.container || profile.container)
+                                + '?key=' + token
                                 + (argv.prod ? '': '&webtask_no_cache=1')
                         };
                         if (argv.name) {
                             result.named_webtask_url = profile.url
                                 + '/api/run/'
-                                + profile.container
+                                + (argv.container || profile.container)
                                 + '/' + argv.name
                                 + (argv.prod ? '': '?webtask_no_cache=1');
                         }

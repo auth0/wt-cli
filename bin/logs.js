@@ -19,7 +19,11 @@ module.exports = Cli.createCommand('logs', 'Streaming, real-time logs', {
         all: {
             alias: 'a',
             description: 'show cluster logs',
-            'default': false,
+            type: 'boolean',
+        },
+        verbose: {
+            alias: 'v',
+            description: 'show verbose logs',
             type: 'boolean',
         },
         profile: {
@@ -90,6 +94,7 @@ function handleStream (argv) {
                     
                     if (argv.raw) console.log(data.msg);
                     else if (typeof data === 'string') logger.info(data);
+                    else if (argv.verbose) logger.info(data, data.msg);
                     else logger.info(data.msg);
                 }
             });
