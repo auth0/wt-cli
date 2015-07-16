@@ -68,10 +68,12 @@ var advancedTokenOptions = {
         'default': false,
     },
     nbf: {
-        description: 'webtask cannot be used before this time',
+        description: 'webtask cannot be used before this time (use +N to indicate \'N\' minutes from now)',
+        type: 'string',
     },
     exp: {
-        description: 'webtask cannot be used after this time',
+        description: 'webtask cannot be used after this time (use +N to indicate \'N\' minutes from now)',
+        type: 'string',
     },
     'self-revoke': {
         description: 'allow the webtask token to revoke itself',
@@ -289,7 +291,7 @@ function handleCreate (argv) {
 function parseDate (argv, field) {
     var value = argv[field];
     var date = (value[0] === '+')
-        ? Date.now() + parseInt(value.substring(1), 10) * 60 * 1000
+        ? new Date(Date.now() + parseInt(value.substring(1), 10) * 60 * 1000)
         : Date.parse(value);
     
     if (isNaN(date)) {

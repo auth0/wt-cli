@@ -325,12 +325,7 @@ function printCronJob (job) {
         intervalOptions.endDate = new Date(job.expires_at);
     }
     
-    var interval = Cron.parseExpression(job.schedule, intervalOptions);
-    var nextRunAt = interval.next();
-    
-    if (nextRunAt) {
-        console.log('Next run:    '.blue, new Date(job.next_available_at).toLocaleString());
-    }
+    console.log('Next run:    '.blue, new Date(job.next_available_at).toLocaleString());
     
     if (job.expires_at) {
         console.log('Expires:     '.blue, new Date(job.expires_at).toLocaleString());
