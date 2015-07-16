@@ -111,7 +111,7 @@ function handleInit (argv) {
 
             printProfile(argv.profile, profile);
 
-            return Promptly.confirmAsync('Do you want to override it? [yN]', {
+            return Promptly.confirmAsync('Do you want to override it? [y/N]', {
                 'default': false,
             })
                 .then(function (override) {
@@ -141,10 +141,9 @@ function handleInit (argv) {
         .then(function (profile) {
             return config.save()
                 .then(function () {
-                    printProfile(argv.profile, profile);
-
-                    console.log(('Welcome to webtasks! Create one with '
-                        + '`wt create hello-world.js`'.bold + '.').green);
+                    console.log(('Welcome to webtasks! Create your first one as follows:\n\n'
+                        + '$ echo "module.exports = function (cb) { cb(null, \'Hello\'); }" > hello.js\n'.bold
+                        + '$ wt create hello.js\n'.bold).green);
                 });
         })
         .catch(function (e) {
@@ -260,7 +259,7 @@ function getVerifiedProfile (argv) {
         .catch(function (err) {
             console.log(('We were unable to verify your identity.').red);
 
-            return Promptly.confirmAsync('Would you like to try again? [Yn]', {
+            return Promptly.confirmAsync('Would you like to try again? [Y/n]', {
                 'default': true,
             })
                 .then(function (tryAgain) {
@@ -276,6 +275,7 @@ function getVerifiedProfile (argv) {
 
 function sendVerificationCode (phoneOrEmail) {
     var verifier = Webtask.createUserVerifier();
+    var FIVE_MINUTES = 1000 * 60 * 5;
 
     return verifier.requestVerificationCode(phoneOrEmail)
         .then(function (verifyFunc) {
@@ -283,8 +283,12 @@ function sendVerificationCode (phoneOrEmail) {
                 + phoneOrEmail + ' below.');
 
             return Promptly.promptAsync('Verification code:')
-                .then(verifyFunc);
-        })
+                .then(verifyFunc)
+                .timeout(FIVE_MINUTES, 'Verification code expired.')
+                .catch(function (e) {
+                    console.log('\n' + e.message.red + '\n');
+                });
+        });
 }
 
 function printProfile (name, profile, details) {

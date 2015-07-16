@@ -1,0 +1,73 @@
+### Create a webtask (from a local file)
+
+Creates a webtask based on a local file and returns a URL that can be used to execute it.
+
+```bash
+$ wt create foo.js
+```
+
+> Specifying `--watch` modifier will watch for file changes and refresh the webtask
+
+### Create a webtask (from a public URL)
+
+Creates a webtask that when called it will fetch the code from that public URL and execute it. By default the code is not cached, use `--prod` modifier to get a URL where the code is not cached.
+
+```bash
+$ wt create https://raw.githubusercontent.com/auth0/wt-cli/master/sample-webtasks/html-response.js \
+          --name html-response-url
+```
+
+### Log streaming
+
+Shows the log streaming of all your webtasks. All `console.log` calls will be available.
+
+```bash
+$ wt logs
+```
+
+### Create a webtask with a secret
+
+Create a webtask that depends on a secret (a mongodb connection string).
+
+```bash
+$ wt create https://raw.githubusercontent.com/auth0/wt-cli/master/sample-webtasks/mongodb.js \
+          --name mongo \
+          --secret MONGO_URL=mongodb://webtask:supersecret@ds047592.mongolab.com:47592/webtask-examples
+```
+
+> Secrets are encrypted with AES256-CBC. This is a real mongodb URL (powered by mongolab), no guarrantee that it will work :)
+
+### Cron a webtask
+
+Cron a webtask that will run every 10 minutes.
+
+```bash
+$ wt cron schedule -n mongocron \
+                 -s MONGO_URL=mongodb://webtask:supersecret@ds047592.mongolab.com:47592/webtask-examples \
+                 "*/10 * * * *" \
+                 https://raw.githubusercontent.com/auth0/wt-cli/master/sample-webtasks/mongodb.js
+```
+
+### Create a webtask that uses express.js
+
+You can use the [express](https://expressjs.org) framework inside a webtask. Specify `--no-parse` and `--no-merge` modifiers to keep the request raw.
+
+```bash
+$ wt create express.js --no-parse --no-merge
+```
+
+### Get cron history
+
+Get a history of all the runs of a specific cron.
+
+```bash
+$ wt cron history mongogron
+```
+
+### Get all crons
+
+Get a list of all the crons you have registered.
+
+```bash
+$ wt cron ls
+```
