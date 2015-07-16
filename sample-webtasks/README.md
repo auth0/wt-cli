@@ -1,4 +1,4 @@
-### Create a webtask (from a local file)
+### Create
 
 Creates a webtask based on a local file and returns a URL that can be used to execute it.
 
@@ -8,7 +8,7 @@ $ wt create foo.js
 
 > Specifying `--watch` modifier will watch for file changes and refresh the webtask
 
-### Create a webtask (from a public URL)
+### Create from URL
 
 Creates a webtask that when called it will fetch the code from that public URL and execute it. By default the code is not cached, use `--prod` modifier to get a URL where the code is not cached.
 
@@ -17,7 +17,7 @@ $ wt create https://raw.githubusercontent.com/auth0/wt-cli/master/sample-webtask
           --name html-response-url
 ```
 
-### Log streaming
+### Logs
 
 Shows the log streaming of all your webtasks. All `console.log` calls will be available.
 
@@ -25,7 +25,7 @@ Shows the log streaming of all your webtasks. All `console.log` calls will be av
 $ wt logs
 ```
 
-### Create a webtask with a secret
+### Secrets
 
 Create a webtask that depends on a secret (a mongodb connection string).
 
@@ -37,7 +37,7 @@ $ wt create https://raw.githubusercontent.com/auth0/wt-cli/master/sample-webtask
 
 > Secrets are encrypted with AES256-CBC. This is a real mongodb URL (powered by mongolab), no guarrantee that it will work :)
 
-### Cron a webtask
+### Cron
 
 Cron a webtask that will run every 10 minutes.
 
@@ -48,7 +48,7 @@ $ wt cron schedule -n mongocron \
                  https://raw.githubusercontent.com/auth0/wt-cli/master/sample-webtasks/mongodb.js
 ```
 
-### Create a webtask that uses express.js
+### Express.js
 
 You can use the [express](https://expressjs.org) framework inside a webtask. Specify `--no-parse` and `--no-merge` modifiers to keep the request raw.
 
@@ -56,7 +56,7 @@ You can use the [express](https://expressjs.org) framework inside a webtask. Spe
 $ wt create express.js --no-parse --no-merge
 ```
 
-### Get cron history
+### Cron history
 
 Get a history of all the runs of a specific cron.
 
@@ -64,7 +64,7 @@ Get a history of all the runs of a specific cron.
 $ wt cron history mongogron
 ```
 
-### Get all crons
+### Crons
 
 Get a list of all the crons you have registered.
 
