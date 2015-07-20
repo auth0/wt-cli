@@ -8,6 +8,8 @@ var Path = require('path');
 var Watcher = require('filewatcher');
 var Webtask = require('../');
 var _ = require('lodash');
+var crypto = require('crypto');
+var jwt = require('jsonwebtoken');
 
 var tokenOptions = {
     secret: {
@@ -25,6 +27,15 @@ var tokenOptions = {
         alias: 'n',
         description: 'name of the webtask',
         type: 'string'
+    },
+    auth0: {
+      alias: 'emails',
+      description: 'set webtask permisions',
+      type: 'string'
+    },
+    share: {
+        description: 'generate secure, shareable link',
+        type: 'bool',
     },
     prod: {
         alias: 'r',
@@ -56,6 +67,10 @@ var tokenOptions = {
         alias: 'C',
         description: 'pre-compile a local file using the indicated library (for now only `babel` is supported and will read `.babelrc` if present)',
         type: 'string',
+    },
+    auth: {
+      description: 'set webtask permisions',
+      type: 'boolean'
     },
     advanced: {
         alias: 'a',
@@ -106,6 +121,18 @@ var advancedTokenOptions = {
         description: 'webtask container where the job will run',
         type: 'string',
     },
+    clientId: {
+        description: 'for custom auth0 account',
+        type: 'string'
+    },
+    clientSecret: {
+        description: 'for custom auth0 account',
+        type: 'string'
+    },
+    auth0Domain: {
+        description: 'for custom auth0 account',
+        type: 'string'
+    }
 };
 
 
@@ -153,15 +180,52 @@ module.exports = Cli.createCommand('create', 'Create webtasks', {
                 if (argv.param) parseHash(argv, 'param');
                 if (argv.tokenLimit) parseHash(argv, 'tokenLimit');
                 if (argv.containerLimit) parseHash(argv, 'containerLimit');
-                
+
+                if (argv.auth0 === '') argv.auth0 = {};
+                if (argv.auth0 && argv.share) throw new Error('Cannot specify both --share and --auth0');
+
+                if (argv.auth0 && argv.auth0 !== {}) {
+                    argv.auth0 = {
+                        // Because yargs turns n passes of --cmd into array
+                        email: (typeof argv.auth0 === 'string') ?
+                            argv.auth0
+                              .split(',')
+                              .map(function (str) {
+                                  return str.trim();
+                              })
+                              .filter(function (str) {
+                                  return str;
+                              })
+                              : argv.auth0
+                    };
+                }
+
+                // Add custom auth0 accout
+                if (argv.clientId && argv.clientSecret && argv.auth0Domain) {
+                    if(!argv.auth0) argv.auth0 = {};
+
+                    argv.auth0.account = {
+                      client_id: argv.clientId,
+                      domain:    argv.auth0Domain
+                    }
+
+                    argv.auth0.secret = argv.clientSecret;
+
+                } else if(argv.clientId || argv.clientSecret || argv.auth0Domain) {
+                    throw new Error('Must specify clientId, clientSecret and auth0Domain for custom Auth0 account')
+                }
+
+                if (argv.share) {
+                    argv.auth0 = { secret: getSecret(argv) }
+                    argv.share = getAuthToken({}, argv.auth0.secret);
+                }
+
                 return true;
             });
     },
 	handler: handleCreate,
 });
 
-
-  
 function handleCreate (argv) {
     var fileOrUrl = argv.params.file_or_url;
     var fol = fileOrUrl.toLowerCase();
@@ -219,7 +283,7 @@ function handleCreate (argv) {
     else if (argv.name && argv.output !== 'none') {
         throw new Error('The `name` option can only be specified when --output is set to `url`.');
     }
-    
+
     argv.merge = typeof argv.merge === 'undefined' ? true : !!argv.merge;
     argv.parse = typeof argv.parse === 'undefined' ? true : !!argv.parse;
     
@@ -302,6 +366,7 @@ function handleCreate (argv) {
                 }
             })
             .then(function (profile) {
+
                 return profile.createToken(argv)
                     .then(function (token) {
                         var result = {
@@ -316,12 +381,16 @@ function handleCreate (argv) {
                                 + '/api/run/'
                                 + (argv.container || profile.container)
                                 + '/' + argv.name
-                                + (argv.prod ? '': '?webtask_no_cache=1');
+                                + (argv.prod ? '': '?webtask_no_cache=1')
+                                + (argv.share ? (argv.prod ? '?key=' + argv.share : '&key=' + argv.share) : '');
                         }
+
                         return result;
                     });
             })
             .then(function (data) {
+                var auth_token = '';
+
                 if (argv.output === 'token') {
                     console.log(argv.json
                         ? JSON.stringify(data.token)
@@ -364,6 +433,22 @@ function parseDate (argv, field) {
     argv[field] = Math.floor(date.valueOf() / 1000);
 }
 
+function getSecret(argv) {
+    try {
+        return crypto.randomBytes(128).toString('base64');
+    } catch(e) {
+        console.log('Couldn\'t generate random secret: ' + e.message);
+    }
+}
+
+function getAuthToken(payload, secret) {
+    try {
+        return jwt.sign(payload, new Buffer(secret, 'base64'));
+    } catch(e) {
+        throw new Error('Unable to generate authorization token.');
+    }
+}
+
 function parseHash (argv, field) {
     var param = argv[field];
     
@@ -383,4 +468,3 @@ function parseHash (argv, field) {
         return hash;
     }, {});
 }
-

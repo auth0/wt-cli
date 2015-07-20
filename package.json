@@ -32,6 +32,7 @@
     "colors": "^1.1.0",
     "cron-parser": "^0.6.3",
     "filewatcher": "^3.0.0",
+    "jsonwebtoken": "^5.0.4",
     "jws": "^3.0.0",
     "livereload": "^0.3.7",
     "lodash": "^3.10.0",
