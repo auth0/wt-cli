@@ -207,7 +207,9 @@ WebtaskProfile.prototype.createLogStream = function (options, cb) {
     var self = this;
     
     var promise = new Bluebird(function (resolve, reject) {
-        var url = '/api/logs/tenant/' + (options.container || self.container) + '?backlog=' + options.history;
+        var url = '/api/logs/tenant/' + (options.container || self.container) + '?offset=' + (isNaN(+options.history) ? options.history : ('-' + options.history));
+
+        console.log(url);
         var reqOptions = { 
             headers: { 'accept': 'text/event-stream' }
         };
