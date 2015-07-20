@@ -34,9 +34,8 @@ module.exports = Cli.createCommand('logs', 'Streaming, real-time logs', {
         },
         history: {
             alias: 'h',
-            description: 'number or previous lines to show',
-            'default': 10,
-            type: 'number'
+            description: 'Show previous logs, no. of lines or time (n[s|m|h|d])',
+            'default': 10
         }
     },
     handler: handleStream,
@@ -74,7 +73,6 @@ function handleStream (argv) {
             return config.getProfile(argv.profile);
         })
         .then(function (profile) {
-            console.log(argv);
             return Bluebird.all([
                 profile,
                 profile.createLogStream(argv)
