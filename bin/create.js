@@ -68,10 +68,12 @@ var advancedTokenOptions = {
         'default': false,
     },
     nbf: {
-        description: 'webtask cannot be used before this time',
+        description: 'webtask cannot be used before this time (use +N to indicate \'N\' minutes from now)',
+        type: 'string',
     },
     exp: {
-        description: 'webtask cannot be used after this time',
+        description: 'webtask cannot be used after this time (use +N to indicate \'N\' minutes from now)',
+        type: 'string',
     },
     'self-revoke': {
         description: 'allow the webtask token to revoke itself',
@@ -181,7 +183,7 @@ function handleCreate (argv) {
             }
         }
     }
-    else if (argv.name) {
+    else if (argv.name && argv.output !== 'none') {
         throw new Error('The `name` option can only be specified when --output is set to `url`.');
     }
     
@@ -215,6 +217,7 @@ function handleCreate (argv) {
     
     function createToken () {
         var config = Webtask.configFile();
+        var firstTime = false;
         
         return config.load()
             .then(function (profiles) {
@@ -226,18 +229,35 @@ function handleCreate (argv) {
                 return config.getProfile(argv.profile);
             })
             .then(function (profile) {
+                if(!profile.hasCreated) {
+                    firstTime = true;
+
+                    return config.setProfile(argv.profile, _.assign(profile, { hasCreated: true }))
+                        .then(config.save.bind(config))
+                        .then(function () {
+                            return profile;
+                        })
+                        .catch(function (e) {
+                            throw new Error('Unable to save new config: ' + e.message);
+                        });
+                } else {
+                    return profile;
+                }
+            })
+            .then(function (profile) {
                 return profile.createToken(argv)
                     .then(function (token) {
                         var result = {
                             token: token,
                             webtask_url: profile.url + '/api/run/'
-                                + profile.container + '?key=' + token
+                                + (argv.container || profile.container)
+                                + '?key=' + token
                                 + (argv.prod ? '': '&webtask_no_cache=1')
                         };
                         if (argv.name) {
                             result.named_webtask_url = profile.url
                                 + '/api/run/'
-                                + profile.container
+                                + (argv.container || profile.container)
                                 + '/' + argv.name
                                 + (argv.prod ? '': '?webtask_no_cache=1');
                         }
@@ -260,6 +280,8 @@ function handleCreate (argv) {
                 } else if (argv.json) {
                     console.log(data);
                 }
+
+                if(firstTime) console.log('\nRun your new webtask like so:\n\t$ curl %s'.green, data.named_webtask_url || data.webtask_url)
                 
                 return data;
             });
@@ -269,7 +291,7 @@ function handleCreate (argv) {
 function parseDate (argv, field) {
     var value = argv[field];
     var date = (value[0] === '+')
-        ? Date.now() + parseInt(value.substring(1), 10) * 60 * 1000
+        ? new Date(Date.now() + parseInt(value.substring(1), 10) * 60 * 1000)
         : Date.parse(value);
     
     if (isNaN(date)) {
@@ -301,3 +323,4 @@ function parseHash (argv, field) {
         return hash;
     }, {});
 }
+

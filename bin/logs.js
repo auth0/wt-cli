@@ -16,6 +16,16 @@ module.exports = Cli.createCommand('logs', 'Streaming, real-time logs', {
             description: 'do not pretty print',
             type: 'boolean',
         },
+        all: {
+            alias: 'a',
+            description: 'show cluster logs',
+            type: 'boolean',
+        },
+        verbose: {
+            alias: 'v',
+            description: 'show verbose logs',
+            type: 'boolean',
+        },
         profile: {
             alias: 'p',
             description: 'name of the webtask profile to use',
@@ -64,7 +74,7 @@ function handleStream (argv) {
             ]);
         })
         .spread(function (profile, stream) {
-            logger.info({ container: profile.container },
+            logger.info({ container: argv.container || profile.container },
                 'connected to streaming logs');
 
             setTimeout(function () {
@@ -79,10 +89,12 @@ function handleStream (argv) {
                         var data = JSON.parse(event.data);
                     } catch (__) { return; }
                     
-                    if (!data || data.name !== 'sandbox-kafka') return;
+                    if (!data || (data.name !== 'sandbox-kafka' && !argv.all))
+                        return;
                     
                     if (argv.raw) console.log(data.msg);
                     else if (typeof data === 'string') logger.info(data);
+                    else if (argv.verbose) logger.info(data, data.msg);
                     else logger.info(data.msg);
                 }
             });

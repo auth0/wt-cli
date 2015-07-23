@@ -1,6 +1,7 @@
 var Bluebird = require('bluebird');
 var Cli = require('nested-yargs');
 var Create = require('./create');
+var Cron = require('cron-parser');
 var Webtask = require('../');
 var _ = require('lodash');
 
@@ -311,9 +312,23 @@ function printCronJob (job) {
     console.log('Container:   '.blue, job.container);
     console.log('Schedule:    '.blue, job.schedule);
     
-    if (job.last_result) {
-        console.log('Last result: '.blue, job.last_result.type);
-        console.log('Last run at: '.blue, new Date(job.last_result.created_at).toLocaleString());
+    if (job.results.length) {
+        console.log('Last result: '.blue, job.results[0].type);
+        console.log('Last run at: '.blue, new Date(job.results[0].created_at).toLocaleString());
+    }
+    
+    var intervalOptions = {
+        currentDate: new Date(job.next_available_at),
+    };
+    
+    if (job.expires_at) {
+        intervalOptions.endDate = new Date(job.expires_at);
+    }
+    
+    console.log('Next run:    '.blue, new Date(job.next_available_at).toLocaleString());
+    
+    if (job.expires_at) {
+        console.log('Expires:     '.blue, new Date(job.expires_at).toLocaleString());
     }
 }
 
