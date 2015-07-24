@@ -1,3 +1,4 @@
+var Babel = require('babel');
 var Cli = require('nested-yargs');
 var Colors = require('colors');
 var Fs = require('fs');
@@ -44,6 +45,11 @@ var tokenOptions = {
         alias: 'j',
         description: 'json output',
         type: 'boolean',
+    },
+    compile: {
+        alias: 'C',
+        description: 'pre-compile a local file using the indicated library (for now only `babel` is supported and will read `.babelrc` if present)',
+        type: 'string',
     },
     advanced: {
         alias: 'a',
@@ -153,12 +159,18 @@ module.exports = Cli.createCommand('create', 'Create webtasks', {
 function handleCreate (argv) {
     var fileOrUrl = argv.params.file_or_url;
     var fol = fileOrUrl.toLowerCase();
-
+    var useBabelRx = /^[\n\s]*(\"|\')use\s+latest\1\s*(?:;|\n)/;
+    
     if (fol.indexOf('http://') === 0 || fol.indexOf('https://') === 0) {
         argv.code_url = fileOrUrl;
 
         if (argv.watch) {
             throw new Error('The --watch option can only be used '
+                + 'when a file name is specified.');
+        }
+        
+        if (argv.compile) {
+            throw new Error('The --compile option can only be used '
                 + 'when a file name is specified.');
         }
     } else {
@@ -170,6 +182,36 @@ function handleCreate (argv) {
             throw new Error('Unable to read the file `'
                 + argv.file_name + '`.');
         }
+        
+        if (argv.compile === 'babel') {
+            argv.code = compileWithBabel(argv.code);
+        } else if (argv.compile) {
+            throw new Error('Unsupported compiler `' + argv.compile + '`. Only '
+                + '`babel` supported at this time.');
+        } else {
+            // Support local transformation of "use latest";
+            var matches = argv.code.match(useBabelRx);
+            
+            if (matches) {
+                // Get rid of the "use latest";
+                argv.code = compileWithBabel(argv.code);
+            }
+        }
+    }
+    
+    function compileWithBabel (code) {
+        var options = {};
+        
+        try {
+            var babelrc = Fs.readFileSync(Path.join(process.cwd(), '.babelrc'),
+                'utf8');
+            
+            options = _.extend(options, JSON.parse(babelrc));
+        } catch (__) {}
+        
+        code = code.replace(useBabelRx, '');
+        
+        return Babel.transform(code, options).code;
     }
 
     if (argv.output === 'url') {

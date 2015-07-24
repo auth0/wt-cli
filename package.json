@@ -24,6 +24,7 @@
     }
   ],
   "dependencies": {
+    "babel": "^5.8.3",
     "bluebird": "^2.9.31",
     "boom": "^2.8.0",
     "bunyan": "^1.4.0",
