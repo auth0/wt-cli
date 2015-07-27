@@ -171,6 +171,8 @@ WebtaskProfile.prototype.createToken = Bluebird.method(function (options, cb) {
         addLimits(options.tokenLimit, limits.token);
     if (options.containerLimit)
         addLimits(options.containerLimit, limits.container);
+        
+    console.log('params', params);
     
     var promise = request(this._wreck, 'post', '/api/tokens/issue', {}, params)
         .spread(function (res, token) {
@@ -228,50 +230,65 @@ WebtaskProfile.prototype.createLogStream = function (options, cb) {
             var lastId = '';
             var eventName = '';
             var eventData = '';
+            var eventBuffer = '';
             
-            // Straight mapping right now.
-            var logMapper = Through.obj(function (chunk, enc, callback) {
-                // For parsing this, see: http://www.w3.org/TR/2009/WD-eventsource-20091029/#event-stream-interpretation
+            // Accumulate data until the end of a block (two newlines)
+            var logMapper = Through(function (chunk, enc, callback) {
                 var data = chunk.toString('utf8');
-                var events = data.split(/\n\n/);
+                var events = data.split('\n\n');
                 
                 _.forEach(events, function (event) {
                     if (!event) {
-                        this.push({
-                            id: lastId,
-                            type: eventName || 'data',
-                            data: eventData.slice(0, -1), // Strip trailing \n
-                        });
-                        
-                        eventName = '';
-                        eventData = '';
-                        
-                        return;
+                        this.push(eventBuffer);
+                        eventBuffer = '';
+                    } else {
+                        eventBuffer += event;
                     }
-                        
-                    var lines = event.split('\n').filter(Boolean);
-                    
-                    _.forEach(lines, function (line) {
-                        // This marks the end of an event
-                        var matches = line.match(/^([^:]*):(.*)$/);
-                        
-                        if (matches) {
-                            var field = matches[1];
-                            var value = matches[2];
-                            
-                            if (!field) return; // event-source comment
-                            if (field === 'event') eventName = value;
-                            else if (field === 'data') eventData += value + '\n';
-                            else if (field === 'id') lastId = value;
-                        }
-                    }, this);
                 }, this);
                 
                 callback();
             });
             
+            // Parse blocks and emit json objects
+            var logParser = Through.obj(function (chunk, enc, callback) {
+                // For parsing this, see: http://www.w3.org/TR/2009/WD-eventsource-20091029/#event-stream-interpretation
+                var event = chunk.toString('utf8');
+                var lines = event.split('\n');
+                
+                _.forEach(lines, function (line) {
+                    var matches = line.match(/^([^:]*):(.*)$/);
+                    
+                    if (matches) {
+                        var field = matches[1];
+                        var value = matches[2];
+                        
+                        if (!field) return; // event-source comment
+                        if (field === 'event') eventName = value;
+                        else if (field === 'data') eventData += value;
+                        else if (field === 'id') lastId = value;
+                    } else {
+                        // console.log('unexpected data', line);
+                    }
+                }, this);
+                
+                var eventObj = {
+                    id: lastId,
+                    type: eventName || 'data',
+                    data: eventData,
+                };
+                
+                lastId = '';
+                eventName = '';
+                eventData = '';
+                
+                this.push(eventObj);
+                
+                callback();
+            });
+            
             var logStream = res
-                .pipe(logMapper);
+                .pipe(logMapper)
+                .pipe(logParser);
             
             resolve(logStream);
         });
