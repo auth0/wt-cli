@@ -7,6 +7,7 @@ var Watcher = require('filewatcher');
 var Webtask = require('../');
 var _ = require('lodash');
 var crypto = require('crypto');
+var livereload = require('livereload');
 
 var tokenOptions = {
     secret: {
@@ -237,6 +238,7 @@ function handleCreate (argv) {
     
     if (argv.watch) {
         var watcher = Watcher();
+        var reloadServer = livereload.createServer();
         
         watcher.add(argv.file_name);
         
@@ -251,7 +253,10 @@ function handleCreate (argv) {
             argv.code = Fs.readFileSync(argv.file_name, 'utf8');
             
             pending = pending
-                .then(createToken);
+                .then(createToken)
+                .then(function () {
+                  reloadServer.refresh(argv.file_name);
+                });
         });
     }
     
