@@ -198,21 +198,6 @@ function handleCreate (argv) {
             }
         }
     }
-    
-    function compileWithBabel (code) {
-        var options = {};
-        
-        try {
-            var babelrc = Fs.readFileSync(Path.join(process.cwd(), '.babelrc'),
-                'utf8');
-            
-            options = _.extend(options, JSON.parse(babelrc));
-        } catch (__) {}
-        
-        code = code.replace(useBabelRx, '');
-        
-        return Babel.transform(code, options).code;
-    }
 
     if (argv.output === 'url') {
         if (!argv.name) {
@@ -256,6 +241,21 @@ function handleCreate (argv) {
     }
     
     return pending;
+    
+    function compileWithBabel (code) {
+        var options = {};
+        
+        try {
+            var babelrc = Fs.readFileSync(Path.join(process.cwd(), '.babelrc'),
+                'utf8');
+            
+            options = _.extend(options, JSON.parse(babelrc));
+        } catch (__) {}
+        
+        code = code.replace(useBabelRx, '');
+        
+        return Babel.transform(code, options).code;
+    }
     
     function createToken () {
         var config = Webtask.configFile();
