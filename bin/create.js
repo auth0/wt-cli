@@ -47,6 +47,11 @@ var tokenOptions = {
         description: 'json output',
         type: 'boolean',
     },
+    nolivereload: {
+      alias: 'N',
+      description: 'disable livereload',
+      type: 'boolean'
+    },
     compile: {
         alias: 'C',
         description: 'pre-compile a local file using the indicated library (for now only `babel` is supported and will read `.babelrc` if present)',
@@ -238,7 +243,11 @@ function handleCreate (argv) {
     
     if (argv.watch) {
         var watcher = Watcher();
-        var reloadServer = livereload.createServer();
+
+        if(!argv.nolivereload) {
+            var reloadServer = livereload.createServer();
+            console.log('Livereload server listening: http://livereload.com/extensions\n');
+        }
         
         watcher.add(argv.file_name);
         
@@ -246,7 +255,7 @@ function handleCreate (argv) {
             generation++;
             
             if (!argv.json) {
-                console.log('File change detected, creating generation'
+                console.log('\nFile change detected, creating generation'
                     , generation);
             }
             
@@ -255,7 +264,8 @@ function handleCreate (argv) {
             pending = pending
                 .then(createToken)
                 .then(function () {
-                  reloadServer.refresh(argv.file_name);
+                    if(!argv.nolivereload)
+                        reloadServer.refresh(argv.file_name);
                 });
         });
     }
