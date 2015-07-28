@@ -10,6 +10,7 @@ var Webtask = require('../');
 var _ = require('lodash');
 var crypto = require('crypto');
 var jwt = require('jsonwebtoken');
+var dotenv = require('dotenv').load({ silent: true });
 
 var tokenOptions = {
     secret: {
@@ -123,15 +124,18 @@ var advancedTokenOptions = {
     },
     clientId: {
         description: 'for custom auth0 account',
-        type: 'string'
+        type: 'string',
+        'default': ''
     },
     clientSecret: {
         description: 'for custom auth0 account',
-        type: 'string'
+        type: 'string',
+        'default': ''
     },
     auth0Domain: {
         description: 'for custom auth0 account',
-        type: 'string'
+        type: 'string',
+        'default': ''
     }
 };
 
@@ -181,10 +185,16 @@ module.exports = Cli.createCommand('create', 'Create webtasks', {
                 if (argv.tokenLimit) parseHash(argv, 'tokenLimit');
                 if (argv.containerLimit) parseHash(argv, 'containerLimit');
 
-                if (argv.auth0 === '') argv.auth0 = {};
                 if (argv.auth0 && argv.share) throw new Error('Cannot specify both --share and --auth0');
+                
+                if(!argv.clientId)
+                  argv.clientId = process.env.AUTH0_CLIENT_ID;
+                if(!argv.clientSecret)
+                argv.clientSecret = process.env.AUTH0_CLIENT_SECRET;
+                if(!argv.auth0Domain)
+                  argv.auth0Domain = process.env.AUTH0_DOMAIN;
 
-                if (argv.auth0 && argv.auth0 !== {}) {
+                if (argv.auth0) {
                     argv.auth0 = {
                         // Because yargs turns n passes of --cmd into array
                         email: (typeof argv.auth0 === 'string') ?
@@ -200,10 +210,10 @@ module.exports = Cli.createCommand('create', 'Create webtasks', {
                     };
                 }
 
+                if (!argv.auth0) argv.auth0 = {};
+
                 // Add custom auth0 accout
                 if (argv.clientId && argv.clientSecret && argv.auth0Domain) {
-                    if(!argv.auth0) argv.auth0 = {};
-
                     argv.auth0.account = {
                       client_id: argv.clientId,
                       domain:    argv.auth0Domain
