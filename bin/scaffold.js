@@ -76,20 +76,20 @@ function scaffoldFrom(commit, path) {
             return entry.getBlob();
         })
         .then(function (blob) {
-            return WriteFile('./webtask.js', blob.toString())
-            .then(function () {
-                var create_args = [
-                    'create',
-                    './webtask.js',
-                    '-n',
-                    Path.basename(path, '.js')
-                ];
+            return WriteFile('./webtask.js', blob.toString());
+        })
+        .then(function () {
+            var create_args = [
+                'create',
+                './webtask.js',
+                '-n',
+                Path.basename(path, '.js')
+            ];
 
-                return ExecFile(__dirname + '/wt', create_args)
-                    .then(function (output) {
-                        return output[0].slice(0, -1);
-                    });
-            })
+            return ExecFile(__dirname + '/wt', create_args);
+        })
+        .then(function (output) {
+            return output[0].slice(0, -1);
         })
         .then(function (url) {
             console.log('Scaffold written to'.blue, 'webtask.js'.bold.green);
