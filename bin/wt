@@ -14,5 +14,6 @@ wt.command(require('./create'));
 wt.command(require('./logs'));
 wt.command(require('./cron'));
 wt.command(require('./profile'));
+wt.command(require('./scaffold'));
 
 var argv = Cli.run(wt);
