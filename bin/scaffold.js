@@ -71,17 +71,19 @@ function listScaffolds(commit) {
 }
 
 function scaffoldFrom(argv, commit, path) {
+    var filename = (argv.params.name + '.js') || 'webtask.js';
+
     return commit.getEntry(path)
         .then(function (entry) {
             return entry.getBlob();
         })
         .then(function (blob) {
-            return WriteFile('./webtask.js', blob.toString());
+            return WriteFile(filename, blob.toString());
         })
         .then(function () {
             var create_args = [
                 'create',
-                './webtask.js',
+                filename,
                 '-n',
                 argv.params.name || Path.basename(path, '.js'),
                 '-p',
@@ -94,7 +96,7 @@ function scaffoldFrom(argv, commit, path) {
             return output[0].slice(0, -1);
         })
         .then(function (url) {
-            console.log('Scaffold written to'.blue, 'webtask.js'.bold.green);
+            console.log('Scaffold written to'.blue, filename.bold.green);
             console.log('Scaffold deployed to'.blue, url.bold.green)
         })
         .catch(function (e) {
