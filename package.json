@@ -35,7 +35,9 @@
     "jws": "^3.0.0",
     "lodash": "^3.10.0",
     "nested-yargs": "^1.0.0",
+    "nodegit": "^0.4.1",
     "promptly": "^0.2.1",
+    "rimraf": "^2.4.2",
     "through2": "^2.0.0",
     "wreck": "^6.0.0"
   },
