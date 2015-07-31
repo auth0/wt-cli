@@ -38,7 +38,7 @@ function handleScaffold(argv) {
                 argv.params.webtask +
                 (argv.params.webtask.match(/.js$/) ? '' : '.js');
 
-            return scaffoldFrom(commit, path);
+            return scaffoldFrom(argv, commit, path);
         })
         .then(cleanup)
         .catch(function (e) {
@@ -70,7 +70,7 @@ function listScaffolds(commit) {
       });
 }
 
-function scaffoldFrom(commit, path) {
+function scaffoldFrom(argv, commit, path) {
     return commit.getEntry(path)
         .then(function (entry) {
             return entry.getBlob();
@@ -83,7 +83,9 @@ function scaffoldFrom(commit, path) {
                 'create',
                 './webtask.js',
                 '-n',
-                Path.basename(path, '.js')
+                Path.basename(path, '.js'),
+                '-p',
+                argv.profile
             ];
 
             return ExecFile(__dirname + '/wt', create_args);
