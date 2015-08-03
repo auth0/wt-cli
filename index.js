@@ -171,8 +171,6 @@ WebtaskProfile.prototype.createToken = Bluebird.method(function (options, cb) {
         addLimits(options.tokenLimit, limits.token);
     if (options.containerLimit)
         addLimits(options.containerLimit, limits.container);
-        
-    console.log('params', params);
     
     var promise = request(this._wreck, 'post', '/api/tokens/issue', {}, params)
         .spread(function (res, token) {
