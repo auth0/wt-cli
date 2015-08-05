@@ -9,7 +9,7 @@ var ExecFile  = Bluebird.promisify(require('child_process').execFile);
 var Webtask   = require('../');
 
 module.exports = Cli.createCommand('scaffold', 'download webtask templates', {
-    params: '<webtask> [name]',
+    params: '[webtask] [name]',
     options: {
         profile: {
             alias: 'p',
