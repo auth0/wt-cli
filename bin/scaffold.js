@@ -95,7 +95,7 @@ function listScaffolds(commit) {
 }
 
 function scaffoldFrom(argv, commit, path) {
-    var filename = (argv.params.name + '.js') || 'webtask.js';
+    var filename = argv.params.name ? (argv.params.name + '.js') : 'webtask.js';
 
     return commit.getEntry(path)
         .then(function (entry) {
