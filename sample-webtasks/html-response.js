@@ -1,4 +1,6 @@
-/* More on programming models: https://webtask.io/docs/models */
+/**
+* Hello world HTML template. For more on programming models check out https://webtask.io/docs/models
+*/
 
 module.exports = 
     function (context, req, res) {

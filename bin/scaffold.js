@@ -6,6 +6,7 @@ var Rimraf    = require('rimraf');
 var Colors    = require('colors');
 var WriteFile = Bluebird.promisify(require('fs').writeFile);
 var ExecFile  = Bluebird.promisify(require('child_process').execFile);
+var jsdParse  = require('comment-parser');
 var Webtask   = require('../');
 
 module.exports = Cli.createCommand('scaffold', 'download webtask templates', {
@@ -59,13 +60,36 @@ function listScaffolds(commit) {
           return entry.getTree();
       })
       .then(function (tree) {
-          tree.entries()
+          var entries = tree.entries()
               .filter(function (entry) {
                   return Path.extname(entry.toString()) === '.js';
-              })
-              .forEach(function (entry) {
-                  var filename = Path.basename(entry.toString(), '.js');
-                  console.log(filename.bold);
+              });
+
+          var blobs = entries
+              .map(function (entry) {
+                  return entry.getBlob();
+              });
+
+          var names = entries
+              .map(function (entry) {
+                  return Path.basename(entry.toString(), '.js');
+              });
+
+          return Bluebird.all(blobs)
+              .map(function (blob, index) {
+                  var name = names[index];
+                  var jsdoc = jsdParse(blob.toString());
+
+                  return {
+                      name: name,
+                      description: jsdoc[0] ? jsdoc[0].description : 'no description.'
+                  };
+              });
+      })
+      .then(function (scaffolds) {
+          scaffolds
+              .forEach(function (scaffold) {
+                  console.log(scaffold.name.bold.white + ':', scaffold.description.grey);
               });
       });
 }

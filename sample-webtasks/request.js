@@ -1,4 +1,6 @@
-/* Use Node.js modules: https://webtask.io/docs/101 */
+/**
+ * Example use of Node.js module, see https://webtask.io/docs/101
+ */
 
 var request = require('request');
 

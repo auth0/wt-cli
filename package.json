@@ -30,6 +30,7 @@
     "bunyan": "^1.4.0",
     "bunyan-prettystream": "^0.1.3",
     "colors": "^1.1.0",
+    "comment-parser": "^0.3.0",
     "cron-parser": "^0.6.3",
     "filewatcher": "^3.0.0",
     "jws": "^3.0.0",

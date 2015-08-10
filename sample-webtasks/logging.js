@@ -1,5 +1,6 @@
-/* `wt logs` -- will stream your logs to the console
-  More on logging: https://webtask.io/docs/api_logs */
+/**
+* Example to test webtask logging. For more on logging see https://webtask.io/docs/api_logs
+*/
 
 module.exports = 
     function (context, cb) {

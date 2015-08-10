@@ -1,4 +1,6 @@
-/* URL query parameters are passed through context.data */
+/**
+* Access URL query parameters
+*/
 
 module.exports = 
     function (context, cb) {

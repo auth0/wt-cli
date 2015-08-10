@@ -1,3 +1,7 @@
+/**
+ * Send a JSON response
+ */
+
 module.exports = 
     function (cb) {
         cb(null, {

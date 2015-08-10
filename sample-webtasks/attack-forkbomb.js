@@ -1,4 +1,6 @@
-/* fork bomb - look at logs with `wt logs` */
+/**
+* fork bomb - look at logs with `wt logs`
+*/
 var spawn = require('child_process').spawn;
 
 module.exports = function (cb) {

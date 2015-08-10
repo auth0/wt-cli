@@ -1,7 +1,8 @@
-/* 
-  Connects to mongo. The mongo connection url is specified on webtask creation (and is encrypted)
-  wt create task -s MONGO_URL=mongodb://<my-secret-url>
+/**
+* Securely connect to a MongoDB instance
 */
+
+/* wt create task -s MONGO_URL=mongodb://<my-secret-url>*/
 
 var MongoClient = require('mongodb').MongoClient;
 var waterfall   = require('async').waterfall;
