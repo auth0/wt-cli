@@ -33,6 +33,7 @@
     "cron-parser": "^0.6.3",
     "filewatcher": "^3.0.0",
     "jws": "^3.0.0",
+    "livereload": "^0.3.7",
     "lodash": "^3.10.0",
     "nested-yargs": "^1.0.0",
     "promptly": "^0.2.1",

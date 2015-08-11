@@ -7,6 +7,7 @@ var Watcher = require('filewatcher');
 var Webtask = require('../');
 var _ = require('lodash');
 var crypto = require('crypto');
+var livereload = require('livereload');
 
 var tokenOptions = {
     secret: {
@@ -45,6 +46,11 @@ var tokenOptions = {
         alias: 'j',
         description: 'json output',
         type: 'boolean',
+    },
+    nolivereload: {
+      alias: 'N',
+      description: 'disable livereload',
+      type: 'boolean'
     },
     compile: {
         alias: 'C',
@@ -222,6 +228,11 @@ function handleCreate (argv) {
     
     if (argv.watch) {
         var watcher = Watcher();
+
+        if(!argv.nolivereload) {
+            var reloadServer = livereload.createServer();
+            console.log('Livereload server listening: http://livereload.com/extensions\n');
+        }
         
         watcher.add(argv.file_name);
         
@@ -229,14 +240,18 @@ function handleCreate (argv) {
             generation++;
             
             if (!argv.json) {
-                console.log('File change detected, creating generation'
+                console.log('\nFile change detected, creating generation'
                     , generation);
             }
             
             argv.code = Fs.readFileSync(argv.file_name, 'utf8');
             
             pending = pending
-                .then(createToken);
+                .then(createToken)
+                .then(function () {
+                    if(!argv.nolivereload)
+                        reloadServer.refresh(argv.file_name);
+                });
         });
     }
     
