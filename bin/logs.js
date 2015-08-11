@@ -32,6 +32,11 @@ module.exports = Cli.createCommand('logs', 'Streaming, real-time logs', {
             'default': 'default',
             type: 'string',
         },
+        history: {
+            alias: 'h',
+            description: 'Show previous logs, no. of lines or time (n[s|m|h|d])',
+            'default': 10
+        }
     },
     handler: handleStream,
 });
