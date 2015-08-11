@@ -1,3 +1,4 @@
+var Fs = require('fs');
 var Parse = require('comment-parser');
 var Dotenv = require('dotenv');
 var Bluebird = require('bluebird');
@@ -41,10 +42,14 @@ function getSecret(key) {
     try {
         dotenvFile = Fs.readFileSync('./.env');
     } catch(e) {
-        if(key && !secrets[key])
-            return null;
+        if((/^ENOENT/).test(e.message)) {
+            if(key && !secrets[key])
+                return null;
 
-        return secrets;
+            return secrets;
+        }
+
+        throw e;
     }
 
     var dotenvObj = Dotenv.parse(dotenvFile);
@@ -60,8 +65,9 @@ function getSecret(key) {
         });
 
     if(key) {
-        if(value)
+        if(value) {
             return value;
+        }
 
         return null;
     } else {
@@ -73,6 +79,8 @@ function getTaskConfig (argv, code) {
     var tags;
     var param = {};
     var secret = {};
+
+    // Deal with secrets
 
     try {
         tags = Parse(code)[0].tags;
