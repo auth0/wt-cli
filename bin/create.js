@@ -1,13 +1,13 @@
 var Babel = require('babel');
 var Cli = require('nested-yargs');
 var Colors = require('colors');
+var Crypto = require('crypto');
 var Fs = require('fs');
+var Livereload = require('livereload');
 var Path = require('path');
 var Watcher = require('filewatcher');
 var Webtask = require('../');
 var _ = require('lodash');
-var crypto = require('crypto');
-var livereload = require('livereload');
 
 var tokenOptions = {
     secret: {
@@ -211,7 +211,7 @@ function handleCreate (argv) {
                 argv.name = Path.basename(fol, Path.extname(fol));
             }
             if (!argv.name) {
-                var md5 = crypto.createHash('md5');
+                var md5 = Crypto.createHash('md5');
                 argv.name = md5.update(fol, 'utf8').digest('hex');
             }
         }
@@ -230,7 +230,7 @@ function handleCreate (argv) {
         var watcher = Watcher();
 
         if(!argv.nolivereload) {
-            var reloadServer = livereload.createServer();
+            var reloadServer = Livereload.createServer();
             console.log('Livereload server listening: http://livereload.com/extensions\n');
         }
         
@@ -248,7 +248,7 @@ function handleCreate (argv) {
             
             pending = pending
                 .then(createToken)
-                .then(function () {
+                .tap(function () {
                     if(!argv.nolivereload)
                         reloadServer.refresh(argv.file_name);
                 });
@@ -338,7 +338,10 @@ function handleCreate (argv) {
                     console.log(data);
                 }
 
-                if(firstTime) console.log('\nRun your new webtask like so:\n\t$ curl %s'.green, data.named_webtask_url || data.webtask_url)
+                if (firstTime) {
+                    console.log('\nRun your new webtask like so:\n\t$ curl %s'.green,
+                        data.named_webtask_url || data.webtask_url);
+                }
                 
                 return data;
             });
