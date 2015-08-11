@@ -8,6 +8,8 @@ var Path = require('path');
 var Watcher = require('filewatcher');
 var Webtask = require('../');
 var _ = require('lodash');
+var Bluebird = require('bluebird');
+var GetTaskConfig = require('./utils/getTaskConfig');
 
 var tokenOptions = {
     secret: {
@@ -124,7 +126,7 @@ module.exports = Cli.createCommand('create', 'Create webtasks', {
                     && (!tokenOptions[key] || !tokenOptions['no-' + key]);
         })) {
             _.extend(tokenOptions, advancedTokenOptions);
-            
+
             // We have detected advanced options, turn on advanced to signal
             // advanced mode to handler
             yargs.argv.advanced = true;
@@ -136,7 +138,7 @@ module.exports = Cli.createCommand('create', 'Create webtasks', {
                 if (argv.issuanceDepth
                     && (Math.floor(argv.issuanceDepth) !== argv.issuanceDepth
                     || argv.issuanceDepth < 0)) {
-                    
+
                     throw new Error('The `issuance-depth` parameter must be a '
                         + 'non-negative integer.');
                 }
@@ -153,15 +155,14 @@ module.exports = Cli.createCommand('create', 'Create webtasks', {
                 if (argv.param) parseHash(argv, 'param');
                 if (argv.tokenLimit) parseHash(argv, 'tokenLimit');
                 if (argv.containerLimit) parseHash(argv, 'containerLimit');
-                
+
+
                 return true;
             });
     },
-	handler: handleCreate,
+	handler: handleCreate
 });
 
-
-  
 function handleCreate (argv) {
     var fileOrUrl = argv.params.file_or_url;
     var fol = fileOrUrl.toLowerCase();
@@ -222,40 +223,49 @@ function handleCreate (argv) {
     
     argv.merge = typeof argv.merge === 'undefined' ? true : !!argv.merge;
     argv.parse = typeof argv.parse === 'undefined' ? true : !!argv.parse;
-    
-    var generation = 0;
-    var pending = createToken();
-    
-    if (argv.watch) {
-        var watcher = Watcher();
 
-        if(!argv.nolivereload) {
-            var reloadServer = Livereload.createServer();
-            console.log('Livereload server listening: http://livereload.com/extensions\n');
+    return createWebtask(argv.file_name);
+    
+    function createWebtask(pathToCode) {
+        var generation = 0;
+        var code       = Fs.readFileSync(pathToCode, 'utf8');
+        var name       = Path.basename(pathToCode, '.js');
+
+        var pending = createToken(code, name);
+
+        if (argv.watch) {
+            if(!argv.nolivereload) {
+                var reloadServer = Livereload.createServer();
+                console.log('Livereload server listening: http://livereload.com/extensions\n');
+            }
+            var watcher = Watcher();
+
+            watcher.add(pathToCode);
+            watcher.add('./.env');
+
+            watcher.on('change', function (file) {
+                generation++;
+
+                if (!argv.json) {
+                    console.log('%s changed, creating generation %s'
+                    , name, generation);
+                }
+
+                code = Fs.readFileSync(pathToCode, 'utf8');
+
+                pending = pending
+                    .then(createToken.bind(null, code, name))
+                    .tap(function () {
+                        if(!argv.nolivereload)
+                            reloadServer.refresh(argv.file_name);
+                    });
+            });
+
+
+            return pending;
         }
         
-        watcher.add(argv.file_name);
-        
-        watcher.on('change', function (file, stat) {
-            generation++;
-            
-            if (!argv.json) {
-                console.log('\nFile change detected, creating generation'
-                    , generation);
-            }
-            
-            argv.code = Fs.readFileSync(argv.file_name, 'utf8');
-            
-            pending = pending
-                .then(createToken)
-                .tap(function () {
-                    if(!argv.nolivereload)
-                        reloadServer.refresh(argv.file_name);
-                });
-        });
     }
-    
-    return pending;
     
     function compileWithBabel (code) {
         var options = {};
@@ -272,11 +282,17 @@ function handleCreate (argv) {
         return Babel.transform(code, options).code;
     }
     
-    function createToken () {
+    function createToken (code, name) {
         var config = Webtask.configFile();
         var firstTime = false;
-        
-        return config.load()
+
+        var tokenOpts;
+
+        return GetTaskConfig(argv, code)
+            .then(function (taskConfig) {
+                tokenOpts = _.merge({}, argv, taskConfig, { code: code, name: name });
+            })
+            .then(config.load.bind(config))
             .then(function (profiles) {
                 if (_.isEmpty(profiles)) {
                     throw new Error('You must create a profile to begin using '
@@ -302,7 +318,7 @@ function handleCreate (argv) {
                 }
             })
             .then(function (profile) {
-                return profile.createToken(argv)
+                return profile.createToken(tokenOpts)
                     .then(function (token) {
                         var result = {
                             token: token,
@@ -383,4 +399,3 @@ function parseHash (argv, field) {
         return hash;
     }, {});
 }
-
