@@ -1,16 +1,15 @@
 /**
 * Securely connect to a MongoDB instance
+* @param {secret} MONGO_URL - MongoDB URL
+* @param {string} COLLECTION - Collection to read
 */
-
-/* wt create task -s MONGO_URL=mongodb://<my-secret-url>*/
 
 var MongoClient = require('mongodb').MongoClient;
 var waterfall   = require('async').waterfall;
 
-module.exports = function(ctx, cb) {
-
-    var MONGO_URL = ctx.data.MONGO_URL;
-    if (!MONGO_URL) return cb(new Error('MONGO_URL secret is missing'))
+module.exports = function(context, cb) {
+    var MONGO_URL = context.data.MONGO_URL;
+    var COLLECTION = context.data.COLLECTION;
 
     waterfall([
         function connect_to_db(done) {
