@@ -8,8 +8,9 @@ var Path = require('path');
 var Watcher = require('filewatcher');
 var Webtask = require('../');
 var _ = require('lodash');
-var Parse = require('comment-parser');
-var Dotenv = require('dotenv');
+var Bluebird = require('bluebird');
+var JsdParse = require('comment-parser');
+var PromptFor = require('./lib/promptFor');
 
 var tokenOptions = {
     secret: {
@@ -285,9 +286,14 @@ function handleCreate (argv) {
     function createToken (code, name) {
         var config = Webtask.configFile();
         var firstTime = false;
-        var createTokenOptions = _.merge({}, argv, parseLocalConfig(argv.name), { code: code, name: name });
 
-        return config.load()
+        var tokenOpts;
+
+        return getTaskConfig(argv, code)
+            .then(function (taskConfig) {
+                tokenOpts = _.merge({}, argv, taskConfig, { code: code, name: name });
+            })
+            .then(config.load.bind(config))
             .then(function (profiles) {
                 if (_.isEmpty(profiles)) {
                     throw new Error('You must create a profile to begin using '
@@ -313,7 +319,7 @@ function handleCreate (argv) {
                 }
             })
             .then(function (profile) {
-                return profile.createToken(createTokenOptions)
+                return profile.createToken(tokenOpts)
                     .then(function (token) {
                         var result = {
                             token: token,
@@ -399,20 +405,18 @@ function parseHash (argv, field) {
 // Load params and secrets from local config files (package.json & .env)
 //
 
-function getParamsFromConfig(obj) {
-    var params = {};
-
-    Object
-        .keys(obj)
-        .forEach(function (key) {
-             params[key] = obj[key];
-        });
-
-    return params;
-}
-
-function getSecretsFromConfig(array) {
+function getSecret(key) {
     var secrets = {};
+    var value   = ''
+
+    // Source from process.env
+    if(key)
+        Object
+            .keys(process.env)
+            .forEach(function (envKey) {
+                if(key === envKey)
+                    secrets[key] = process.env[key];
+            });
 
     // Source from .env
     var dotenvFile;
@@ -420,24 +424,26 @@ function getSecretsFromConfig(array) {
     try {
         dotenvFile = Fs.readFileSync('./.env');
     } catch(e) {
-        throw new Error('Secrets must be specified in a .env file, eg: SECRET="shhh"');
+        if(key && !secrets[key])
+            return null;
+
+        return secrets;
     }
 
     var dotenvObj = Dotenv.parse(dotenvFile);
 
     Object.keys(dotenvObj)
         .forEach(function (secret) {
-            if(!key) {
+            if(!key)
                 // Then supply *all* the secrets
                 secrets[secret] = dotenvObj[secret];
-            }
-            else if(secret === key) {
+            else if(secret === key)
                 value = dotenvObj[secret];
-            }
         });
 
     if(key) {
-        if(typeof value === 'undefined') throw noKeyErr;
+        if(!value)
+            return null;
 
         return value;
     } else {
@@ -445,63 +451,53 @@ function getSecretsFromConfig(array) {
     }
 }
 
-function getTasks(config) {
-    return Object
-        .keys(config)
-        .filter(function (key) {
-            return key !== 'global';
-        });
-}
-
-function parseTaskConfig (argv, code) {
-    var options = {
-        param:  {},
-        secret: {}
-    };
-
-    var parsers = [
-        function get_tag(str, data) {
-            var tag          = str.match(/^\@[a-z]+\s/)[0].replace(/\@|\s/, '');
-            var defaultValue = str.match('\[.+\]')[0];
-
-            console.log(defaultValue);
-        }
-    ];
+function getTaskConfig (argv, code) {
+    var tags;
+    var param = {};
+    var secret = {};
 
     try {
-        var configFile = Fs.readFileSync('./package.json');
+        tags = JsdParse(code)[0].tags;
     } catch(e) {
-        return options;
+        // Then there is no config specified, just supply all secrets in .env
+        return Bluebird.props({
+            secret: getSecret()
+        });
     }
 
-    var config = 
-        JSON.parse(
-            configFile.toString()
-        )
-        .webtasks;
+    tags
+        .filter(function tag(tag) {
+            return tag.type === 'secret';
+        })
+        .forEach(function (tag) {
+            secret[tag.name] = getSecret(tag.name);
+        });
 
-    if(!config) return;
+    // Supply all secrets if none are specified in the config
+    if(!Object.keys(secret).length)
+        secret = getSecret();
 
-    // Global params and secrets for every task
-    if(config.global) {
-            if(config.global.params)
-                _.assign(options.param, getParamsFromConfig(config.global.params));
-
-            if(config.global.secrets)
-                _.assign(options.secret, getSecretsFromConfig(config.global.secrets));
-    }
-
-    // Per-task
-    getTasks(config)
-        .forEach(function (key) {
-            if(key === taskName) {
-                if(config[key].params)
-                    _.assign(options.param, getParamsFromConfig(config[key].params));
-
-                if(config[key].secrets)
-                    _.assign(options.secret, getSecretsFromConfig(config[key].secrets));
+    tags
+        .filter(function (tag) {
+            return tag.type === 'string';
+        })
+        .forEach(function (tag) {
+            if(!tag.optional && (!argv.param || !argv.param[tag.name])) {
+                param[tag.name] = null;
+            }
+            else if(tag['default']) {
+                param[tag.name] = tag['default'];
             }
         });
 
-    return options;
+        return PromptFor('parameter', param)
+          .then(function (resolvedParams) {
+              return PromptFor('secret', secret);
+          })
+          .then(function (resolvedSecrets) {
+              return {
+                  param: param,
+                  secret: secret
+              }
+          });
 }

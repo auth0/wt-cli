@@ -136,7 +136,6 @@ function WebtaskProfile (options) {
 }
 
 WebtaskProfile.prototype.createToken = Bluebird.method(function (options, cb) {
-    console.log(options);
     var params = {
         ten: options.container || this.container,
         dd: options.issuanceDepth || 0,
