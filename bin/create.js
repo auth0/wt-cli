@@ -6,7 +6,8 @@ var Path = require('path');
 var Watcher = require('filewatcher');
 var Webtask = require('../');
 var _ = require('lodash');
-var crypto = require('crypto');
+var Crypto = require('crypto');
+var ParseHash = require('./utils/parseHash');
 
 var tokenOptions = {
     secret: {
@@ -143,10 +144,10 @@ module.exports = Cli.createCommand('create', 'Create webtasks', {
                 if (argv.nbf) parseDate(argv, 'nbf');
                 if (argv.exp) parseDate(argv, 'exp');
                 
-                if (argv.secret) parseHash(argv, 'secret');
-                if (argv.param) parseHash(argv, 'param');
-                if (argv.tokenLimit) parseHash(argv, 'tokenLimit');
-                if (argv.containerLimit) parseHash(argv, 'containerLimit');
+                if (argv.secret) ParseHash(argv, 'secret');
+                if (argv.param) ParseHash(argv, 'param');
+                if (argv.tokenLimit) ParseHash(argv, 'tokenLimit');
+                if (argv.containerLimit) ParseHash(argv, 'containerLimit');
                 
                 return true;
             });
@@ -205,7 +206,7 @@ function handleCreate (argv) {
                 argv.name = Path.basename(fol, Path.extname(fol));
             }
             if (!argv.name) {
-                var md5 = crypto.createHash('md5');
+                var md5 = Crypto.createHash('md5');
                 argv.name = md5.update(fol, 'utf8').digest('hex');
             }
         }
@@ -345,24 +346,3 @@ function parseDate (argv, field) {
     
     argv[field] = Math.floor(date.valueOf() / 1000);
 }
-
-function parseHash (argv, field) {
-    var param = argv[field];
-    
-    if (!_.isArray(param)) argv[field] = [param];
-    
-    argv[field] = _.reduce(argv[field], function (hash, item) {
-        var parts = item.split('=');
-        var key = parts.shift();
-        var value = parts.join('=');
-        
-        if (!key || !value) throw new Error('Unsupported ' + field + ' `'
-            + value + '`. All ' + field + 's must be in the <key>=<value> '
-            + 'format.');
-        
-        hash[key] = value;
-        
-        return hash;
-    }, {});
-}
-

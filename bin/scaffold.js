@@ -1,13 +1,16 @@
-var Cli       = require('nested-yargs');
-var Git       = require('nodegit');
-var Bluebird  = require('bluebird');
-var Path      = require('path');
-var Rimraf    = require('rimraf');
-var Colors    = require('colors');
+var Cli = require('nested-yargs');
+var Git = require('nodegit');
+var Bluebird = require('bluebird');
+var Path = require('path');
+var Rimraf = require('rimraf');
+var Colors = require('colors');
 var WriteFile = Bluebird.promisify(require('fs').writeFile);
-var ExecFile  = Bluebird.promisify(require('child_process').execFile);
-var jsdParse  = require('comment-parser');
-var Webtask   = require('../');
+var ExecFile = Bluebird.promisify(require('child_process').execFile);
+var JsdParse = require('comment-parser');
+var ParseHash = require('./utils/parseHash.js');
+var GetTaskCfg = require('./utils/getTaskConfig');
+var WtCreate = require('./create');
+var Webtask  = require('../');
 
 module.exports = Cli.createCommand('scaffold', 'download webtask templates', {
     params: '[webtask] [name]',
@@ -16,16 +19,32 @@ module.exports = Cli.createCommand('scaffold', 'download webtask templates', {
             alias: 'p',
             description: 'name of the webtask profile to use',
             'default': 'default',
-            type: 'string'
-        }
+            type: 'string',
+        },
+        param: {
+            alias: 'm',
+            description: 'nonsecret param(s) to provide to code at runtime',
+            type: 'string',
+        },
+        secret: {
+            alias: 's',
+            description: 'secret(s) to provide to code at runtime',
+            type: 'string',
+        },
     },
-    handler: handleScaffold
+    handler: handleScaffold,
 });
 
 var REPO_URL = 'https://github.com/auth0/wt-cli';
 var SAMPLE_DIR = 'sample-webtasks';
 
 function handleScaffold(argv) {
+    if(argv.param)
+        ParseHash(argv, 'param');
+
+    if(argv.secret)
+        ParseHash(argv, 'secret');
+
     Git.Clone(REPO_URL, '.tmp')
         .then(function (repo) {
             return repo.getBranchCommit('master');
@@ -43,6 +62,11 @@ function handleScaffold(argv) {
         })
         .then(cleanup)
         .catch(function (e) {
+            if(e.message === '\'.tmp\' exists and is not an empty directory') {
+                cleanup();
+
+                return handleScaffold(argv);
+            }
             console.error(e);
             cleanup();
         });
@@ -78,7 +102,7 @@ function listScaffolds(commit) {
           return Bluebird.all(blobs)
               .map(function (blob, index) {
                   var name = names[index];
-                  var jsdoc = jsdParse(blob.toString());
+                  var jsdoc = JsdParse(blob.toString());
 
                   return {
                       name: name,
@@ -102,9 +126,15 @@ function scaffoldFrom(argv, commit, path) {
             return entry.getBlob();
         })
         .then(function (blob) {
-            return WriteFile(filename, blob.toString());
+            return WriteFile(filename, blob.toString())
+                .then(function () {
+                    return blob;
+                });
         })
-        .then(function () {
+        .then(function (blob) {
+            return GetTaskCfg(argv, blob.toString());
+        })
+        .then(function (cfg) {
             var create_args = [
                 'create',
                 filename,
@@ -114,12 +144,17 @@ function scaffoldFrom(argv, commit, path) {
                 argv.profile
             ];
 
+            if(cfg.param)
+                addArgumentsTo(create_args, cfg.param, '--param');
+
+            if(cfg.secret)
+                addArgumentsTo(create_args, cfg.secret, '--secret');
+
             return ExecFile(__dirname + '/wt', create_args);
         })
         .then(function (output) {
-            return output[0].slice(0, -1);
-        })
-        .then(function (url) {
+            var url = output[0].slice(0, -1);
+
             console.log('Scaffold written to'.blue, filename.bold.green);
             console.log('Scaffold deployed to'.blue, url.bold.green)
         })
@@ -136,4 +171,13 @@ function scaffoldFrom(argv, commit, path) {
 
 function cleanup() {
     Rimraf.sync('.tmp');
+}
+
+function addArgumentsTo(args, obj, type) {
+    Object.keys(obj)
+        .forEach(function (key) {
+            var hash = [key, obj[key]].join('=');
+
+            args.push(type, hash);
+        });
 }
