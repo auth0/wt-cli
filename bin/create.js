@@ -9,8 +9,7 @@ var Watcher = require('filewatcher');
 var Webtask = require('../');
 var _ = require('lodash');
 var Bluebird = require('bluebird');
-var JsdParse = require('comment-parser');
-var PromptFor = require('./lib/promptFor');
+var GetTaskConfig = require('./utils/getTaskConfig');
 
 var tokenOptions = {
     secret: {
@@ -289,7 +288,7 @@ function handleCreate (argv) {
 
         var tokenOpts;
 
-        return getTaskConfig(argv, code)
+        return GetTaskConfig(argv, code)
             .then(function (taskConfig) {
                 tokenOpts = _.merge({}, argv, taskConfig, { code: code, name: name });
             })
@@ -399,105 +398,4 @@ function parseHash (argv, field) {
         
         return hash;
     }, {});
-}
-
-//
-// Load params and secrets from local config files (package.json & .env)
-//
-
-function getSecret(key) {
-    var secrets = {};
-    var value   = ''
-
-    // Source from process.env
-    if(key)
-        Object
-            .keys(process.env)
-            .forEach(function (envKey) {
-                if(key === envKey)
-                    secrets[key] = process.env[key];
-            });
-
-    // Source from .env
-    var dotenvFile;
-
-    try {
-        dotenvFile = Fs.readFileSync('./.env');
-    } catch(e) {
-        if(key && !secrets[key])
-            return null;
-
-        return secrets;
-    }
-
-    var dotenvObj = Dotenv.parse(dotenvFile);
-
-    Object.keys(dotenvObj)
-        .forEach(function (secret) {
-            if(!key)
-                // Then supply *all* the secrets
-                secrets[secret] = dotenvObj[secret];
-            else if(secret === key)
-                value = dotenvObj[secret];
-        });
-
-    if(key) {
-        if(!value)
-            return null;
-
-        return value;
-    } else {
-        return secrets;
-    }
-}
-
-function getTaskConfig (argv, code) {
-    var tags;
-    var param = {};
-    var secret = {};
-
-    try {
-        tags = JsdParse(code)[0].tags;
-    } catch(e) {
-        // Then there is no config specified, just supply all secrets in .env
-        return Bluebird.props({
-            secret: getSecret()
-        });
-    }
-
-    tags
-        .filter(function tag(tag) {
-            return tag.type === 'secret';
-        })
-        .forEach(function (tag) {
-            secret[tag.name] = getSecret(tag.name);
-        });
-
-    // Supply all secrets if none are specified in the config
-    if(!Object.keys(secret).length)
-        secret = getSecret();
-
-    tags
-        .filter(function (tag) {
-            return tag.type === 'string';
-        })
-        .forEach(function (tag) {
-            if(!tag.optional && (!argv.param || !argv.param[tag.name])) {
-                param[tag.name] = null;
-            }
-            else if(tag['default']) {
-                param[tag.name] = tag['default'];
-            }
-        });
-
-        return PromptFor('parameter', param)
-          .then(function (resolvedParams) {
-              return PromptFor('secret', secret);
-          })
-          .then(function (resolvedSecrets) {
-              return {
-                  param: param,
-                  secret: secret
-              }
-          });
 }
