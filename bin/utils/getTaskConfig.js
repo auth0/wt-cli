@@ -1,10 +1,10 @@
+var Colors = require('colors');
 var Fs = require('fs');
 var Parse = require('comment-parser');
 var Dotenv = require('dotenv');
 var Bluebird = require('bluebird');
 var Promptly = require('promptly');
 var _ = require('lodash');
-var Colors = require('colors');
 
 Bluebird.promisifyAll(Promptly);
 
@@ -12,20 +12,22 @@ Bluebird.promisifyAll(Promptly);
 function promptFor (type, obj) {
     return Bluebird.map(Object.keys(obj), function (key) {
         if(obj[key] === null) {
-            return Promptly.promptAsync('Please supply ' + type + ' ' + key.green + ':')
+            var promptMethod = type === 'secret'
+                ? 'passwordAsync'
+                : 'promptAsync';
+                
+            return Promptly[promptMethod]('Please supply ' + type + ' ' + key.green + ':')
                 .then(function (val) {
                     obj[key] = val;
                 });
         }
     }, { concurrency: 1 })
-    .then(function () {
-        return obj;
-    });
+        .return(obj);
 }
 
 function getSecret(key) {
     var secrets = {};
-    var value   = ''
+    var value   = '';
 
     // Source from process.env
     if(key)
