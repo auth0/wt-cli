@@ -216,8 +216,13 @@ WebtaskProfile.prototype.createLogStream = function (options, cb) {
             
             if (res.statusCode >= 400) {
                 // Error response from webtask cluster
-                return reject(Boom.create(res.statusCode,
-                    'Error returned by webtask cluster: ' + res.statusCode));
+                return Wreck.read(res, null, function (err, body) {
+                    if (err) return reject(Boom.create(res.statusCode,
+                        'Error reading error from webtask cluster.'));
+                        
+                    return reject(Boom.create(res.statusCode,
+                        'Error `' + res.statusCode + '` returned by webtask cluster: ' + body.toString('utf8')));
+                });
             } else if (res.statusCode >= 300) {
                 // Unresolved redirect from webtask cluster
                 return reject(Boom.create(502,
