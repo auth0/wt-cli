@@ -98,13 +98,15 @@ function getTaskConfig (argv, code) {
             return tag.type === 'secret';
         })
         .forEach(function (tag) {
-            secret[tag.name] = getSecret(tag.name);
+            if(!argv.secret || !argv.secret[tag.name])
+                secret[tag.name] = getSecret(tag.name);
         });
 
     // Supply all secrets if none are specified in the config
     if(!Object.keys(secret).length)
         secret = getSecret();
 
+    // Deal with params
     tags
         .filter(function (tag) {
             return tag.type === 'string';
