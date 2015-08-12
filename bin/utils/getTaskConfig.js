@@ -11,7 +11,7 @@ Bluebird.promisifyAll(Promptly);
 // Resolves null keys to values by asking the user
 function promptFor (type, obj) {
     return Bluebird.map(Object.keys(obj), function (key) {
-        if(obj[key] === null) {
+        if(!obj[key]) {
             var promptMethod = type === 'secret'
                 ? 'passwordAsync'
                 : 'promptAsync';
@@ -25,56 +25,39 @@ function promptFor (type, obj) {
         .return(obj);
 }
 
-function getSecret(key) {
-    var secrets = {};
-    var value   = '';
+function getFromEnv(key) {
+    var dotenvFile;
+    var dotenvObj;
 
     // Source from process.env
     if(key)
-        Object
-            .keys(process.env)
-            .forEach(function (envKey) {
-                if(key === envKey)
-                    secrets[key] = process.env[key];
-            });
+        for (var envKey of Object.keys(process.env))
+            if(key === envKey)
+                return process.env[envKey];
 
     // Source from .env
-    var dotenvFile;
-
     try {
         dotenvFile = Fs.readFileSync('./.env');
     } catch(e) {
-        if((/^ENOENT/).test(e.message)) {
-            if(key && !secrets[key])
-                return null;
-
-            return secrets;
-        }
+        if((/^ENOENT/).test(e.message))
+            if(key)
+                return;
+            else
+                return {};
 
         throw e;
     }
 
-    var dotenvObj = Dotenv.parse(dotenvFile);
+    dotenvObj = Dotenv.parse(dotenvFile);
 
-    Object
-        .keys(dotenvObj)
-        .forEach(function (secret) {
-            if(!key)
-                // Then supply *all* the secrets
-                secrets[secret] = dotenvObj[secret];
-            else if(secret === key)
-                value = dotenvObj[secret];
-        });
+    if(!key)
+        return dotenvObj;
 
-    if(key) {
-        if(value) {
-            return value;
-        }
+    for (var dotenvKey of Object.keys(dotenvObj))
+        if(key === dotenvKey)
+            return dotenvObj[dotenvKey];
 
-        return null;
-    } else {
-        return secrets;
-    }
+    return;
 }
 
 function getTaskConfig (argv, code) {
@@ -89,7 +72,7 @@ function getTaskConfig (argv, code) {
     } catch(e) {
         // Then there is no config specified, just supply all secrets in .env
         return _.merge(argv, {
-            secret: getSecret()
+            secret: getFromEnv()
         });
     }
 
@@ -99,12 +82,12 @@ function getTaskConfig (argv, code) {
         })
         .forEach(function (tag) {
             if(!argv.secret || !argv.secret[tag.name])
-                secret[tag.name] = getSecret(tag.name);
+                secret[tag.name] = getFromEnv(tag.name);
         });
 
     // Supply all secrets if none are specified in the config
     if(!Object.keys(secret).length)
-        secret = getSecret();
+        secret = getFromEnv();
 
     // Deal with params
     tags
@@ -113,7 +96,7 @@ function getTaskConfig (argv, code) {
         })
         .forEach(function (tag) {
             if(!tag.optional && (!argv.param || !argv.param[tag.name])) {
-                param[tag.name] = null;
+                param[tag.name] = getFromEnv(tag.name);
             }
             else if(tag['default']) {
                 param[tag.name] = tag['default'];
