@@ -228,33 +228,59 @@ function handleCreate (argv) {
     
     function createWebtask(pathToCode) {
         var generation = 0;
-        var code       = Fs.readFileSync(pathToCode, 'utf8');
-        var name       = Path.basename(pathToCode, '.js');
+        var code = Fs.readFileSync(pathToCode, 'utf8');
+        var name = Path.basename(pathToCode, '.js');
 
-        var pending = createToken(code, name);
+        var tokenOpts;
+        var watcher = Watcher();
+
+        var pending = GetTaskConfig(argv, code)
+            .then(function (taskConfig) {
+                tokenOpts = _.merge({}, argv, taskConfig, { code: code, name: name });
+
+                if(argv.watch) {
+                    addListeners();
+                }
+
+                return createToken(tokenOpts)
+            })
+
+        function addListeners() {
+            watcher.add(pathToCode);
+            watcher.add('./.env');
+        }
 
         if (argv.watch) {
             if(!argv.nolivereload) {
                 var reloadServer = Livereload.createServer();
                 console.log('Livereload server listening: http://livereload.com/extensions\n');
             }
-            var watcher = Watcher();
-
-            watcher.add(pathToCode);
-            watcher.add('./.env');
 
             watcher.on('change', function (file) {
-                generation++;
-
-                if (!argv.json) {
-                    console.log('%s changed, creating generation %s'
-                    , name, generation);
-                }
-
-                code = Fs.readFileSync(pathToCode, 'utf8');
+                watcher.removeAll();
 
                 pending = pending
-                    .then(createToken.bind(null, code, name))
+                    .then(function () {
+                        code = Fs.readFileSync(pathToCode, 'utf8');
+
+                        return GetTaskConfig(tokenOpts, code)
+                    })
+                    .then(function (taskConfig) {
+                        addListeners();
+
+                        generation++;
+
+
+                        if (!argv.json) {
+                            console.log('%s changed, creating generation %s'
+                            , name, generation);
+                        }
+
+
+                        tokenOpts = _.merge({}, argv, taskConfig, { code: code, name: name });
+
+                        return createToken(tokenOpts)
+                    })
                     .tap(function () {
                         if(!argv.nolivereload)
                             reloadServer.refresh(argv.file_name);
@@ -282,17 +308,11 @@ function handleCreate (argv) {
         return Babel.transform(code, options).code;
     }
     
-    function createToken (code, name) {
+    function createToken (tokenOpts) {
         var config = Webtask.configFile();
         var firstTime = false;
 
-        var tokenOpts;
-
-        return GetTaskConfig(argv, code)
-            .then(function (taskConfig) {
-                tokenOpts = _.merge({}, argv, taskConfig, { code: code, name: name });
-            })
-            .then(config.load.bind(config))
+        return config.load()
             .then(function (profiles) {
                 if (_.isEmpty(profiles)) {
                     throw new Error('You must create a profile to begin using '
