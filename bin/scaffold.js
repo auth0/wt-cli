@@ -2,53 +2,32 @@ var Cli = require('nested-yargs');
 var Git = require('nodegit');
 var Bluebird = require('bluebird');
 var Path = require('path');
-var Url = require('url');
 var Rimraf = require('rimraf');
 var Colors = require('colors');
 var WriteFile = Bluebird.promisify(require('fs').writeFile);
-var ExecFile = Bluebird.promisify(require('child_process').execFile);
 var JsdParse = require('comment-parser');
-var ParseHash = require('./utils/parseHash.js');
-var GetTaskCfg = require('./utils/getTaskConfig');
+var _ = require('lodash');
+var Create = require('./create');
 
 module.exports = Cli.createCommand('scaffold', 'download webtask templates', {
     params: '[webtask] [name]',
-    options: {
-        profile: {
-            alias: 'p',
-            description: 'name of the webtask profile to use',
-            'default': 'default',
-            type: 'string'
-        }
-        param: {
-            alias: 'm',
-            description: 'nonsecret param(s) to provide to code at runtime',
-            type: 'string',
-        },
-        secret: {
-            alias: 's',
-            description: 'secret(s) to provide to code at runtime',
-            type: 'string',
-        },
+    setup: function (yargs) {
+        Create.options.setup(yargs);
+    },
+    options: _.assign({}, Create.options.options, {
         repo: {
             alias: 'r',
             description: 'git repo to use',
             type: 'string',
         },
-    },
-    handler: handleScaffold
+    }),
+    handler: handleScaffold,
 });
 
-var DEFAULT_REPO_URL = 'https://github.com/auth0/wt-cli';
+var DEFAULT_REPO_URL = 'https://github.com/bananaoomarang/wt-cli';
 var DEFAULT_REPO_SAMPLE_DIR = 'sample-webtasks/';
 
 function handleScaffold(argv) {
-    if(argv.param)
-        ParseHash(argv, 'param');
-
-    if(argv.secret)
-        ParseHash(argv, 'secret');
-
     if(argv.params.webtask)
         argv.params.webtask += /.js$/.test(argv.params.webtask) ? '' : '.js'; 
     else
@@ -171,37 +150,20 @@ function scaffoldFrom(argv, commit, path) {
             return WriteFile(filename, blob.toString());
         })
         .then(function () {
-            var create_args = [
-                'create',
-                filename,
-                '-n',
-                argv.params.name || Path.basename(path, '.js'),
-                '-p',
-                argv.profile
-            ];
+            argv.params.file_or_url = filename;
+            argv.output = 'none';
+            argv.name = argv.params.name || Path.basename(filename, '.js');
 
-            return ExecFile(__dirname + '/wt', create_args);
+            return Create.options.handler(argv);
         })
-        .then(function (output) {
-            return output[0].slice(0, -1);
-        })
-        .then(function (url) {
-            console.log('Scaffold written to'.blue, filename.bold.green);
-            console.log('Scaffold deployed to'.blue, url.bold.green)
+        .then(function (result) {
+            console.log('Scaffold written to '.blue, filename.bold.green);
+            console.log('Scaffold deployed to'.blue, result.named_webtask_url.bold.green)
         });
 }
 
 function cleanup() {
     Rimraf.sync('.tmp');
-}
-
-function addArgumentsTo(args, obj, type) {
-    Object.keys(obj)
-        .forEach(function (key) {
-            var hash = [key, obj[key]].join('=');
-
-            args.push(type, hash);
-        });
 }
 
 function getCommit(repo, branch) {

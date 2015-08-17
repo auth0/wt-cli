@@ -377,9 +377,9 @@ function parseHash (argv, field) {
         if (!key || !value) throw new Error('Unsupported ' + field + ' `'
             + value + '`. All ' + field + 's must be in the <key>=<value> '
             + 'format.');
-        
+
         hash[key] = value;
-        
+
         return hash;
     }, {});
 }
