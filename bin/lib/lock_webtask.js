@@ -21,6 +21,7 @@ const VIEW = hbs.compile(`
       <head>
         <meta charset="utf8" />
         <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0" />
+        <link rel="shortcut icon" href="https://webtask.io/images/favicon/favicon.ico">
 
         <title>Authenticate</title>
 
@@ -31,7 +32,6 @@ const VIEW = hbs.compile(`
       <body>
         <script type="application/javascript">
             window.TASK_URL       = '{{{TASK_URL}}}';
-            window.SHARED_ACCOUNT = '{{{SHARED_ACCOUNT}}}'
             window.CLIENT_ID      = '{{{CLIENT_ID}}}';
             window.AUTH0_DOMAIN   = '{{{AUTH0_DOMAIN}}}';
             window.REQ_METHOD     = '{{{REQ_METHOD}}}';
@@ -53,47 +53,24 @@ const FUNC_TO_RUN = function() {
     lock.show(lock_opts, function (err, profile, id_token) {
         if(err) return console.log(err);
 
-        var user_payload;
-
-        if(SHARED_ACCOUNT) {
-            user_payload = request('GET', window.location.href.split('?')[0] + '/verify', { qs: { token: id_token } })
-                .then(function (res) {
-                    if(res.statusCode === 200) {
-                        var opts = {
-                            headers: {
-                                Authorization: 'Bearer ' + res.body
-                            }
-                        };
-
-                        return request(REQ_METHOD, TASK_URL, opts);
-                    } else {
-                        return res;
-                    }
-                });
-        } else {
-            var opts = {
-                headers: {
-                    'Authorization': 'Bearer ' + id_token
-                }
-            };
-
-            user_payload = request(REQ_METHOD, TASK_URL, opts);
-        }
-
-        function injectResponse (res) {
-            switch(res.headers['content-type']) {
-                case 'application/json':
-                    var parsed = JSON.parse(res.body);
-
-                    document.body.innerHTML = '<pre>' + JSON.stringify(parsed, null, 1) + '</pre>';
-                    break;
-                default:
-                    document.body.innerHTML = res.body;
+        var opts = {
+            headers: {
+                'Authorization': 'Bearer ' + id_token
             }
-        }
+        };
 
-        user_payload
-            .then(injectResponse)
+        request(REQ_METHOD, TASK_URL, opts)
+            .then(function (res) {
+                switch(res.headers['content-type']) {
+                    case 'application/json':
+                        var parsed = JSON.parse(res.body);
+
+                        document.body.innerHTML = '<pre>' + JSON.stringify(parsed, null, 1) + '</pre>';
+                        break;
+                    default:
+                        document.body.innerHTML = res.body;
+                }
+            })
             .catch(function (err) {
                 console.log(err);
             });
@@ -116,13 +93,10 @@ const query_delete = [
     'container',
     'taskname',
     'domain',
-    'client_id',
-    'SHARED_ACCOUNT_URL',
-    'TOKEN_SECRET',
-    'EMAILS'
+    'clientId',
 ];
 
-app.get('/', (req, res) => {
+app.get('*', (req, res) => {
     const ctx = req.webtaskContext;
 
     if(!ctx.data.container || !ctx.data.taskname) {
@@ -130,14 +104,9 @@ app.get('/', (req, res) => {
        res.end('Must provide container & taskname params');
     }
 
-    if(!ctx.data.client_id && !ctx.data.domain) {
+    if(!ctx.data.clientId && !ctx.data.domain) {
        res.statusCode = 400;
-       res.end('Must provide client_id & domain params');
-    }
-
-    if (ctx.data.SHARED_ACCOUNT_URL && !ctx.data.TOKEN_SECRET) {
-        res.statusCode = 400;
-        res.end('Must provide TOKEN_SECRET if usin shared account');
+       res.end('Must provide clientId & domain params');
     }
 
     let query = qs.parse(
@@ -154,10 +123,11 @@ app.get('/', (req, res) => {
         });
 
     const TASK_URL = (ctx.data.baseUrl   || 'https://webtask.it.auth0.com') +
-                   '/api/run/'        +
-                   ctx.data.container +
-                   '/'                +
-                   ctx.data.taskname  +
+                   '/api/run/'                 +
+                   ctx.data.container          +
+                   '/'                         +
+                   ctx.data.taskname           +
+                   url.parse(req.url).pathname +
                    '?' + qs.stringify(query);
 
     const AUTH_TOKEN = getAuthToken(req);
@@ -174,43 +144,12 @@ app.get('/', (req, res) => {
         res.end(
             VIEW({
                 REQ_METHOD: req.method,
-                CLIENT_ID: ctx.data.client_id,
+                CLIENT_ID: ctx.data.clientId,
                 AUTH0_DOMAIN: ctx.data.domain,
-                SHARED_ACCOUNT: !!ctx.data.SHARED_ACCOUNT_URL,
                 FUNC_TO_RUN,
                 TASK_URL
             })
         );
-});
-
-app.get('/verify', (req, res) => {
-    const ctx = req.webtaskContext;
-
-    request.get(ctx.data.SHARED_ACCOUNT_URL, { qs: { token: ctx.data.token } }, function (err, res2) {
-        if (err) res.status(502).end(err.message);
-
-        var payload = JSON.parse(res2.body);
-        payload.aud = ctx.data.client_id;
-
-        if(ctx.data.EMAILS) {
-            if(!payload.email_verified)
-                res.status(401).end('account email not verified');
-
-            var passed_emails = ctx.data.EMAILS
-              .split(',')
-              .filter(function (email) {
-                  return payload.email.match(email);
-              })
-
-           if(!passed_emails.length)
-               res.status(401).end('your email does not authorize you to run this webtask');
-        }
-
-        var secret = new Buffer(ctx.data.TOKEN_SECRET, 'base64');
-        var token = jwt.sign(payload, secret);
-
-        res.end(token);
-    });
 });
 
 module.exports = fromExpress(app);

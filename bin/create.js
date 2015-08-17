@@ -14,9 +14,6 @@ var Dotenv = require('dotenv').load({ silent: true });
 var Qs = require('qs');
 var Bluebird = require('bluebird');
 
-var SHARED_ACCOUNT_CLIENT_ID = 'ODGT86Z8Sx0e92shNVn9N5H8JNGAh8R9';
-var SHARED_ACCOUNT_DOMAIN = 'webtaskme.auth0.com'
-
 var tokenOptions = {
     secret: {
         alias: 's',
@@ -38,10 +35,6 @@ var tokenOptions = {
         description: 'name of the webtask',
         type: 'string'
     },
-    auth0: {
-      description: 'set webtask permisions',
-      type: 'string'
-    },
     share: {
         description: 'generate secure, shareable link',
         type: 'bool',
@@ -55,6 +48,10 @@ var tokenOptions = {
         alias: 'p',
         description: 'name of the webtask profile to use',
         'default': 'default',
+        type: 'string',
+    },
+    auth0: {
+        description: 'Authenticate webtask with Auth0: --auth0 <clientID> <client-secret> <auth0-domain>',
         type: 'string',
     },
     watch: {
@@ -126,18 +123,6 @@ var advancedTokenOptions = {
         description: 'webtask container where the job will run',
         type: 'string',
     },
-    clientId: {
-        description: 'for custom auth0 account',
-        type: 'string'
-    },
-    clientSecret: {
-        description: 'for custom auth0 account',
-        type: 'string'
-    },
-    auth0Domain: {
-        description: 'for custom auth0 account',
-        type: 'string'
-    }
 };
 
 
@@ -193,53 +178,18 @@ module.exports = Cli.createCommand('create', 'Create webtasks', {
                 if (argv.auth0 && argv.share)
                     throw new Error('Cannot specify both --share and --auth0');
 
-                if (argv.auth0 || argv.auth0 === '') {
-                    var clientId = argv.clientId || process.env.AUTH0_CLIENT_ID;
-                    var clientSecret = argv.clientSecret || process.env.AUTH0_CLIENT_SECRET;
-                    var auth0Domain = argv.auth0Domain || process.env.AUTH0_DOMAIN;
+                if(argv.auth0 || argv.auth0 === '') {
+                    var auth0Credentials = argv.auth0.split(' ');
 
-                    if(clientId)
-                        argv.clientId = clientId;
-                    if(clientSecret)
-                        argv.clientSecret = clientSecret;
-                    if(auth0Domain)
-                        argv.auth0Domain = auth0Domain;
-
-                    // Because yargs turns n passes of --cmd into array
                     argv.auth0 = {
-                        emails: ((typeof argv.auth0 === 'string') ?
-                            argv.auth0
-                                .split(',')
-                                .map(function (str) {
-                                    return str.trim();
-                                })
-                                .filter(function (str) {
-                                    return str;
-                                })
-                                : argv.auth0)
-                                .join(',')
-                    }
+                        clientId: auth0Credentials[0]     || process.env.AUTH0_CLIENT_ID,
+                        clientSecret: auth0Credentials[1] || process.env.AUTH0_CLIENT_SECRET,
+                        domain: auth0Credentials[2]       || process.env.AUTH0_DOMAIN,
+                    };
 
-                    // Add custom auth0 accout
-                    if (argv.clientId && argv.clientSecret && argv.auth0Domain) {
-                        if(!argv.auth0) argv.auth0 = {};
-
-                        argv.auth0.client_id = argv.clientId;
-                        argv.auth0.domain = argv.auth0Domain;
-
-                        argv.secret.WEBTASK_JWT_SECRET = argv.clientSecret;
-                        argv.param.WEBTASK_JWT_AUD = argv.clientId;
-
-                    } else if(argv.clientId || argv.clientSecret || argv.auth0Domain) {
-                        throw new Error('Must specify clientId, clientSecret and auth0Domain for custom Auth0 account')
-                    }
+                    if(!(argv.auth0.clientId && argv.auth0.clientSecret && argv.auth0.domain))
+                        throw 'Invalid auth0 configuration, expected: <clientID> <client-secret> <domain>';
                 }
-
-                if (argv.auth0 === '') argv.auth0 = {};
-
-                if (argv.share || (argv.auth0 && !argv.auth0.domain && !argv.auth0.client_id))
-                    argv.secret.WEBTASK_JWT_SECRET = getSecret(argv);
-                    argv.param.WEBTASK_JWT_AUD = SHARED_ACCOUNT_CLIENT_ID;
 
                 return true;
             });
@@ -400,6 +350,8 @@ function handleCreate (argv) {
                 if(argv.share) {
                     var aud = named_url.replace('https:\/\/', '');
 
+                    argv.secret.WEBTASK_JWT_SECRET = getSecret();
+
                     // This is the token we attach to the URL for the user
                     argv.share = getAuthToken({ aud: aud }, argv.secret.WEBTASK_JWT_SECRET);
 
@@ -413,19 +365,16 @@ function handleCreate (argv) {
                         name: argv.name,
                         code: Fs.readFileSync(__dirname + '/lib/lock_webtask.js', 'utf8'),
                         param: {
-                            SHARED_ACCOUNT_URL: argv.auth0.client_id ? '' : 'https://webtask.it.auth0.com/api/run/wt-milomord-gmail_com-0/verify_auth0_token',
                             baseUrl: profile.url,
-                            container: (argv.container || profile.container),
+                            container: argv.container || profile.container,
                             taskname: actual_name,
-                            client_id: argv.auth0.client_id || SHARED_ACCOUNT_CLIENT_ID,
-                            domain: argv.auth0.domain || SHARED_ACCOUNT_DOMAIN
+                            clientId: argv.auth0.clientId,
+                            domain: argv.auth0.domain,
                          },
-                         secret: {
-                            TOKEN_SECRET: argv.secret.WEBTASK_JWT_SECRET,
-                            EMAILS: argv.auth0.emails
+                    };
 
-                        },
-                    }
+                    argv.secret.WEBTASK_JWT_SECRET = argv.auth0.clientSecret;
+                    argv.param.WEBTASK_JWT_AUD = argv.auth0.clientId;
 
                     promises.push(profile.createToken(_.assign({}, argv, { name: actual_name })));
                     promises.push(profile.createToken(lock_webtask));
@@ -500,9 +449,9 @@ function parseDate (argv, field) {
     argv[field] = Math.floor(date.valueOf() / 1000);
 }
 
-function getSecret(argv) {
+function getSecret() {
     try {
-        return (process.env.JWT_SECRET || Crypto.randomBytes(128).toString('base64'));
+        return (process.env.WEBTASK_JWT_SECRET || Crypto.randomBytes(128).toString('base64'));
     } catch(e) {
         console.log('Couldn\'t generate random secret: ' + e.message);
     }
