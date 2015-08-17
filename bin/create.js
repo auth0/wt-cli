@@ -286,10 +286,9 @@ function handleCreate (argv) {
                             reloadServer.refresh(argv.file_name);
                     });
             });
-
-
-            return pending;
         }
+
+        return pending;
         
     }
     
