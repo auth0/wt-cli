@@ -1,4 +1,6 @@
-/* attack cpu - look at logs with `wt logs` */
+/**
+* Attacks the CPU - see the logs with `wt logs`
+*/
 
 module.exports = 
     function (cb) {

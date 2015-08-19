@@ -1,4 +1,7 @@
-/* More on programming models: https://webtask.io/docs/models */
+/**
+* Templating example, for available models see https://webtask.io/docs/model
+* @param {string} [name] - Optionally supply name to greet
+*/
 
 module.exports = 
     function (context, req, res) {
