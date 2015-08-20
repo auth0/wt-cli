@@ -1,6 +1,6 @@
-/* 
-  wt create httppost.js
-  curl --data foo=bar https://webtask.it.auth0.com/api/run/yours/httppost
+/** 
+* Webtask that uses data from the request body
+* @param {string} foo - example context
 */
 
 module.exports = 

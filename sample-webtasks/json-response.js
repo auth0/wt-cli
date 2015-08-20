@@ -1,3 +1,7 @@
+/**
+ * Example of sending a JSON response
+ */
+
 module.exports = 
     function (cb) {
         cb(null, {

@@ -1,4 +1,6 @@
-/* express app as a webtask */
+/**
+* Express app as a webtask
+*/
 
 var Express = require('express');
 var Webtask = require('webtask-tools');

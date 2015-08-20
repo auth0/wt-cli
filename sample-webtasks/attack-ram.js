@@ -1,4 +1,4 @@
-/* attack memory  - look at logs with `wt logs` */
+/* Attacks the memory, ee the logs with `wt logs` */
 module.exports = function (cb) {
     var evil = 'evil';
     more_evil();

@@ -1,4 +1,6 @@
-/* Using C# via Edge.js: http://tjanczuk.github.io/edge */
+/**
+* Using C# via Edge.js: http://tjanczuk.github.io/edge
+*/
 
 module.exports = function (cb) {
     require('edge').func(function () {/*
