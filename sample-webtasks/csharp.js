@@ -6,4 +6,4 @@ module.exports = function (cb) {
             return "Hello, world from C#!";
         }
     */})(null, cb);
-}
+};

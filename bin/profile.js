@@ -138,7 +138,7 @@ function handleInit (argv) {
                 : getVerifiedProfile(argv);
         })
         .then(config.setProfile.bind(config, argv.profile))
-        .then(function (profile) {
+        .then(function () {
             return config.save()
                 .then(function () {
                     console.log(('Welcome to webtasks! Create your first one as follows:\n\n'
@@ -245,7 +245,7 @@ function getVerifiedProfile (argv) {
         profile = Promptly.promptAsync('E-mail or phone number:')
             .then(function (phoneOrEmail) {
                 return sendVerificationCode(phoneOrEmail);
-            })
+            });
     }
 
 

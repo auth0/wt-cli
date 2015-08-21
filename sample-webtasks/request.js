@@ -2,7 +2,7 @@
 
 var request = require('request');
 
-module.exports = 
+module.exports =
     function (cb) {
         var start = Date.now();
         request.get('https://auth0.com', function (error, res, body) {
@@ -15,4 +15,4 @@ module.exports =
                     latency: Date.now() - start
                 });
         });
-    }
+    };

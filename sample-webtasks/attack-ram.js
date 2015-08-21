@@ -8,4 +8,4 @@ module.exports = function (cb) {
         console.log('Current length: ' + evil.length);
         process.nextTick(more_evil);
     }
-}
+};
