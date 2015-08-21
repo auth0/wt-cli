@@ -1,7 +1,6 @@
 var Bluebird = require('bluebird');
 var Cli = require('nested-yargs');
 var Create = require('./create');
-var Cron = require('cron-parser');
 var Webtask = require('../');
 var _ = require('lodash');
 
@@ -11,7 +10,7 @@ var cron = module.exports =
 cron.command(Cli.createCommand('schedule', 'Schedule a webtask to run periodically', {
 	params: '<schedule> <file_or_url>',
 	setup: function (yargs) {
-	    Create.options.setup(yargs);
+            Create.options.setup(yargs);
 	},
 	options: _.extend({}, Create.options.options, {
         container: {
@@ -138,16 +137,16 @@ module.exports = cron;
 function handleCronSchedule (argv) {
     // Prevent `wt create` from outputting
     argv.output = 'none';
-    
+
     var config = Webtask.configFile();
-    
+
     return config.load()
         .then(function (profiles) {
             if (_.isEmpty(profiles)) {
                 throw new Error('You must create a profile to begin using '
                     + 'this tool: `wt init`.');
             }
-            
+
             return Bluebird.all([
                 config.getProfile(argv.profile),
                 Create.options.handler(argv)
@@ -165,19 +164,19 @@ function handleCronSchedule (argv) {
             if (argv.json) console.log(job);
             else printCronJob(job);
         });
-    
+
 }
 
 function handleCronRemove (argv) {
     var config = Webtask.configFile();
-    
+
     return config.load()
         .then(function (profiles) {
             if (_.isEmpty(profiles)) {
                 throw new Error('You must create a profile to begin using '
                     + 'this tool: `wt init`.');
             }
-            
+
             return config.getProfile(argv.profile);
         })
         .then(function (profile) {
@@ -190,25 +189,25 @@ function handleCronRemove (argv) {
             if (argv.json) console.log(true);
             else console.log(('Successfully removed the job ' + argv.params.job_name).green);
         });
-    
+
 }
 
 function handleCronList (argv) {
     var config = Webtask.configFile();
     var container;
-    
+
     return config.load()
         .then(function (profiles) {
             if (_.isEmpty(profiles)) {
                 throw new Error('You must create a profile to begin using '
                     + 'this tool: `wt init`.');
             }
-            
+
             return config.getProfile(argv.profile);
         })
         .then(function (profile) {
             container = argv.container || profile.container;
-            
+
             return profile.listCronJobs({
                 container: container,
             });
@@ -221,26 +220,26 @@ function handleCronList (argv) {
                     + 'container `' + container + '`.').green);
                 else console.log(('Listing cron jobs scheduled on the '
                     + 'container `' + container + '`:\n').green);
-                    
+
                 _.forEach(jobs, function (job) {
                     printCronJob(job);
                     console.log(); // Blank line between jobs
                 });
             }
         });
-    
+
 }
 
 function handleCronGet (argv) {
     var config = Webtask.configFile();
-    
+
     return config.load()
         .then(function (profiles) {
             if (_.isEmpty(profiles)) {
                 throw new Error('You must create a profile to begin using '
                     + 'this tool: `wt init`.');
             }
-            
+
             return config.getProfile(argv.profile);
         })
         .then(function (profile) {
@@ -252,12 +251,12 @@ function handleCronGet (argv) {
         .tap(function (job) {
             if (!job) throw new Error('No such job `' + argv.params.job_name
                 + '`.');
-                
+
             if (argv.json) {
                 var json = argv.params.field
                     ? job[argv.params.field]
                     : job;
-                
+
                 if (_.isObject(json)) console.log(json);
                 else console.log(JSON.stringify(json));
             } else if (argv.params.field) {
@@ -266,19 +265,19 @@ function handleCronGet (argv) {
                 printCronJob(job);
             }
         });
-    
+
 }
 
 function handleCronHistory (argv) {
     var config = Webtask.configFile();
-    
+
     return config.load()
         .then(function (profiles) {
             if (_.isEmpty(profiles)) {
                 throw new Error('You must create a profile to begin using '
                     + 'this tool: `wt init`.');
             }
-            
+
             return config.getProfile(argv.profile);
         })
         .then(function (profile) {
@@ -292,7 +291,7 @@ function handleCronHistory (argv) {
         .tap(function (history) {
             var fields = argv.fields.split(',');
             var json = _.map(history, _.partialRight(_.pick, fields));
-            
+
             if (argv.json) {
                 console.log(json);
             } else {
@@ -302,7 +301,7 @@ function handleCronHistory (argv) {
                 }).value();
             }
         });
-    
+
 }
 
 
@@ -311,22 +310,22 @@ function printCronJob (job) {
     console.log('State:       '.blue, job.state);
     console.log('Container:   '.blue, job.container);
     console.log('Schedule:    '.blue, job.schedule);
-    
+
     if (job.results.length) {
         console.log('Last result: '.blue, job.results[0].type);
         console.log('Last run at: '.blue, new Date(job.results[0].created_at).toLocaleString());
     }
-    
+
     var intervalOptions = {
         currentDate: new Date(job.next_available_at),
     };
-    
+
     if (job.expires_at) {
         intervalOptions.endDate = new Date(job.expires_at);
     }
-    
+
     console.log('Next run:    '.blue, new Date(job.next_available_at).toLocaleString());
-    
+
     if (job.expires_at) {
         console.log('Expires:     '.blue, new Date(job.expires_at).toLocaleString());
     }
@@ -335,22 +334,22 @@ function printCronJob (job) {
 function printCronResult (result) {
     if (result.created_at)
         console.log('Timestamp:       '.blue, new Date(result.created_at).toLocaleString().green);
-        
+
     _.forEach(result, function (value, key) {
         if (['created_at', 'body'].indexOf(key) === -1)
             console.log(pad(key + ':', 18).blue, value);
     });
-    
+
     if (result.body)
         console.log('Body:            '.blue, result.body);
 }
 
 function pad (prefix, length, padChar) {
     if (!padChar) padChar = ' ';
-    
+
     length -= prefix.length;
-    
+
     var times = Math.floor(length / padChar.length);
-    
+
     return prefix + Array(times).join(padChar);
 }

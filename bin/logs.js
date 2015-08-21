@@ -1,12 +1,10 @@
 var Bluebird = require('bluebird');
-var Boom = require('boom');
 var Bunyan = require('bunyan');
 var Cli = require('nested-yargs');
 var Colors = require('colors');
 var PrettyStream = require('bunyan-prettystream');
 var Webtask = require('../');
 var _ = require('lodash');
-
 
 module.exports = Cli.createCommand('logs', 'Streaming, real-time logs', {
     params: '[container]',
@@ -36,7 +34,7 @@ module.exports = Cli.createCommand('logs', 'Streaming, real-time logs', {
     handler: handleStream,
 });
 
-  
+
 function handleStream (argv) {
     var prettyStdOut = new PrettyStream({ mode: 'short' });
     var logger = Bunyan.createLogger({
@@ -46,25 +44,25 @@ function handleStream (argv) {
               type: 'raw',
               stream: prettyStdOut
           }]
-    });    
+    });
 
     prettyStdOut.pipe(process.stdout);
-    
+
     var container = argv.params.container;
-    
+
     if (container) {
         argv.container = container;
     }
-    
+
     var config = Webtask.configFile();
-    
+
     config.load()
         .then(function (profiles) {
             if (_.isEmpty(profiles)) {
                 throw new Error('You must create a profile to begin using '
                     + 'this tool: `wt init`.');
             }
-            
+
             return config.getProfile(argv.profile);
         })
         .then(function (profile) {
@@ -79,19 +77,19 @@ function handleStream (argv) {
 
             setTimeout(function () {
                 logger.warn('reached maximum connection time of 30min, '
-                    +'disconnecting');
+                    + 'disconnecting');
                 process.exit(1);
             }, 30 * 60 * 1000).unref();
-            
+
             stream.on('data', function (event) {
                 if (event.type === 'data') {
                     try {
                         var data = JSON.parse(event.data);
                     } catch (__) { return; }
-                    
+
                     if (!data || (data.name !== 'sandbox-kafka' && !argv.all))
                         return;
-                    
+
                     if (argv.raw) console.log(data.msg);
                     else if (typeof data === 'string') logger.info(data);
                     else if (argv.verbose) logger.info(data, data.msg);

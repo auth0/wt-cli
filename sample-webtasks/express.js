@@ -21,7 +21,7 @@ app.put('*', function (req, res) {
 
 // DELETE
 app.delete('*', function (req, res) {
-    res.json({ id: 1 })
+    res.json({ id: 1 });
 });
 
 // expose this express app as a webtask-compatible function

@@ -39,7 +39,7 @@ function ConfigFile (configPath) {
             ];
         configPath = Path.join(homePath, '.webtask');
     }
-    
+
     this.configPath = configPath;
     this.profiles = {};
     this.loaded = null;
@@ -48,7 +48,7 @@ function ConfigFile (configPath) {
 ConfigFile.prototype.load = function (cb) {
     var self = this;
     var readFile = Bluebird.promisify(Fs.readFile, Fs);
-    
+
     this.loaded = readFile(this.configPath, 'utf8')
         .catch(function (e) {
             if (e.code === 'ENOENT') return '{}';
@@ -58,32 +58,32 @@ ConfigFile.prototype.load = function (cb) {
         .then(function (profiles) {
             return (self.profiles = profiles);
         });
-    
+
     return cb ? this.loaded.nodeify(cb) : this.loaded;
 };
 
 ConfigFile.prototype.save = function (cb) {
     var writeFile = Bluebird.promisify(Fs.writeFile, Fs);
     var profileData = JSON.stringify(this.profiles, null, 2);
-    
+
     var promise = writeFile(this.configPath, profileData, 'utf8');
-    
+
     return cb ? promise.nodeify(cb) : promise;
 };
 
 ConfigFile.prototype.getProfile = function (profileName, cb) {
     if (!profileName) profileName = 'default';
-    
+
     var promise = this.load()
         .get(profileName)
         .then(function (profile) {
-            if (!profile) 
+            if (!profile)
                 throw new Boom.notFound('Profile `' + profileName
                     + '` not found.');
-            
+
             return new WebtaskProfile(profile);
         });
-    
+
     return cb ? promise.nodeify(cb) : promise;
 };
 
@@ -92,27 +92,27 @@ ConfigFile.prototype.setProfile = function (profileName, profileData, cb) {
         .then(function (profiles) {
             return (profiles[profileName] = profileData);
         });
-    
+
     return cb ? promise.nodeify(cb) : promise;
 };
 
 ConfigFile.prototype.removeProfile = function (profileName, cb) {
     var promise = this.load()
         .then(function (profiles) {
-            if (!profiles[profileName]) 
+            if (!profiles[profileName])
                 throw Boom.notFound('No such profile `' + profileName + '`');
-                
+
             delete profiles[profileName];
         });
-    
+
     return cb ? promise.nodeify(cb) : promise;
 };
 
 ConfigFile.prototype.removeAllProfiles = function (cb) {
     this.profiles = {};
-    
+
     var promise = this.save();
-    
+
     return cb ? promise.nodeify(cb) : promise;
 };
 
@@ -123,7 +123,7 @@ function WebtaskProfile (options) {
     this.token = options.token;
 
     this.hasCreated = options.hasCreated;
-    
+
     Object.defineProperty(this, '_wreck', {
         value: Wreck.defaults({
             baseUrl: this.url,
@@ -148,7 +148,7 @@ WebtaskProfile.prototype.createToken = Bluebird.method(function (options, cb) {
 
     if (options.code_url)
         params.url = options.code_url;
-    if (options.code) 
+    if (options.code)
         params.code = options.code;
     if (options.secret && Object.keys(options.secret).length > 0)
         params.ectx = options.secret;
@@ -166,36 +166,36 @@ WebtaskProfile.prototype.createToken = Bluebird.method(function (options, cb) {
         params.dr = 1;
     if (options.name)
         params.jtn = options.name;
-    
+
     if (options.tokenLimit)
         addLimits(options.tokenLimit, limits.token);
     if (options.containerLimit)
         addLimits(options.containerLimit, limits.container);
-    
+
     var promise = request(this._wreck, 'post', '/api/tokens/issue', {}, params)
         .spread(function (res, token) {
             return token.toString('utf8');
         });
-    
+
     if (cb) return promise.nodify(cb);
     else return promise;
 
     function addLimits(limits, spec) {
         for (var l in limits) {
             var limit = parseInt(limits[l], 10);
-            
+
             if (!spec[l]) {
                 throw new Error('Unsupported limit type `' + l
                     + '`. Supported limits are: '
                     + Object.keys(spec).join(', ') + '.');
             }
-            
+
             if (isNaN(limits[l]) || Math.floor(+limits[l]) !== limit
                 || limit < 1) {
                     throw new Error('Unsupported limit value for `' + l
                         + '` limit. All limits must be positive integers.');
             }
-            
+
             params[spec[l]] = limit;
         }
     }
@@ -203,23 +203,23 @@ WebtaskProfile.prototype.createToken = Bluebird.method(function (options, cb) {
 
 WebtaskProfile.prototype.createLogStream = function (options, cb) {
     var self = this;
-    
+
     var promise = new Bluebird(function (resolve, reject) {
         var url = '/api/logs/tenant/' + (options.container || self.container);
-        var reqOptions = { 
+        var reqOptions = {
             headers: { 'accept': 'text/event-stream' },
         };
-        
+
         self._wreck.request('get', url, reqOptions, function (err, res) {
             if (err) return reject(err.isBoom ? err : Boom.wrap(err, 502,
                 'Error communicating with webtask cluster: ' + err.message));
-            
+
             if (res.statusCode >= 400) {
                 // Error response from webtask cluster
                 return Wreck.read(res, null, function (err, body) {
                     if (err) return reject(Boom.create(res.statusCode,
                         'Error reading error from webtask cluster.'));
-                        
+
                     return reject(Boom.create(res.statusCode,
                         'Error `' + res.statusCode + '` returned by webtask cluster: ' + body.toString('utf8')));
                 });
@@ -229,17 +229,17 @@ WebtaskProfile.prototype.createLogStream = function (options, cb) {
                     'Unexpected response-type from webtask cluster: '
                     + err.message));
             }
-            
+
             var lastId = '';
             var eventName = '';
             var eventData = '';
             var eventBuffer = '';
-            
+
             // Accumulate data until the end of a block (two newlines)
             var logMapper = Through(function (chunk, enc, callback) {
                 var data = chunk.toString('utf8');
                 var events = data.split('\n\n');
-                
+
                 _.forEach(events, function (event) {
                     if (!event) {
                         this.push(eventBuffer);
@@ -248,23 +248,23 @@ WebtaskProfile.prototype.createLogStream = function (options, cb) {
                         eventBuffer += event;
                     }
                 }, this);
-                
+
                 callback();
             });
-            
+
             // Parse blocks and emit json objects
             var logParser = Through.obj(function (chunk, enc, callback) {
                 // For parsing this, see: http://www.w3.org/TR/2009/WD-eventsource-20091029/#event-stream-interpretation
                 var event = chunk.toString('utf8');
                 var lines = event.split('\n');
-                
+
                 _.forEach(lines, function (line) {
                     var matches = line.match(/^([^:]*):(.*)$/);
-                    
+
                     if (matches) {
                         var field = matches[1];
                         var value = matches[2];
-                        
+
                         if (!field) return; // event-source comment
                         if (field === 'event') eventName = value;
                         else if (field === 'data') eventData += value;
@@ -273,30 +273,30 @@ WebtaskProfile.prototype.createLogStream = function (options, cb) {
                         // console.log('unexpected data', line);
                     }
                 }, this);
-                
+
                 var eventObj = {
                     id: lastId,
                     type: eventName || 'data',
                     data: eventData,
                 };
-                
+
                 lastId = '';
                 eventName = '';
                 eventData = '';
-                
+
                 this.push(eventObj);
-                
+
                 callback();
             });
-            
+
             var logStream = res
                 .pipe(logMapper)
                 .pipe(logParser);
-            
+
             resolve(logStream);
         });
     });
-    
+
     return cb ? promise.nodify(cb) : promise;
 };
 
@@ -307,7 +307,7 @@ WebtaskProfile.prototype.createCronJob = function (options, cb) {
         schedule: options.schedule,
     })
         .get(1); // Return the job
-    
+
     return cb ? promise.nodeify(cb) : promise;
 };
 
@@ -315,7 +315,7 @@ WebtaskProfile.prototype.removeCronJob = function (options, cb) {
     var url = '/api/cron/' + options.container + '/' + options.name;
     var promise = request(this._wreck, 'delete', url)
         .get(1); // Return the job
-    
+
     return cb ? promise.nodeify(cb) : promise;
 };
 
@@ -323,7 +323,7 @@ WebtaskProfile.prototype.listCronJobs = function (options, cb) {
     var url = '/api/cron/' + options.container;
     var promise = request(this._wreck, 'get', url)
         .get(1); // Return the job array
-    
+
     return cb ? promise.nodeify(cb) : promise;
 };
 
@@ -331,54 +331,54 @@ WebtaskProfile.prototype.getCronJob = function (options, cb) {
     var url = '/api/cron/' + options.container + '/' + options.name;
     var promise = request(this._wreck, 'get', url)
         .get(1); // Return the job
-    
+
     return cb ? promise.nodeify(cb) : promise;
 };
 
 WebtaskProfile.prototype.getCronJobHistory = function (options, cb) {
     var url = '/api/cron/' + options.container + '/' + options.name + '/history';
     var query = {};
-    
+
     if (options.offset) query.offset = options.offset;
     if (options.limit) query.limit = options.limit;
-    
+
     var promise = request(this._wreck, 'get', url, query)
         .get(1); // Return the job history
-    
+
     return cb ? promise.nodeify(cb) : promise;
 };
 
 function request (wreck, method, path, query, payload, options) {
     if (!options) options = {};
-    
+
     _.defaultsDeep(options, {
         headers: {},
     });
-    
+
     var url = Url.parse(path, true);
     _.extend(url.query, query);
     delete url.search;
     path = Url.format(url);
-    
+
     if (payload) {
         options.payload = payload;
-        
+
         // Not supporting streams for now
         if (!_.isString(payload) && !Buffer.isBuffer(payload)) {
             options.payload = JSON.stringify(payload);
             options.headers['content-type'] = 'application/json';
         }
     }
-    
+
     if (!wreck) throw new Boom.badImplementation('Missing wreck instance.');
     if (!wreck[method])
         throw new Boom.badImplementation('Invalid request method: ' + method);
-    
+
     return new Bluebird(function (resolve, reject) {
         wreck[method](path, options, function (err, res, body) {
             if (err) return reject(err.isBoom ? err : Boom.wrap(err, 502,
                 'Error communicating with webtask cluster: ' + err.message));
-            
+
             if (res.statusCode >= 400) {
                 // Error response from webtask cluster
                 return reject(Boom.create(res.statusCode,
@@ -402,16 +402,16 @@ function createToken (options, cb) {
         .then(function (profile) {
             return profile.createToken(options);
         });
-    
+
     return cb ? promise.nodeify(cb) : promise;
 }
 
 function UserVerifier (config) {
     if (!config) config = {};
-    
+
     this.token = config.token || smsEmailToken;
     this.sandboxUrl = config.sandboxUrl || 'https://webtask.it.auth0.com';
-    
+
     Object.defineProperty(this, '_wreck', {
         value: Wreck.defaults({
             baseUrl: this.sandboxUrl,
@@ -425,7 +425,7 @@ function UserVerifier (config) {
 
 UserVerifier.prototype._runVerifierWebtask = function (query) {
     var url = '/api/run/auth0-webtask-cli';
-    
+
     return request(this._wreck, 'get', url, query);
 };
 
@@ -433,10 +433,10 @@ UserVerifier.prototype.requestVerificationCode = Bluebird.method(function (phone
     var self = this;
     var type;
     var value;
-    
+
     if (UserVerifier.isPhone(phoneOrEmail)) {
         if (phoneOrEmail.indexOf('+') !== 0)
-            phoneOrEmail = '+1' + phoneOrEmail; // default to US     
+            phoneOrEmail = '+1' + phoneOrEmail; // default to US
         type = 'phone';
         value = phoneOrEmail;
     } else if (UserVerifier.isEmail(phoneOrEmail)) {
@@ -447,11 +447,11 @@ UserVerifier.prototype.requestVerificationCode = Bluebird.method(function (phone
             + 'or a phone number. The phone number must start with + followed '
             + 'by country code, area code, and local number.');
     }
-    
+
     var payload = {};
-    
+
     payload[type] = value;
-    
+
     var promise = this._runVerifierWebtask(payload)
         .spread(function (res, body) {
             // Return a function that can be called to verify the identification
@@ -459,25 +459,25 @@ UserVerifier.prototype.requestVerificationCode = Bluebird.method(function (phone
             return function verify (code, cb) {
                 var payload = { verification_code: code };
                 payload[type] = value;
-                
+
                 var promise = self._runVerifierWebtask(payload)
                     .get(1) // Get the body, 2nd argument
                     .get('id_token')
                     .then(Jws.decode)
                     .get('payload') // Traverse into decoded jwt
                     .get('webtask'); // To get the webtask info
-                    
+
                 return cb ? promise.nodeify(cb) : promise;
             };
         });
-    
+
     return cb ? promise.nodeify(cb) : promise;
 });
 
 UserVerifier.isPhone = function (value) {
     return !!value.match(/^\+?[0-9]{1,15}$/);
 };
-    
+
 UserVerifier.isEmail = function (value) {
     return !!value.match(/^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,4}$/i);
 };
@@ -489,7 +489,7 @@ function configFile (configPath) {
 
 function withProfile (profileName) {
     var config = new ConfigFile();
-    
+
     return config.getProfile(profileName);
 }
 

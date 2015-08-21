@@ -1,4 +1,4 @@
-module.exports = 
+module.exports =
     function (cb) {
         cb(null, {
             now: new Date(),
@@ -6,8 +6,8 @@ module.exports =
             name: 'Auth0',
             amount: 200,
             details: {
-                history: [1,2,3,4],
+                history: [1, 2, 3, 4],
                 average: 2.5
             }
         });
-    }
+    };
