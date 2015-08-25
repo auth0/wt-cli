@@ -9,10 +9,10 @@ var Watcher = require('filewatcher');
 var Webtask = require('../');
 var _ = require('lodash');
 var Crypto = require('crypto');
-var Jwt = require('jsonwebtoken');
 var Dotenv = require('dotenv').load({ silent: true });
 var Qs = require('qs');
 var Bluebird = require('bluebird');
+var Jws = require('jws');
 
 var tokenOptions = {
     secret: {
@@ -51,7 +51,7 @@ var tokenOptions = {
         type: 'string',
     },
     auth0: {
-        description: 'Authenticate webtask with Auth0: --auth0 <clientID> <client-secret> <auth0-domain>',
+        description: 'Authenticate webtask with Auth0: --auth0 <clientID>,<client-secret>,<auth0-domain>',
         type: 'string',
     },
     watch: {
@@ -73,10 +73,6 @@ var tokenOptions = {
         alias: 'C',
         description: 'pre-compile a local file using the indicated library (for now only `babel` is supported and will read `.babelrc` if present)',
         type: 'string',
-    },
-    auth: {
-      description: 'set webtask permisions',
-      type: 'boolean'
     },
     advanced: {
         alias: 'a',
@@ -178,8 +174,11 @@ module.exports = Cli.createCommand('create', 'Create webtasks', {
                 if (argv.auth0 && argv.share)
                     throw new Error('Cannot specify both --share and --auth0');
 
+                if (argv.auth0 && /token|token-url/.test(argv.output))
+                    throw new Error('Cannot secure unnamed webtasks with Auth0');
+
                 if(argv.auth0 || argv.auth0 === '') {
-                    var auth0Credentials = argv.auth0.split(' ');
+                    var auth0Credentials = argv.auth0.split(',');
 
                     argv.auth0 = {
                         clientId: auth0Credentials[0]     || process.env.AUTH0_CLIENT_ID,
@@ -188,7 +187,7 @@ module.exports = Cli.createCommand('create', 'Create webtasks', {
                     };
 
                     if(!(argv.auth0.clientId && argv.auth0.clientSecret && argv.auth0.domain))
-                        throw 'Invalid auth0 configuration, expected: <clientID> <client-secret> <domain>';
+                        throw 'Invalid auth0 configuration, expected: <clientID>,<client-secret>,<domain>';
                 }
 
                 return true;
@@ -342,10 +341,7 @@ function handleCreate (argv) {
                     + (argv.container || profile.container);
 
                 if (argv.name)
-                    var named_url = profile.url
-                        + '/api/run/'
-                        + (argv.container || profile.container)
-                        + '/' + argv.name;
+                    var named_url = unnamed_url + '/' + argv.name;
 
                 if(argv.share) {
                     var aud = named_url.replace('https:\/\/', '');
@@ -367,6 +363,7 @@ function handleCreate (argv) {
                         param: {
                             baseUrl: profile.url,
                             container: argv.container || profile.container,
+                            title: argv.name,
                             taskname: actual_name,
                             clientId: argv.auth0.clientId,
                             domain: argv.auth0.domain,
@@ -453,13 +450,19 @@ function getSecret() {
     try {
         return (process.env.WEBTASK_JWT_SECRET || Crypto.randomBytes(128).toString('base64'));
     } catch(e) {
-        console.log('Couldn\'t generate random secret: ' + e.message);
+        throw new Error('Unable generate random secret: ' + e.message);
     }
 }
 
 function getAuthToken(payload, secret) {
     try {
-        return Jwt.sign(payload, new Buffer(secret, 'base64'));
+        return Jws.sign({
+          header: {
+            alg: 'HS264'
+          },
+          payload: payload,
+          secret:  new Buffer(secret, 'base64')
+        });
     } catch(e) {
         throw new Error('Unable to generate authorization token.');
     }

@@ -23,7 +23,7 @@ const VIEW = hbs.compile(`
         <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0" />
         <link rel="shortcut icon" href="https://webtask.io/images/favicon/favicon.ico">
 
-        <title>Authenticate</title>
+        <title>{{TITLE}}</title>
 
         <script src="//cdn.auth0.com/js/lock-7.6.2.min.js"></script>
         <script src="https://cdnjs.cloudflare.com/ajax/libs/then-request/2.1.1/request.min.js"></script>
@@ -42,7 +42,7 @@ const VIEW = hbs.compile(`
     </html>
 `);
 
-const FUNC_TO_RUN = function() {
+const CLIENT_FUNCTION = function() {
     var lock = new Auth0Lock(CLIENT_ID, AUTH0_DOMAIN);
     var lock_opts = {
         authParams: {
@@ -61,7 +61,9 @@ const FUNC_TO_RUN = function() {
 
         request(REQ_METHOD, TASK_URL, opts)
             .then(function (res) {
-                switch(res.headers['content-type']) {
+                var contentType = res.headers['content-type'].split(';')[0];
+
+                switch(contentType) {
                     case 'application/json':
                         var parsed = JSON.parse(res.body);
 
@@ -77,7 +79,7 @@ const FUNC_TO_RUN = function() {
     });
 }.toString();
 
-function getAuthToken (req) {
+function attemptToGetAuthToken(req) {
     if(req.query.key)
         return req.query.key;
 
@@ -88,51 +90,51 @@ function getAuthToken (req) {
     return false;
 }
 
-const query_delete = [
-    'baseUrl',
-    'container',
-    'taskname',
-    'domain',
-    'clientId',
-];
-
-app.get('*', (req, res) => {
-    const ctx = req.webtaskContext;
-
-    if(!ctx.data.container || !ctx.data.taskname) {
+module.exports = function (ctx, req, res) {
+    if(!ctx.data.container ||
+       !ctx.data.taskname  ||
+       !ctx.data.clientId  ||
+       !ctx.data.domain) {
        res.statusCode = 400;
-       res.end('Must provide container & taskname params');
+       return res.end('Must provide `container`, `taskname`, `clientId` & `domain` params');
     }
 
-    if(!ctx.data.clientId && !ctx.data.domain) {
-       res.statusCode = 400;
-       res.end('Must provide clientId & domain params');
-    }
-
-    let query = qs.parse(
-        url.parse(req.url).query
-    );
+    let query = url.parse(req.url, true).query
 
     for(let i in query)
         if(i.match('webtask_') && i !== 'webtask_no_cache')
             delete query[i];
 
-    query_delete
-        .forEach(function (key) {
-            delete query[key];
-        });
+    [
+        'baseUrl',
+        'container',
+        'taskname',
+        'title',
+        'domain',
+        'clientId',
+        'WEBTASK_JWT_AUD',
+        'WEBTASK_JWT_SECRET',
+        'webtask_url'
+    ]
+    .forEach(function (key) {
+        if(query[key])
+          delete query[key];
+    });
 
-    const TASK_URL = (ctx.data.baseUrl   || 'https://webtask.it.auth0.com') +
-                   '/api/run/'                 +
-                   ctx.data.container          +
-                   '/'                         +
-                   ctx.data.taskname           +
-                   url.parse(req.url).pathname +
-                   '?' + qs.stringify(query);
+    const path = url.parse(req.url).pathname.split('/').slice(5).join('/');
 
-    const AUTH_TOKEN = getAuthToken(req);
+    const TASK_URL = [
+      (ctx.data.baseUrl || 'https://webtask.it.auth0.com'),
+      'api/run',
+      ctx.data.container,
+      ctx.data.taskname
+    ].join('/') +
+      (path.length > 1 ? '/' + path : '') +
+      '?' + qs.stringify(query);
 
-    if(AUTH_TOKEN)
+    const AUTH_TOKEN = attemptToGetAuthToken(req);
+
+    if(AUTH_TOKEN) {
         request({
             method: req.method,
             url: TASK_URL,
@@ -140,16 +142,16 @@ app.get('*', (req, res) => {
                 Authorization: 'Bearer ' + AUTH_TOKEN
             }
         }).pipe(res);
-    else
+    } else {
         res.end(
             VIEW({
+                TITLE: ctx.data.title || 'Webtask',
                 REQ_METHOD: req.method,
                 CLIENT_ID: ctx.data.clientId,
                 AUTH0_DOMAIN: ctx.data.domain,
-                FUNC_TO_RUN,
+                FUNC_TO_RUN: CLIENT_FUNCTION,
                 TASK_URL
             })
         );
-});
-
-module.exports = fromExpress(app);
+    }
+};
