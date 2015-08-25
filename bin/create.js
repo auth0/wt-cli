@@ -51,8 +51,16 @@ var tokenOptions = {
         'default': 'default',
         type: 'string',
     },
-    auth0: {
-        description: 'Authenticate webtask with Auth0: --auth0 <clientID>,<client-secret>,<auth0-domain>',
+    clientId: {
+        description: 'Auth0 client ID',
+        type: 'string',
+    },
+    clientSecret: {
+        description: 'Auth0 client secret',
+        type: 'string',
+    },
+    auth0Domain: {
+        description: 'Auth0 Domain',
         type: 'string',
     },
     watch: {
@@ -172,30 +180,27 @@ module.exports = Cli.createCommand('create', 'Create webtasks', {
                 if (argv.tokenLimit) parseHash(argv, 'tokenLimit');
                 if (argv.containerLimit) parseHash(argv, 'containerLimit');
 
-                if (argv.auth0 && argv.share)
-                    throw new Error('Cannot specify both --share and --auth0');
-
-                if (argv.auth0 && /token|token-url/.test(argv.output))
-                    throw new Error('Cannot secure unnamed webtasks with Auth0');
-
-                if(argv.auth0 || argv.auth0 === '') {
-                    var auth0Credentials = argv.auth0.split(',');
-
-                    argv.auth0 = {
-                        clientId: auth0Credentials[0]     || process.env.AUTH0_CLIENT_ID,
-                        clientSecret: auth0Credentials[1] || process.env.AUTH0_CLIENT_SECRET,
-                        domain: auth0Credentials[2]       || process.env.AUTH0_DOMAIN,
-                    };
-
-                    if(!(argv.auth0.clientId && argv.auth0.clientSecret && argv.auth0.domain))
-                        throw 'Invalid auth0 configuration, expected: <clientID>,<client-secret>,<domain>';
-
-                }
-
                 if (argv.watch && argv.json) {
                     throw new Error('The `watch` flag can not be enabled at the same time '
                         + 'as the `json` flag.');
                 }
+
+                var auth0 = {
+                    clientId: argv.clientId         || process.env.AUTH0_CLIENT_ID,
+                    clientSecret: argv.clientSecret || process.env.AUTH0_CLIENT_SECRET,
+                    domain: argv.auth0Domain        || process.env.AUTH0_DOMAIN,
+                };
+
+                var allThree = (!!auth0.clientId && !!auth0.clientSecret && !!auth0.domain);
+
+                if (allThree && argv.share)
+                    throw new Error('Cannot specify both --share and --auth0');
+
+                if (allThree && /token|token-url/.test(argv.output))
+                    throw new Error('Cannot secure unnamed webtasks with Auth0');
+
+                if (!allThree && (auth0.clientId || auth0.clientSecret || auth0.auth0Domain))
+                    throw new Error('Invalid auth0 configuration, require --clientId, --clientSecret & --auth0Domain');
 
                 return true;
             });
@@ -401,7 +406,13 @@ function handleCreate (argv) {
                     argv.param.WEBTASK_JWT_AUD = aud
                 }
 
-                if(argv.auth0) {
+                var auth0 = {
+                  clientId: argv.clientId         || process.env.AUTH0_CLIENT_ID,
+                  clientSecret: argv.clientSecret || process.env.AUTH0_CLIENT_SECRET,
+                  domain: argv.auth0Domain        || process.env.AUTH0_DOMAIN,
+                };
+
+                if(auth0.clientId && auth0.clientSecret && auth0.domain) {
                     var actual_name = argv.name + '_auth0';
                     var lock_webtask = {
                         name: argv.name,
@@ -411,13 +422,13 @@ function handleCreate (argv) {
                             container: argv.container || profile.container,
                             title: argv.name,
                             taskname: actual_name,
-                            clientId: argv.auth0.clientId,
-                            domain: argv.auth0.domain,
+                            clientId: auth0.clientId,
+                            domain: auth0.domain,
                          },
                     };
 
-                    argv.secret.WEBTASK_JWT_SECRET = argv.auth0.clientSecret;
-                    argv.param.WEBTASK_JWT_AUD = argv.auth0.clientId;
+                    argv.secret.WEBTASK_JWT_SECRET = auth0.clientSecret;
+                    argv.param.WEBTASK_JWT_AUD = auth0.clientId;
 
                     promises.push(profile.createToken(_.assign({}, argv, { name: actual_name })));
                     promises.push(profile.createToken(lock_webtask));
