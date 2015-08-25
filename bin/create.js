@@ -247,7 +247,7 @@ function handleCreate (argv) {
                         addListeners();
                     }
     
-                    return createToken(tokenOpts)
+                    return createToken(tokenOpts);
                 });
 
         function addListeners () {
@@ -270,7 +270,7 @@ function handleCreate (argv) {
                     .then(function () {
                         code = Fs.readFileSync(pathToCode, 'utf8');
 
-                        return GetTaskConfig(tokenOpts, code)
+                        return GetTaskConfig(tokenOpts, code);
                     })
                     .then(function (taskConfig) {
                         addListeners();
@@ -286,18 +286,16 @@ function handleCreate (argv) {
 
                         tokenOpts = _.merge({}, argv, taskConfig, { code: code, name: name });
 
-                        return createToken(tokenOpts)
+                        return createToken(tokenOpts);
                     })
                     .tap(function () {
                         if(!argv.nolivereload)
                             reloadServer.refresh(argv.file_name);
                     });
             });
-
-
-            return pending;
         }
-        
+
+        return pending;
     }
     
     function compileWithBabel (code) {
