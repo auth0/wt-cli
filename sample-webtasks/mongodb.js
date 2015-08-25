@@ -6,6 +6,9 @@
 var MongoClient = require('mongodb').MongoClient;
 var waterfall   = require('async').waterfall;
 
+/**
+ * @param {secret} MONGO_URL - Mongo database url
+ */
 module.exports = function(ctx, cb) {
 
     var MONGO_URL = ctx.data.MONGO_URL;
