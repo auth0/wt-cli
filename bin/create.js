@@ -3,13 +3,12 @@ var Cli = require('nested-yargs');
 var Colors = require('colors');
 var Crypto = require('crypto');
 var Fs = require('fs');
+var GetTaskConfig = require('./utils/getTaskConfig');
 var Livereload = require('livereload');
 var Path = require('path');
 var Watcher = require('filewatcher');
 var Webtask = require('../');
 var _ = require('lodash');
-var Bluebird = require('bluebird');
-var GetTaskConfig = require('./utils/getTaskConfig');
 
 var tokenOptions = {
     secret: {
@@ -156,6 +155,10 @@ module.exports = Cli.createCommand('create', 'Create webtasks', {
                 if (argv.tokenLimit) parseHash(argv, 'tokenLimit');
                 if (argv.containerLimit) parseHash(argv, 'containerLimit');
 
+                if (argv.watch && argv.json) {
+                    throw new Error('The `watch` flag can not be enabled at the same time '
+                        + 'as the `json` flag.');
+                }
 
                 return true;
             });
@@ -226,7 +229,7 @@ function handleCreate (argv) {
 
     return createWebtask(argv.file_name);
     
-    function createWebtask(pathToCode) {
+    function createWebtask (pathToCode) {
         var generation = 0;
         var code = Fs.readFileSync(pathToCode, 'utf8');
         var name = Path.basename(pathToCode, '.js');
@@ -234,23 +237,27 @@ function handleCreate (argv) {
         var tokenOpts;
         var watcher = Watcher();
 
-        var pending = GetTaskConfig(argv, code)
-            .then(function (taskConfig) {
-                tokenOpts = _.merge({}, argv, taskConfig, { code: code, name: name });
+        var pending = argv.json
+            ? createToken(argv)
+            : GetTaskConfig(argv, code)
+                .then(function (taskConfig) {
+                    tokenOpts = _.merge({}, argv, taskConfig, { code: code, name: name });
+    
+                    if(argv.watch) {
+                        addListeners();
+                    }
+    
+                    return createToken(tokenOpts)
+                });
 
-                if(argv.watch) {
-                    addListeners();
-                }
-
-                return createToken(tokenOpts)
-            })
-
-        function addListeners() {
+        function addListeners () {
             watcher.add(pathToCode);
             watcher.add('./.env');
         }
 
         if (argv.watch) {
+            // There should not be any output except that specified by --output
+            // when the --json flag is enabled.
             if(!argv.nolivereload) {
                 var reloadServer = Livereload.createServer();
                 console.log('Livereload server listening: http://livereload.com/extensions\n');

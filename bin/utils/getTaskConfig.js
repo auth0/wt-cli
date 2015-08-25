@@ -1,8 +1,8 @@
+var Bluebird = require('bluebird');
 var Colors = require('colors');
+var Dotenv = require('dotenv');
 var Fs = require('fs');
 var Parse = require('comment-parser');
-var Dotenv = require('dotenv');
-var Bluebird = require('bluebird');
 var Promptly = require('promptly');
 var _ = require('lodash');
 
@@ -25,7 +25,7 @@ function promptFor (type, obj) {
         .return(obj);
 }
 
-function getFromEnv(key) {
+function getFromEnv (key) {
     var dotenvFile; 
     var dotenvObj;
 
@@ -60,7 +60,7 @@ function getFromEnv(key) {
     return;
 }
 
-function prune(previous, newer) {
+function prune (previous, newer) {
     Object.keys(previous)
         .forEach(function (key) {
             if(!newer[key])
