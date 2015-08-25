@@ -31,7 +31,7 @@ function getFromEnv (key) {
 
     // Source from process.env
     if(key)
-        for (var envKey of Object.keys(process.env))
+        for (var envKey in Object.keys(process.env))
             if(key === envKey)
                 return process.env[envKey];
 
@@ -53,7 +53,7 @@ function getFromEnv (key) {
     if(!key)
         return dotenvObj;
 
-    for (var dotenvKey of Object.keys(dotenvObj))
+    for (var dotenvKey in Object.keys(dotenvObj))
         if(key === dotenvKey)
             return dotenvObj[dotenvKey];
 
