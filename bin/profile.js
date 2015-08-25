@@ -9,7 +9,6 @@ var _ = require('lodash');
 
 Bluebird.promisifyAll(Promptly);
 
-
 var profile = module.exports = Cli.createCategory('profile',
     'Manage webtask profiles');
 
