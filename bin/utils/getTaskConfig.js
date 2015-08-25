@@ -92,10 +92,12 @@ function getTaskConfig (prevConfig, code) {
             prune(prevConfig.secret, secret);
 
         // Then there is no config specified, just supply all secrets in .env and get out early
-        return _.merge({}, prevConfig, {
+        return Bluebird.resolve(
+          _.merge({}, prevConfig, {
             secret: secret,
             param: param
-        });
+          })
+        );
     }
 
     tags
