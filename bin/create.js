@@ -227,7 +227,9 @@ function handleCreate (argv) {
     argv.merge = typeof argv.merge === 'undefined' ? true : !!argv.merge;
     argv.parse = typeof argv.parse === 'undefined' ? true : !!argv.parse;
 
-    return createWebtask(argv.file_name);
+    return argv.file_name
+        ? createWebtask(argv.file_name)
+        : createToken(argv);
     
     function createWebtask (pathToCode) {
         var generation = 0;
