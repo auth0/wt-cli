@@ -5,7 +5,7 @@
     "url": "http://tomasz.janczuk.org",
     "twitter": "tjanczuk"
   },
-  "version": "1.0.10",
+  "version": "1.0.11",
   "description": "Webtask Command Line Interface",
   "tags": [
     "nodejs",
