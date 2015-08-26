@@ -29,7 +29,7 @@ function createScopedRequest (context) {
     var tenant = context.data.AUTH0_TENANT;
     var jwt = context.data.AUTH0_JWT;
 
-    if (!jwt) throw Boom.preconditionFailed('Missing parameter AUTH0_TENANT');
+    if (!tenant) throw Boom.preconditionFailed('Missing parameter AUTH0_TENANT');
     if (!jwt) throw Boom.preconditionFailed('Missing secret AUTH0_JWT');
     
     return Bluebird.promisifyAll(Request.defaults({
