@@ -60,15 +60,15 @@ function getFromEnv (key) {
     return;
 }
 
-function prune (previous, newer) {
+function prune (original, previous, newer) {
     Object.keys(previous)
         .forEach(function (key) {
-            if(!newer[key])
+            if(!newer[key] && !original[key])
                 delete previous[key];
         });
 }
 
-function getTaskConfig (prevConfig, code) {
+function getTaskConfig (argv, prevConfig, code) {
     var tags;
     var param = {};
     var secret = {};
@@ -89,7 +89,7 @@ function getTaskConfig (prevConfig, code) {
         secret = getFromEnv();
 
         if(prevConfig.secret)
-            prune(prevConfig.secret, secret);
+            prune(argv.secret, prevConfig.secret, secret);
 
         // Then there is no config specified, just supply all secrets in .env and get out early
         return Bluebird.resolve(
@@ -139,10 +139,10 @@ function getTaskConfig (prevConfig, code) {
         })
         .then(function (resolvedSecrets) {
             if(prevConfig.param)
-                prune(prevConfig.param, param);
+                prune(argv.param, prevConfig.param, param);
 
             if(prevConfig.secret)
-                prune(prevConfig.secret, secret);
+                prune(argv.secret, prevConfig.secret, secret);
 
             return _.merge({}, prevConfig, {
                 param: param,

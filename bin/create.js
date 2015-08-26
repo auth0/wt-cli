@@ -235,12 +235,12 @@ function handleCreate (argv) {
         var generation = 0;
         var code = Fs.readFileSync(pathToCode, 'utf8');
 
-        var tokenOpts;
+        var tokenOpts = {};
         var watcher = Watcher();
 
         var pending = argv.json
             ? createToken(argv)
-            : GetTaskConfig(argv, code)
+            : GetTaskConfig(argv, tokenOpts, code)
                 .then(function (taskConfig) {
                     tokenOpts = _.merge({}, argv, taskConfig, { code: code });
     
@@ -271,13 +271,12 @@ function handleCreate (argv) {
                     .then(function () {
                         code = Fs.readFileSync(pathToCode, 'utf8');
 
-                        return GetTaskConfig(tokenOpts, code);
+                        return GetTaskConfig(argv, tokenOpts, code);
                     })
                     .then(function (taskConfig) {
                         addListeners();
 
                         generation++;
-
 
                         if (!argv.json) {
                             console.log('%s changed, creating generation %s'
