@@ -34,11 +34,12 @@
     "cron-parser": "^0.6.3",
     "dotenv": "^1.2.0",
     "filewatcher": "^3.0.0",
-    "jws": "^3.0.0",
+    "jws": "^3.1.0",
     "livereload": "^0.3.7",
     "lodash": "^3.10.0",
     "nested-yargs": "^1.0.0",
     "promptly": "^0.2.1",
+    "qs": "^4.0.0",
     "through2": "^2.0.0",
     "wreck": "^6.0.0"
   },

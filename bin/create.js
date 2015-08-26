@@ -9,12 +9,21 @@ var Path = require('path');
 var Watcher = require('filewatcher');
 var Webtask = require('../');
 var _ = require('lodash');
+var Crypto = require('crypto');
+var Dotenv = require('dotenv').load({ silent: true });
+var Qs = require('qs');
+var Bluebird = require('bluebird');
+var Jws = require('jws');
 
 var tokenOptions = {
     secret: {
         alias: 's',
         description: 'secret(s) to provide to code at runtime',
         type: 'string',
+    },
+    param: {
+        description: 'nonsecret param(s) to provide to code at runtime',
+        type: 'string'
     },
     output: {
         alias: 'o',
@@ -27,6 +36,10 @@ var tokenOptions = {
         description: 'name of the webtask',
         type: 'string'
     },
+    share: {
+        description: 'generate secure, shareable link',
+        type: 'bool',
+    },
     prod: {
         alias: 'r',
         description: 'enable production optimizations',
@@ -36,6 +49,18 @@ var tokenOptions = {
         alias: 'p',
         description: 'name of the webtask profile to use',
         'default': 'default',
+        type: 'string',
+    },
+    clientId: {
+        description: 'Auth0 client ID',
+        type: 'string',
+    },
+    clientSecret: {
+        description: 'Auth0 client secret',
+        type: 'string',
+    },
+    auth0Domain: {
+        description: 'Auth0 Domain',
         type: 'string',
     },
     watch: {
@@ -98,10 +123,6 @@ var advancedTokenOptions = {
         type: 'number',
         'default': 0,
     },
-    param: {
-        description: 'nonsecret param(s) to provide to code at runtime',
-        type: 'string',
-    },
     container: {
         alias: 'c',
         description: 'webtask container where the job will run',
@@ -151,7 +172,11 @@ module.exports = Cli.createCommand('create', 'Create webtasks', {
                 if (argv.exp) parseDate(argv, 'exp');
                 
                 if (argv.secret) parseHash(argv, 'secret');
+                else             argv.secret = Object.create(null);
+
                 if (argv.param) parseHash(argv, 'param');
+                else            argv.param = Object.create(null);
+
                 if (argv.tokenLimit) parseHash(argv, 'tokenLimit');
                 if (argv.containerLimit) parseHash(argv, 'containerLimit');
 
@@ -159,6 +184,23 @@ module.exports = Cli.createCommand('create', 'Create webtasks', {
                     throw new Error('The `watch` flag can not be enabled at the same time '
                         + 'as the `json` flag.');
                 }
+
+                var auth0 = {
+                    clientId: argv.clientId         || process.env.AUTH0_CLIENT_ID,
+                    clientSecret: argv.clientSecret || process.env.AUTH0_CLIENT_SECRET,
+                    domain: argv.auth0Domain        || process.env.AUTH0_DOMAIN,
+                };
+
+                var allThree = (!!auth0.clientId && !!auth0.clientSecret && !!auth0.domain);
+
+                if (allThree && argv.share)
+                    throw new Error('Cannot specify both --share and --auth0');
+
+                if (allThree && /token|token-url/.test(argv.output))
+                    throw new Error('Cannot secure unnamed webtasks with Auth0');
+
+                if (!allThree && (auth0.clientId || auth0.clientSecret || auth0.auth0Domain))
+                    throw new Error('Invalid auth0 configuration, require --clientId, --clientSecret & --auth0Domain');
 
                 return true;
             });
@@ -223,7 +265,7 @@ function handleCreate (argv) {
     else if (argv.name && argv.output !== 'none') {
         throw new Error('The `name` option can only be specified when --output is set to `url`.');
     }
-    
+
     argv.merge = typeof argv.merge === 'undefined' ? true : !!argv.merge;
     argv.parse = typeof argv.parse === 'undefined' ? true : !!argv.parse;
 
@@ -344,26 +386,80 @@ function handleCreate (argv) {
                 }
             })
             .then(function (profile) {
-                return profile.createToken(tokenOpts)
+                var promises = [];
+                var unnamed_url = profile.url + '/api/run/'
+                    + (argv.container || profile.container);
+
+                if (argv.name)
+                    var named_url = unnamed_url + '/' + argv.name;
+
+                if(argv.share) {
+                    var aud = named_url.replace('https:\/\/', '');
+
+                    argv.secret.WEBTASK_JWT_SECRET = getSecret();
+
+                    // This is the token we attach to the URL for the user
+                    argv.share = getAuthToken({ aud: aud }, argv.secret.WEBTASK_JWT_SECRET);
+
+                    // Also replace the shared clientId with the URL (the share method is not Auth0-based)
+                    argv.param.WEBTASK_JWT_AUD = aud
+                }
+
+                var auth0 = {
+                  clientId: argv.clientId         || process.env.AUTH0_CLIENT_ID,
+                  clientSecret: argv.clientSecret || process.env.AUTH0_CLIENT_SECRET,
+                  domain: argv.auth0Domain        || process.env.AUTH0_DOMAIN,
+                };
+
+                if(auth0.clientId && auth0.clientSecret && auth0.domain) {
+                    var actual_name = argv.name + '_auth0';
+                    var lock_webtask = {
+                        name: argv.name,
+                        code: Fs.readFileSync(__dirname + '/lib/lock_webtask.js', 'utf8'),
+                        param: {
+                            baseUrl: profile.url,
+                            container: argv.container || profile.container,
+                            title: argv.name,
+                            taskname: actual_name,
+                            clientId: auth0.clientId,
+                            domain: auth0.domain,
+                         },
+                    };
+
+                    argv.secret.WEBTASK_JWT_SECRET = auth0.clientSecret;
+                    argv.param.WEBTASK_JWT_AUD = auth0.clientId;
+
+                    promises.push(profile.createToken(_.assign({}, argv, { name: actual_name })));
+                    promises.push(profile.createToken(lock_webtask));
+                } else {
+                    promises.push(profile.createToken(argv))
+                }
+
+                return Bluebird.all(promises)
                     .then(function (token) {
+                      var unnamed_qs = {
+                        key: token,
+                        webtask_no_cache: argv.prod ? undefined : 1
+                      }; 
+
+                      var named_qs = {
+                        key: argv.share || undefined,
+                        webtask_no_cache: argv.prod ? undefined : 1
+                      }
                         var result = {
                             token: token,
-                            webtask_url: profile.url + '/api/run/'
-                                + (argv.container || profile.container)
-                                + '?key=' + token
-                                + (argv.prod ? '': '&webtask_no_cache=1')
+                            webtask_url: unnamed_url + '?' + Qs.stringify(unnamed_qs)
                         };
-                        if (argv.name) {
-                            result.named_webtask_url = profile.url
-                                + '/api/run/'
-                                + (argv.container || profile.container)
-                                + '/' + argv.name
-                                + (argv.prod ? '': '?webtask_no_cache=1');
-                        }
+
+                        if (argv.name)
+                            result.named_webtask_url = named_url + '?' + Qs.stringify(named_qs)
+
                         return result;
                     });
             })
             .then(function (data) {
+                var auth_token = '';
+
                 if (argv.output === 'token') {
                     console.log(argv.json
                         ? JSON.stringify(data.token)
@@ -404,6 +500,28 @@ function parseDate (argv, field) {
     }
     
     argv[field] = Math.floor(date.valueOf() / 1000);
+}
+
+function getSecret() {
+    try {
+        return (process.env.WEBTASK_JWT_SECRET || Crypto.randomBytes(128).toString('base64'));
+    } catch(e) {
+        throw new Error('Unable generate random secret: ' + e.message);
+    }
+}
+
+function getAuthToken(payload, secret) {
+    try {
+        return Jws.sign({
+          header: {
+            alg: 'HS264'
+          },
+          payload: payload,
+          secret:  new Buffer(secret, 'base64')
+        });
+    } catch(e) {
+        throw new Error('Unable to generate authorization token.');
+    }
 }
 
 function parseHash (argv, field) {
