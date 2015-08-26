@@ -234,7 +234,6 @@ function handleCreate (argv) {
     function createWebtask (pathToCode) {
         var generation = 0;
         var code = Fs.readFileSync(pathToCode, 'utf8');
-        var name = Path.basename(pathToCode, '.js');
 
         var tokenOpts;
         var watcher = Watcher();
@@ -243,7 +242,7 @@ function handleCreate (argv) {
             ? createToken(argv)
             : GetTaskConfig(argv, code)
                 .then(function (taskConfig) {
-                    tokenOpts = _.merge({}, argv, taskConfig, { code: code, name: name });
+                    tokenOpts = _.merge({}, argv, taskConfig, { code: code });
     
                     if(argv.watch) {
                         addListeners();
@@ -282,11 +281,11 @@ function handleCreate (argv) {
 
                         if (!argv.json) {
                             console.log('%s changed, creating generation %s'
-                            , name, generation);
+                            , argv.name, generation);
                         }
 
 
-                        tokenOpts = _.merge({}, argv, taskConfig, { code: code, name: name });
+                        tokenOpts = _.merge({}, argv, taskConfig, { code: code });
 
                         return createToken(tokenOpts);
                     })
