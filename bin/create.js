@@ -106,6 +106,18 @@ var advancedTokenOptions = {
         description: 'download and use the current code indicated by `url`',
         type: 'boolean',
     },
+    cluster_url: {
+        description: 'the webtask cluster url provided in lieu of a profile',
+        type: 'string',
+    },
+    token: {
+        description: 'the webtask token provided in lieu of a profile',
+        type: 'string',
+    },
+    jti: {
+        description: 'specify the json token id that will bused',
+        type: 'string',
+    },
 };
 
 
@@ -160,6 +172,17 @@ module.exports = Cli.createCommand('create', 'Create webtasks', {
                     throw Cli.usageError('The --watch flag can not be enabled at the same time '
                         + 'as the --json flag.');
                 }
+                
+                if (argv.cluster_url || argv.token) {
+                    if (argv.profile !== tokenOptions.profile.default) {
+                        throw Cli.usageError('The --profile option cannot be '
+                            + 'combined with either --cluster_url or --token.');
+                    } else if (!argv.container) {
+                        throw Cli.usageError('The --container option must be '
+                            + 'specified with the --cluster_url and --token '
+                            + 'options.');
+                    }
+                }
 
                 return true;
             });
@@ -205,7 +228,7 @@ function handleCreate (argv) {
             }
         }
     } else if (argv.name && argv.output !== 'none') {
-        throw Cli.usageError('The `name` option can only be specified when --output is set to `url`.');
+        // throw Cli.usageError('The `name` option can only be specified when --output is set to `url`.');
     }
     
     argv.merge = typeof argv.merge === 'undefined' ? true : !!argv.merge;
@@ -288,32 +311,40 @@ function handleCreate (argv) {
     function createToken () {
         var config = Webtask.configFile();
         var firstTime = false;
-
-        return config.load()
-            .then(function (profiles) {
-                if (_.isEmpty(profiles)) {
-                    throw Cli.usageError('You must create a profile to begin using '
-                        + 'this tool: `wt init`.');
-                }
-                
-                return config.getProfile(argv.profile);
-            })
-            .then(function (profile) {
-                if(!profile.hasCreated) {
-                    firstTime = true;
-
-                    return config.setProfile(argv.profile, _.assign(profile, { hasCreated: true }))
-                        .then(config.save.bind(config))
-                        .then(function () {
-                            return profile;
-                        })
-                        .catch(function (e) {
-                            throw Cli.usageError('Unable to save new config: ' + e.message);
-                        });
-                } else {
-                    return profile;
-                }
-            })
+        var profileData = {
+            url: argv.cluster_url,
+            container: argv.container,
+            token: argv.token,
+        };
+        var promise = argv.cluster_url && argv.token && argv.container
+            ? Webtask.createProfile(profileData)
+            : config.load()
+                .then(function (profiles) {
+                    if (_.isEmpty(profiles)) {
+                        throw Cli.usageError('You must create a profile to begin using '
+                            + 'this tool: `wt init`.');
+                    }
+                    
+                    return config.getProfile(argv.profile);
+                })
+                .then(function (profile) {
+                    if(!profile.hasCreated) {
+                        firstTime = true;
+    
+                        return config.setProfile(argv.profile, _.assign(profile, { hasCreated: true }))
+                            .then(config.save.bind(config))
+                            .then(function () {
+                                return profile;
+                            })
+                            .catch(function (e) {
+                                throw Cli.usageError('Unable to save new config: ' + e.message);
+                            });
+                    } else {
+                        return profile;
+                    }
+                });
+        
+        return promise
             .then(function (profile) {
                 return profile.createToken(argv)
                     .then(function (token) {

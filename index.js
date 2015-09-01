@@ -166,6 +166,8 @@ WebtaskProfile.prototype.createToken = Bluebird.method(function (options, cb) {
         params.dr = 1;
     if (options.name)
         params.jtn = options.name;
+    if (options.jti)
+        params.jti = options.jti;
     
     if (options.tokenLimit)
         addLimits(options.tokenLimit, limits.token);
@@ -348,6 +350,22 @@ WebtaskProfile.prototype.getCronJobHistory = function (options, cb) {
     return cb ? promise.nodeify(cb) : promise;
 };
 
+function createProfile (options, cb) {
+    var promise = Bluebird.try(function () {
+        ['url', 'container', 'token']
+            .forEach(function (k) {
+                if (!options[k]) {
+                    throw new Error('Missing required profile '
+                        + 'field `' + k + '`.');
+                }
+            });
+        
+        return new WebtaskProfile(options);
+    });
+    
+    return cb ? promise.nodeify(cb) : promise;
+}
+
 function request (wreck, method, path, query, payload, options) {
     if (!options) options = {};
     
@@ -502,3 +520,4 @@ exports.configFile = configFile;
 exports.withProfile = withProfile;
 exports.createToken = createToken;
 exports.createUserVerifier = createUserVerifier;
+exports.createProfile = createProfile;
