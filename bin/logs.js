@@ -89,7 +89,7 @@ function handleStream (argv) {
                         var data = JSON.parse(event.data);
                     } catch (__) { return; }
                     
-                    if (!data || (data.name !== 'sandbox-kafka' && !argv.all))
+                    if (!data || (data.name !== 'sandbox-logs' && !argv.all))
                         return;
                     
                     if (argv.raw) console.log(data.msg);
