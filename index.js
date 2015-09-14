@@ -493,7 +493,7 @@ UserVerifier.prototype.requestVerificationCode = Bluebird.method(function (phone
 });
 
 UserVerifier.isPhone = function (value) {
-    return !!value.match(/^\+?[0-9]{1,15}$/);
+    return value && !!value.match(/^\+?[0-9]{1,15}$/);
 };
     
 UserVerifier.isEmail = function (value) {

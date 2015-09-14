@@ -244,7 +244,7 @@ function getVerifiedProfile (argv) {
         profile = Promptly.promptAsync('E-mail or phone number:')
             .then(function (phoneOrEmail) {
                 return sendVerificationCode(phoneOrEmail);
-            })
+            });
     }
 
 
