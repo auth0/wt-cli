@@ -59,6 +59,7 @@ var tokenOptions = {
         description: 'show all advanced options when using the `--help` flag',
     },
     help: {
+        alias: 'h',
         type: 'boolean',
         description: 'Show help',
     }
@@ -154,15 +155,15 @@ module.exports = Cli.createCommand('create', 'Create webtasks', {
                     throw Cli.usageError('The `issuance-depth` parameter must be a '
                         + 'non-negative integer.');
                 }
-                
+
                 if (['url', 'token', 'token-url', 'none'].indexOf(argv.output) < 0) {
                     throw Cli.usageError('The `output` parameter must be one of: '
                         + '`url`, `token`, `token-url` or `none`.');
                 }
-                
+
                 if (argv.nbf) parseDate(argv, 'nbf');
                 if (argv.exp) parseDate(argv, 'exp');
-                
+
                 if (argv.secret) parseHash(argv, 'secret');
                 if (argv.param) parseHash(argv, 'param');
                 if (argv.tokenLimit) parseHash(argv, 'tokenLimit');
@@ -172,7 +173,7 @@ module.exports = Cli.createCommand('create', 'Create webtasks', {
                     throw Cli.usageError('The --watch flag can not be enabled at the same time '
                         + 'as the --json flag.');
                 }
-                
+
                 if (argv.cluster_url || argv.token) {
                     if (argv.profile !== tokenOptions.profile.default) {
                         throw Cli.usageError('The --profile option cannot be '
@@ -194,26 +195,26 @@ function handleCreate (argv) {
     var fileOrUrl = argv.params.file_or_url;
     var fol = fileOrUrl.toLowerCase();
     var useBabelRx = /^[\n\s]*(\"|\')use\s+latest\1\s*(?:;|\n)/;
-    
+
     if (fol.indexOf('http://') === 0 || fol.indexOf('https://') === 0) {
         if (argv.watch) {
             throw Cli.usageError('The --watch option can only be used '
                 + 'when a file name is specified.');
         }
-        
+
         if (argv.compile && !argv.capture) {
             throw Cli.usageError('The --compile option can only be used '
                 + 'when a file name is specified or when --capture is used '
                 + 'with a url.');
         }
-        
+
         argv.code_url = fileOrUrl;
     } else {
         if (argv.capture) {
             throw Cli.usageError('The --capture option can only be used '
             + 'when a url is specified.');
         }
-        
+
         argv.file_name = Path.resolve(process.cwd(), fileOrUrl);
     }
 
@@ -230,23 +231,23 @@ function handleCreate (argv) {
     } else if (argv.name && argv.output !== 'none') {
         // throw Cli.usageError('The `name` option can only be specified when --output is set to `url`.');
     }
-    
+
     argv.merge = typeof argv.merge === 'undefined' ? true : !!argv.merge;
     argv.parse = typeof argv.parse === 'undefined' ? true : !!argv.parse;
-    
+
     return maybeReadCode()
         .then(createToken)
         .finally(maybeWatchCode);
-    
+
     function maybeReadCode () {
         if (!argv.file_name && !argv.capture) return Bluebird.resolve();
-        
+
         var promise = argv.file_name
             ? Bluebird.try(Fs.readFileSync, [argv.file_name, 'utf8'])
             : Wreck.getAsync(argv.code_url)
                 .get(1)
                 .call('toString', 'utf8');
-            
+
         return promise
             .then(function (code) {
                 if (argv.compile === 'babel') {
@@ -257,30 +258,30 @@ function handleCreate (argv) {
                 } else {
                     // Support local transformation of "use latest";
                     var matches = code.match(useBabelRx);
-                    
+
                     if (matches) {
                         // Get rid of the "use latest";
                         return compileWithBabel(code);
                     }
                 }
-                
+
                 return code;
             })
             .then(function (code) {
                 // In case we are coming from --capture
                 delete argv.code_url;
-                
+
                 argv.code = code;
             });
     }
-    
+
     function maybeWatchCode () {
         if (argv.file_name && argv.watch) {
             var generation = 0;
             var watcher = Watcher();
-            
+
             watcher.add(argv.file_name);
-            
+
             watcher.on('change', function () {
                 maybeReadCode()
                     .tap(function () {
@@ -292,22 +293,22 @@ function handleCreate (argv) {
             });
         }
     }
-    
+
     function compileWithBabel (code) {
         var options = {};
-        
+
         try {
             var babelrc = Fs.readFileSync(Path.join(process.cwd(), '.babelrc'),
                 'utf8');
-            
+
             options = _.extend(options, JSON.parse(babelrc));
         } catch (__) {}
-        
+
         code = code.replace(useBabelRx, '');
-        
+
         return Babel.transform(code, options).code;
     }
-    
+
     function createToken () {
         var config = Webtask.configFile();
         var firstTime = false;
@@ -324,13 +325,13 @@ function handleCreate (argv) {
                         throw Cli.usageError('You must create a profile to begin using '
                             + 'this tool: `wt init`.');
                     }
-                    
+
                     return config.getProfile(argv.profile);
                 })
                 .then(function (profile) {
                     if(!profile.hasCreated) {
                         firstTime = true;
-    
+
                         return config.setProfile(argv.profile, _.assign(profile, { hasCreated: true }))
                             .then(config.save.bind(config))
                             .then(function () {
@@ -343,7 +344,7 @@ function handleCreate (argv) {
                         return profile;
                     }
                 });
-        
+
         return promise
             .then(function (profile) {
                 return profile.createToken(argv)
@@ -386,7 +387,7 @@ function handleCreate (argv) {
                     console.log('\nRun your new webtask like so:\n\t$ curl %s'.green,
                         data.named_webtask_url || data.webtask_url);
                 }
-                
+
                 return data;
             });
     }
@@ -397,33 +398,33 @@ function parseDate (argv, field) {
     var date = (value[0] === '+')
         ? new Date(Date.now() + parseInt(value.substring(1), 10) * 60 * 1000)
         : Date.parse(value);
-    
+
     if (isNaN(date)) {
         throw Cli.usageError('Invalid value of `' + field + '`. Use RFC2822 format '
             + '(e.g. Mon, 25 Dec 1995 13:30:00 GMT) or ISO 8601 format '
             + '(e.g. 2011-10-10T14:48:00). You can also say +10 to indicate '
             + '"ten minutes from now".');
     }
-    
+
     argv[field] = Math.floor(date.valueOf() / 1000);
 }
 
 function parseHash (argv, field) {
     var param = argv[field];
-    
+
     if (!_.isArray(param)) argv[field] = [param];
-    
+
     argv[field] = _.reduce(argv[field], function (hash, item) {
         var parts = item.split('=');
         var key = parts.shift();
         var value = parts.join('=');
-        
+
         if (!key || !value) throw Cli.usageError('Unsupported ' + field + ' `'
             + value + '`. All ' + field + 's must be in the <key>=<value> '
             + 'format.');
-        
+
         hash[key] = value;
-        
+
         return hash;
     }, {});
 }
