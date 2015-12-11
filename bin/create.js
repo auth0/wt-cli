@@ -115,7 +115,7 @@ var advancedTokenOptions = {
         type: 'string',
     },
     jti: {
-        description: 'specify the json token id that will bused',
+        description: 'specify the json token id that will be used',
         type: 'string',
     },
 };
