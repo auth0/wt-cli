@@ -10,7 +10,7 @@ $ wt create foo.js
 
 ### Create from URL
 
-Creates a webtask that when called it will fetch the code from that public URL and execute it. By default the code is not cached, use `--prod` modifier to get a URL where the code is not cached.
+Creates a webtask that when called it will fetch the code from that public URL and execute it. By default the code is not cached, use `--prod` modifier to get a URL where the code is cached.
 
 ```bash
 $ wt create https://raw.githubusercontent.com/auth0/wt-cli/master/sample-webtasks/html-response.js \
@@ -35,7 +35,7 @@ $ wt create https://raw.githubusercontent.com/auth0/wt-cli/master/sample-webtask
           --secret MONGO_URL=mongodb://webtask:supersecret@ds047592.mongolab.com:47592/webtask-examples
 ```
 
-> Secrets are encrypted with AES256-CBC. This is a real mongodb URL (powered by mongolab), no guarrantee that it will work :)
+> Secrets are encrypted with AES256-CBC. This is a real mongodb URL (powered by mongolab), no guarantee that it will work :)
 
 ### Cron
 
