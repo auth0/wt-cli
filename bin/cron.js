@@ -314,7 +314,7 @@ function printCronJob (job) {
     
     if (job.results.length) {
         console.log('Last result: '.blue, job.results[0].type);
-        console.log('Last run at: '.blue, new Date(job.results[0].created_at).toLocaleString());
+        console.log('Last run:    '.blue, new Date(job.results[0].completed_at).toLocaleString());
     }
     
     var intervalOptions = {
