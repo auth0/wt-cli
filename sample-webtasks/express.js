@@ -4,9 +4,11 @@ var Express = require('express');
 var Webtask = require('webtask-tools');
 var app = Express();
 
+app.use(require('body-parser').json());
+
 // POST
-app.post('*', function (req, res) {
-    res.send(200);
+app.post('/sample/path', function (req, res) {
+    res.json(req.body);
 });
 
 // GET
