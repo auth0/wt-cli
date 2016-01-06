@@ -1,4 +1,4 @@
-/* More on programming models: https://webtask.io/docs/models */
+/* More on programming models: https://webtask.io/docs/model */
 
 module.exports = 
     function (context, req, res) {
