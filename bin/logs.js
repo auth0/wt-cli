@@ -18,7 +18,7 @@ module.exports = Cli.createCommand('logs', 'Streaming, real-time logs', {
         },
         all: {
             alias: 'a',
-            description: 'show cluster logs',
+            description: 'show cluster logs (deprecated, has no effect)',
             type: 'boolean',
         },
         verbose: {
@@ -89,7 +89,7 @@ function handleStream (argv) {
                         var data = JSON.parse(event.data);
                     } catch (__) { return; }
                     
-                    if (!data || (data.name !== 'sandbox-logs' && !argv.all))
+                    if (!data)
                         return;
                     
                     if (argv.raw) console.log(data.msg);
