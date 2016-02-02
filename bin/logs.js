@@ -5,6 +5,8 @@ var Cli = require('nested-yargs');
 var Colors = require('colors');
 var PrettyStream = require('bunyan-prettystream');
 var Webtask = require('../');
+var Fs = require('fs');
+var Path = require('path');
 var _ = require('lodash');
 
 
@@ -31,6 +33,11 @@ module.exports = Cli.createCommand('logs', 'Streaming, real-time logs', {
             description: 'name of the webtask profile to use',
             'default': 'default',
             type: 'string',
+        },
+        browser: {
+            alias: 'b',
+            description: 'create URL to see logs in a browser',
+            type: 'boolean',
         },
     },
     handler: handleStream,
@@ -68,10 +75,32 @@ function handleStream (argv) {
             return config.getProfile(argv.profile);
         })
         .then(function (profile) {
-            return Bluebird.all([
-                profile,
-                profile.createLogStream(argv)
-            ]);
+
+            if (argv.browser) {
+                var options = {
+                    container: (argv.container || profile.container),
+                    code: Fs.readFileSync(Path.resolve(__dirname, 'browser_logs.js'), { encoding: 'utf8' }),
+                    exp: Math.floor(Date.now() / 1000) + 7200, // 2h
+                    param: {
+                        container: (argv.container || profile.container),
+                        logging_url: profile.url + '/api/logs/tenant/' 
+                            + (argv.container || profile.container)
+                    }
+                };
+                return profile.createToken(options)
+                    .then(function (token) {
+                        console.log(profile.url + '/api/run/'
+                                + (argv.container || profile.container)
+                                + '?key=' + token);
+                        process.exit(0);
+                    });
+            }
+            else {
+                return Bluebird.all([
+                    profile,
+                    profile.createLogStream(argv)
+                ]);
+            }
         })
         .spread(function (profile, stream) {
             logger.info({ container: argv.container || profile.container },
