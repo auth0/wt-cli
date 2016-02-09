@@ -10,7 +10,9 @@ var cli = Cli.app({
 });
 
 
+cli.addCommand(require('./profile/init'));
 cli.addCategory(require('./profile'));
+cli.addCommand(require('./logs'));
 
 
 cli.run();
