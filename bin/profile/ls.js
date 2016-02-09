@@ -8,22 +8,22 @@ var printProfile = require('./printProfile');
 
 
 module.exports = Cli.command('ls', {
-    description: 'list existing webtask profiles',
+    description: 'List existing webtask profiles',
     handler: handleProfileList,
     options: {
         json: {
             alias: 'j',
-            description: 'json output',
+            description: 'JSON output',
             type: 'boolean',
         },
         details: {
             alias: 'd',
-            description: 'show more details',
+            description: 'Show more details',
             type: 'boolean',
         },
         token: {
             alias: 't',
-            description: 'show tokens (hidden by default)',
+            description: 'Show tokens (hidden by default)',
             type: 'boolean',
         },
     },

@@ -8,17 +8,17 @@ var _ = require('lodash');
 
 
 module.exports = Cli.command('nuke', {
-    description: 'destroy all existing profiles and their secrets',
+    description: 'Destroy all existing profiles and their secrets',
     handler: handleProfileNuke,
     options: {
         force: {
             alias: 'f',
-            description: 'do not prompt for confirmation',
+            description: 'Do not prompt for confirmation',
             type: 'boolean',
         },
         silent: {
             alias: 's',
-            description: 'no output',
+            description: 'No output',
             type: 'boolean',
         },
     },

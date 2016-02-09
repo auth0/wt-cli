@@ -13,35 +13,35 @@ var printProfile = require('./printProfile');
 
 
 module.exports = Cli.command('init', {
-    description: 'create and update webtask profiles',
+    description: 'Create and update webtask profiles',
     handler: handleProfileInit,
     options: {
         token: {
             alias: 't',
-            description: 'webtask token used to issue new tokens',
+            description: 'Webtask token used to issue new tokens',
             type: 'string',
         },
         container: {
             alias: 'c',
-            description: 'default webtask container',
+            description: 'Default webtask container',
             type: 'string',
         },
         url: {
             alias: 'u',
             defaultValue: 'https://webtask.it.auth0.com',
-            description: 'webtask service URL',
+            description: 'Webtask service URL',
             type: 'string',
         },
         profile: {
             alias: 'p',
             defaultValue: 'default',
-            description: 'name of the profile to set up',
+            description: 'Wame of the profile to set up',
             type: 'string',
         },
     },
     params: {
         'email_or_phone': {
-            description: 'email or phone number that will be used to configure a new webtask profile',
+            description: 'Email or phone number that will be used to configure a new webtask profile',
             type: 'string',
         },
     },

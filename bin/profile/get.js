@@ -9,33 +9,33 @@ var printProfile = require('./printProfile');
 
 
 module.exports = Cli.command('get', {
-    description: 'get information about an existing webtask profile',
+    description: 'Get information about an existing webtask profile',
     handler: handleProfileGet,
     options: {
         json: {
             alias: 'j',
-            description: 'json output',
+            description: 'JSON output',
             type: 'boolean',
         },
         details: {
             alias: 'd',
-            description: 'show more details',
+            description: 'Show more details',
             type: 'boolean',
         },
         field: {
             alias: 'f',
-            description: 'return only the indicated field',
+            description: 'Return only the indicated field',
             type: 'string',
         },
         token: {
             alias: 't',
-            description: 'show tokens (hidden by default)',
+            description: 'Show tokens (hidden by default)',
             type: 'boolean',
         },
     },
     params: {
         'profile': {
-            description: 'profile to inspect',
+            description: 'Profile to inspect',
             type: 'string',
             defaultValue: 'default',
         },

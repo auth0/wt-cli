@@ -9,18 +9,18 @@ var printProfile = require('./printProfile');
 
 
 module.exports = Cli.command('rm', {
-    description: 'remove a saved webtask profile',
+    description: 'Remove a saved webtask profile',
     handler: handleProfileRemove,
     options: {
         silent: {
             alias: 's',
-            description: 'no output',
+            description: 'No output',
             type: 'boolean',
         },
     },
     params: {
         'profile': {
-            description: 'profile to remove',
+            description: 'Profile to remove',
             type: 'string',
             defaultValue: 'default',
         },
