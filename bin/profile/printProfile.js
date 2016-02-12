@@ -6,12 +6,12 @@ var Pad = require('pad');
 module.exports = printProfile;
 
 
-function printProfile (name, profile, options) {
+function printProfile(profile, options) {
     var width = 12;
     
     if (!options) options = {};
     
-    console.log(Chalk.blue(Pad('Profile:', width)), Chalk.green(name));
+    console.log(Chalk.blue(Pad('Profile:', width)), Chalk.green(profile.name));
     console.log(Chalk.blue(Pad('URL:', width)), profile.url);
     console.log(Chalk.blue(Pad('Container:', width)), profile.container);
     

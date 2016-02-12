@@ -2,7 +2,6 @@ var Bluebird = require('bluebird');
 var Chalk = require('chalk');
 var Cli = require('../../cli');
 var ConfigFile = require('../../lib/config');
-var Errors = require('../../lib/errors');
 var Promptly = Bluebird.promisifyAll(require('promptly'));
 var Sandbox = require('sandboxjs');
 var UserVerifier = require('../../lib/userVerifier');
@@ -60,23 +59,21 @@ function handleProfileInit(args) {
         .catch(_.matchesProperty('code', 'E_NOTFOUND'), _.identity)
         .then(verifyUserOrReturnProfile)
         .tap(updateProfile)
-        .tap(showCompleteMessage)
-        .catch(onError);
+        .tap(showCompleteMessage);
     
     
     function confirmProfileOverwrite(profile) {
         console.log('You already have the `' + args.profile
             + '` profile:');
 
-        printProfile(args.profile, profile);
+        printProfile(profile);
 
         return Promptly.confirmAsync('Do you want to override it? [y/N]', {
             'default': false,
         })
             .then(function (override) {
                 if (!override) {
-                    throw Errors.cancelled('User chose not to override '
-                        + 'existing profile.', profile);
+                    throw Cli.error.cancelled('Cancelled', profile);
                 }
             });
     }
@@ -88,26 +85,20 @@ function handleProfileInit(args) {
     }
     
     function updateProfile(profile) {
-        console.log('updateProfile', profile);
         config.setProfile(args.profile, {
             url: profile.url,
             token: profile.token,
             container: profile.container,
-        });
-        
-        return config.save();
+        })
+            .tap(function () {
+                return config.save();
+            });
     }
     
     function showCompleteMessage(profile) {
         console.log(Chalk.green('Welcome to webtasks! Create your first one as follows:\n\n'
             + Chalk.bold('$ echo "module.exports = function (cb) { cb(null, \'Hello\'); }" > hello.js\n')
             + Chalk.bold('$ wt create hello.js\n')));
-    }
-    
-    function onError(err) {
-        console.error(Chalk.red(err.message));
-        
-        process.exit(1);
     }
 }
 
@@ -141,8 +132,7 @@ function getVerifiedProfile (args) {
             })
                 .then(function (tryAgain) {
                     if (!tryAgain) {
-                        throw Errors.cancelled('Failed to verify user\'s '
-                            + 'identity.', err);
+                        throw Cli.error.cancelled('Failed to verify identity', err);
                     }
 
                     return getVerifiedProfile(args);
@@ -173,7 +163,7 @@ function sendVerificationCode (phoneOrEmail) {
 
         return Promptly.promptAsync('Verification code:')
             .then(verifyFunc)
-            .timeout(FIVE_MINUTES, 'Verification code expired.')
+            .timeout(FIVE_MINUTES, 'Verification code expired')
             .catch(function (e) {
                 console.log('\n' + Chalk.red(e.message) + '\n');
             });

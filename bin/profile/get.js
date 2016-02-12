@@ -1,7 +1,6 @@
 var Chalk = require('chalk');
 var Cli = require('../../cli');
 var ConfigFile = require('../../lib/config');
-var Errors = require('../../lib/errors');
 var _ = require('lodash');
 
 
@@ -37,7 +36,6 @@ module.exports = Cli.command('get', {
         'profile': {
             description: 'Profile to inspect',
             type: 'string',
-            defaultValue: 'default',
         },
     },
 });
@@ -54,22 +52,15 @@ function handleProfileGet(args) {
                 var value = profile[args.field.toLowerCase()];
 
                 if (!value) {
-                    console.error(Chalk.red('Field `' + args.field + '` does not '
-                    + 'exist'));
-                    
-                    process.exit(1);
+                    throw Cli.error.invalid('Field `' + args.field + '` does not '
+                    + 'exist');
                 }
 
                 console.log(args.json ? JSON.stringify(value) : value);
             } else {
                 if (args.json) console.log(profile);
-                else printProfile(args.profile, profile, { details: args.details, token: args.token });
+                else printProfile(profile, { details: args.details, token: args.token });
             }
-        })
-        .catch(_.matchesProperty('code', 'E_NOTFOUND'), function (err) {
-            console.error(Chalk.red(err.message));
-            
-            process.exit(1);            
         });
 }
 

@@ -1,5 +1,4 @@
 #!/usr/bin/env node
-
 var Cli = require('../cli');
 var Package = require('../package.json');
 
@@ -10,9 +9,10 @@ var cli = Cli.app({
 });
 
 
-cli.addCommand(require('./profile/init'));
+cli.addCommand(require('./init'));
+cli.addCommand(require('./create'));
 cli.addCategory(require('./profile'));
 cli.addCommand(require('./logs'));
 
 
-cli.run();
+Cli.run(cli, { timeout: 1000 * 20 });

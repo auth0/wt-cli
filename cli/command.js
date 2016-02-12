@@ -26,12 +26,14 @@ Command.prototype.configure = function (parser) {
         if (options.alias) switches.push('-' + options.alias);
         
         parser.addArgument(switches, {
-            action: options.type !== 'boolean' ? 'store' : 'storeTrue',
+            action: options.action || (options.type !== 'boolean' ? 'store' : 'storeTrue'),
+            choices: options.choices,
             defaultValue: options.defaultValue,
             // type: options.type === 'boolean' ? 'bool' : options.type,
+            metavar: options.metavar,
             required: options.required,
             help: options.description,
-            dest: name,
+            dest: options.dest || name,
         });
     }
     
@@ -41,10 +43,9 @@ Command.prototype.configure = function (parser) {
         if (options.alias) switches.push(options.alias);
         
         parser.addArgument(switches, {
-            nargs: '?',
+            nargs: options.nargs || (options.required ? undefined : '?'),
             defaultValue: options.defaultValue,
             type: options.type,
-            required: options.required,
             help: options.description,
         });
     }

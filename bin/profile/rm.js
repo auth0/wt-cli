@@ -1,11 +1,7 @@
 var Chalk = require('chalk');
 var Cli = require('../../cli');
 var ConfigFile = require('../../lib/config');
-var Errors = require('../../lib/errors');
 var _ = require('lodash');
-
-
-var printProfile = require('./printProfile');
 
 
 module.exports = Cli.command('rm', {
@@ -40,11 +36,6 @@ function handleProfileRemove(args) {
             if (!args.silent) {
                 console.log(Chalk.green('Profile `' + args.profile + '` removed.'));
             }
-        })
-        .catch(_.matchesProperty('code', 'E_NOTFOUND'), function (err) {
-            console.error(Chalk.red(err.message));
-            
-            process.exit(1);            
         });
 }
 

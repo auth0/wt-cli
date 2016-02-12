@@ -11,19 +11,20 @@ module.exports = Cli.command('ls', {
     description: 'List existing webtask profiles',
     handler: handleProfileList,
     options: {
-        json: {
+        'json': {
             alias: 'j',
             description: 'JSON output',
             type: 'boolean',
         },
-        details: {
+        'details': {
             alias: 'd',
             description: 'Show more details',
             type: 'boolean',
         },
-        token: {
+        'show-token': {
             alias: 't',
             description: 'Show tokens (hidden by default)',
+            dest: 'token',
             type: 'boolean',
         },
     },
@@ -45,14 +46,12 @@ function handleProfileList(args) {
                 
                 console.log(profiles);
             } else if (_.isEmpty(profiles)) {
-                console.log('No webtask profiles found. To get started:\n');
-                console.log(Chalk.bold('$ wt init'));
-                
-                process.exit(1);
+                throw Cli.error.hint('No webtask profiles found. To get started:\n'
+                    + Chalk.bold('$ wt init'));
             }
             else {
                 _.forEach(profiles, function (profile, profileName) {
-                    printProfile(profileName, profile, { details: args.details, token: args.token });
+                    printProfile(profile, { details: args.details, token: args.token });
                     console.log();
                 });
             }
