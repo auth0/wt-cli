@@ -1,5 +1,5 @@
 var Chalk = require('chalk');
-var Cli = require('../../cli');
+var Cli = require('structured-cli');
 var ConfigFile = require('../../lib/config');
 var _ = require('lodash');
 
@@ -7,7 +7,7 @@ var _ = require('lodash');
 var printProfile = require('./printProfile');
 
 
-module.exports = Cli.command('ls', {
+module.exports = Cli.createCommand('ls', {
     description: 'List existing webtask profiles',
     handler: handleProfileList,
     options: {

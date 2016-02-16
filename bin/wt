@@ -1,18 +1,58 @@
 #!/usr/bin/env node
-var Cli = require('../cli');
+var Bluebird = require('bluebird');
+var Chalk = require('chalk');
+var Cli = require('structured-cli');
 var Package = require('../package.json');
+var _ = require('lodash');
 
 
-var cli = Cli.app({
+var cli = Cli.createApp({
     description: Package.description,
     version: Package.version,
 });
 
 
-cli.addCommand(require('./init'));
-cli.addCommand(require('./create'));
-cli.addCategory(require('./profile'));
-cli.addCommand(require('./logs'));
+cli.addChild(require('./init'));
+cli.addChild(require('./create'));
+cli.addChild(require('./profile'));
+cli.addChild(require('./cron'));
+cli.addChild(require('./logs'));
 
 
-Cli.run(cli, { timeout: 1000 * 20 });
+Cli.run(cli)
+    .timeout(1000 * 60 * 40, Cli.error.timeout('Command timed out after 30 min'))
+    // Code: 1
+    .catch(_.matchesProperty('code', 'E_CANCELLED'), function (err) {
+        console.error(err.message);
+        
+        process.exit(1);
+    })
+    // Code: 2
+    .catch(_.matchesProperty('code', 'E_INVALID'), function (err) {
+        this.error(Chalk.red(err.message));
+        
+        // argparse triggers `process.exit(2)`
+    })
+    // Code: 3
+    .catch(_.matchesProperty('code', 'E_HINT'), function (err) {
+        console.error(err.message);
+        
+        process.exit(3);
+    })
+    // Code: 4
+    .catch(_.matchesProperty('code', 'E_TIMEOUT'), function (err) {
+        console.error(Chalk.red(err.message));
+        
+        process.exit(4);
+    })
+    // Code: 5
+    .catch(function (err) {
+        console.error(Chalk.red('Uncaught error: ', err.message));
+        console.error(err.stack);
+        console.error('Please report this at: https://github.com/auth0/wt-cli/issues');
+        
+        process.exit(1);
+    })
+    .then(function () {
+        process.exit(0);
+    });

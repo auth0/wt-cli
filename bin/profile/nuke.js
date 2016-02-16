@@ -1,12 +1,12 @@
 var Bluebird = require('bluebird');
 var Chalk = require('chalk');
-var Cli = require('../../cli');
+var Cli = require('structured-cli');
 var ConfigFile = require('../../lib/config');
 var Promptly = Bluebird.promisifyAll(require('promptly'));
 var _ = require('lodash');
 
 
-module.exports = Cli.command('nuke', {
+module.exports = Cli.createCommand('nuke', {
     description: 'Destroy all existing profiles and their secrets',
     handler: handleProfileNuke,
     options: {

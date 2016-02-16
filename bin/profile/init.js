@@ -1,6 +1,6 @@
 var Bluebird = require('bluebird');
 var Chalk = require('chalk');
-var Cli = require('../../cli');
+var Cli = require('structured-cli');
 var ConfigFile = require('../../lib/config');
 var Promptly = Bluebird.promisifyAll(require('promptly'));
 var Sandbox = require('sandboxjs');
@@ -11,7 +11,7 @@ var _ = require('lodash');
 var printProfile = require('./printProfile');
 
 
-module.exports = Cli.command('init', {
+module.exports = Cli.createCommand('init', {
     description: 'Create and update webtask profiles',
     handler: handleProfileInit,
     options: {

@@ -1,10 +1,10 @@
 var Chalk = require('chalk');
-var Cli = require('../../cli');
+var Cli = require('structured-cli');
 var ConfigFile = require('../../lib/config');
 var _ = require('lodash');
 
 
-module.exports = Cli.command('rm', {
+module.exports = Cli.createCommand('rm', {
     description: 'Remove a saved webtask profile',
     handler: handleProfileRemove,
     options: {
