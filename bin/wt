@@ -46,6 +46,12 @@ Cli.run(cli)
         process.exit(4);
     })
     // Code: 5
+    .catch(_.matchesProperty('code', 'E_NOTFOUND'), function (err) {
+        console.error(Chalk.red(err.message));
+        
+        process.exit(5);
+    })
+    // Code: 6
     .catch(function (err) {
         console.error(Chalk.red('Uncaught error: ', err.message));
         console.error(err.stack);

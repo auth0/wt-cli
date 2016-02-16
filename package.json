@@ -38,7 +38,7 @@
     "lodash": "^3.10.0",
     "pad": "^1.0.0",
     "promptly": "^0.2.1",
-    "sandboxjs": "^2.1.0",
+    "sandboxjs": "^2.1.2",
     "superagent": "^1.7.2",
     "webtask-bundle": "^1.2.1"
   },
