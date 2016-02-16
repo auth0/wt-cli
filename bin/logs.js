@@ -1,12 +1,13 @@
+var Bluebird = require('bluebird');
 var Chalk = require('chalk');
-var Cli = require('../cli');
+var Cli = require('structured-cli');
 var ConfigFile = require('../lib/config');
 var Errors = require('../lib/errors');
 var Logs = require('../lib/logs');
 var _ = require('lodash');
 
 
-module.exports = Cli.command('logs', {
+module.exports = Cli.createCommand('logs', {
     description: 'Streaming, real-time logs',
     handler: handleLogs,
     options: {
@@ -42,8 +43,10 @@ function handleLogs(args) {
 
     return config.load()
         .then(loadProfile)
-        .tap(function (profile) {
+        .then(function (profile) {
             Logs.createLogStream(profile, args);
+            
+            return Bluebird.delay(30 * 60 * 1000);
         })
         .catch(_.matchesProperty('code', 'E_NOTFOUND'), function (err) {
             console.error(Chalk.red(err.message));
