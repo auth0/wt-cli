@@ -12,6 +12,7 @@ module.exports = Cli.createCommand('edit', {
         'name': {
             description: 'The named webtask you want to edit',
             type: 'string',
+            required: true,
         },
     },
     handler: handleEdit,
