@@ -68,7 +68,7 @@ function handleProfileGet(args) {
                     PrintProfile(profile, { details: args.details, token: args.showToken });
                     
                     if (!args.showToken) console.log(Chalk.bold('* Hint: Use --show-token to show the token for this profile.'));
-                    else console.log(Chalk.bold('* Warning: This token should only be shared with trusted parties.'));
+                    else console.log(Chalk.bold('* Warning: Tokens are like passwords and should not be shared.'));
                 }
             }
         });

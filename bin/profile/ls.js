@@ -57,6 +57,8 @@ function handleProfileList(args) {
                     if (i++) console.log();
                     PrintProfile(profile, { details: args.details, token: args.showToken });
                 });
+                
+                if (args.showToken) console.log(Chalk.bold('* Warning: Tokens are like passwords and should not be shared.'));
             }
         });
 }
