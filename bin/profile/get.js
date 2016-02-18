@@ -61,8 +61,13 @@ function handleProfileGet(args) {
 
                 console.log(args.output === 'json' ? JSON.stringify(value) : value);
             } else {
-                if (args.output === 'json') console.log(profile);
-                else PrintProfile(profile, { details: args.details, token: args.showToken });
+                if (args.output === 'json') {
+                    console.log(profile);
+                } else {
+                    PrintProfile(profile, { details: args.details, token: args.showToken });
+                    
+                    if (!args.showToken) console.log('Hint: Use --show-token to show the token for this profile');
+                }
             }
         });
 }
