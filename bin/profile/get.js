@@ -64,9 +64,11 @@ function handleProfileGet(args) {
                 if (args.output === 'json') {
                     console.log(profile);
                 } else {
+                    
                     PrintProfile(profile, { details: args.details, token: args.showToken });
                     
-                    if (!args.showToken) console.log('Hint: Use --show-token to show the token for this profile');
+                    if (!args.showToken) console.log(Chalk.bold('* Hint: Use --show-token to show the token for this profile.'));
+                    else console.log(Chalk.bold('* Warning: This token should only be shared with trusted parties.'));
                 }
             }
         });
