@@ -9,7 +9,7 @@ var RAW_CLAIMS = {
     dd: {
         type: 'number',
     },
-    url: {
+    'code-url': {
         type: 'string', 
     },
     code: {
@@ -115,6 +115,11 @@ function handleTokenCreate(args) {
     var profile = args.profile;
     var claims = _.pick(_.pickBy(args, Boolean), Object.keys(RAW_CLAIMS));
     
+    if (claims['code-url']) {
+        claims.url = claims['code-url'];
+        delete claims['code-url'];
+    }
+    
     if (args.claims) {
         try {
             claims = _.defaultsDeep(claims, JSON.parse(args.claims));
@@ -125,8 +130,6 @@ function handleTokenCreate(args) {
     
     claims.ectx = parseTuples(claims.ectx);
     claims.pctx = parseTuples(claims.pctx);
-    
-    console.log(claims);
 
     return profile.createTokenRaw(claims)
         .catch(function (err) {

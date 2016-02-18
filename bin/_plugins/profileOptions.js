@@ -9,7 +9,7 @@ function onBeforeConfigure(context) {
     node.addOptionGroup('Webtask profile', {
         profile: {
             alias: 'p',
-            description: 'Use a saved webtask profile',
+            description: 'Default to the webtask container, token, and URL from a stored profile',
             type: 'string',
         },
         container: {
@@ -17,8 +17,8 @@ function onBeforeConfigure(context) {
             description: 'Set the webtask container',
             type: 'string',
         },
-        cluster: {
-            description: 'Set the webtask cluster url',
+        url: {
+            description: 'Set the webtask server url',
             type: 'string',
         },
         token: {

@@ -32,7 +32,7 @@ function sandboxFromArguments(args, options) {
             if (args.profile && !options.allowProfile) return resolve(new Cli.error.invalid('--profile should not be specified with custom tokens'));
             
             var sandboxOptions = {
-                url: args.cluster || 'https://webtask.it.auth0.com',
+                url: args.url || 'https://webtask.it.auth0.com',
             };
             
             if (args.container) sandboxOptions.container = args.container;
@@ -44,7 +44,7 @@ function sandboxFromArguments(args, options) {
             }
         }
         
-        if (args.cluster) return reject(Cli.error.invalid('--token must be specified with --cluster'));
+        if (args.url) return reject(Cli.error.invalid('--token must be specified with --url'));
         
         var config = new ConfigFile();
         var profile$ = config.load()
