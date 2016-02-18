@@ -18,13 +18,13 @@ var RAW_CLAIMS = {
     ectx: {
         action: 'append',
         defaultValue: [],
-        metavar: 'KEY=VALUE, [KEY=VALUE, ...]',
+        metavar: 'KEY=VALUE',
         type: 'string',
     },
     pctx: {
         action: 'append',
         defaultValue: [],
-        metavar: 'KEY=VALUE, [KEY=VALUE, ...]',
+        metavar: 'KEY=VALUE',
         type: 'string',
     },
     nbf: {
