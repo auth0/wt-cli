@@ -14,7 +14,7 @@ module.exports = Cli.createCommand('schedule', {
     plugins: [
         require('../_plugins/profile'),
     ],
-    options: _.extend({}, createCommand.options.options, {
+    options: _.extend({}, createCommand.options, {
         
     }),
     params: _.extend({}, {
@@ -23,7 +23,7 @@ module.exports = Cli.createCommand('schedule', {
             type: 'string',
             required: true,
         },
-    }, createCommand.options.params),
+    }, createCommand.params),
     handler: handleCronSchedule,
 });
 
