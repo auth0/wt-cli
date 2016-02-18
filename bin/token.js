@@ -2,7 +2,7 @@ var Cli = require('structured-cli');
 
 
 var category = module.exports = Cli.createCategory('token', {
-    description: 'Create and inspect webtask tokens',
+    description: 'Advanced operations on webtask tokens',
 });
 
 category.addChild(require('./token/create'));
