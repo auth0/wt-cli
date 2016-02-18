@@ -1,33 +1,33 @@
 var Chalk = require('chalk');
 var Cli = require('structured-cli');
 var ConfigFile = require('../../lib/config');
+var PrintProfile = require('../../lib/printProfile');
 var _ = require('lodash');
-
-
-var printProfile = require('./printProfile');
 
 
 module.exports = Cli.createCommand('ls', {
     description: 'List existing webtask profiles',
-    handler: handleProfileList,
-    options: {
-        'json': {
-            alias: 'j',
-            description: 'JSON output',
-            type: 'boolean',
-        },
-        'details': {
-            alias: 'd',
-            description: 'Show more details',
-            type: 'boolean',
-        },
-        'show-token': {
-            alias: 't',
-            description: 'Show tokens (hidden by default)',
-            dest: 'token',
-            type: 'boolean',
+    optionGroups: {
+        'Output options': {
+            'output': {
+                alias: 'o',
+                description: 'Set the output format',
+                choices: ['json'],
+                type: 'string',
+            },
+            'details': {
+                alias: 'd',
+                description: 'Show more details',
+                type: 'boolean',
+            },
+            'show-token': {
+                description: 'Show tokens (hidden by default)',
+                dest: 'showToken',
+                type: 'boolean',
+            },
         },
     },
+    handler: handleProfileList,
 });
 
 
@@ -38,21 +38,24 @@ function handleProfileList(args) {
 
     return config.load()
         .tap(function (profiles) {
-            if (args.json) {
+            if (args.output === 'json') {
+                var props = ['url', 'container'];
+                
                 // Strip tokens by default
-                if (!args.token) {
-                    profiles = _.mapValues(profiles, _.partialRight(_.omit, 'token'));
+                if (args.showToken) {
+                    props.push('token');
                 }
                 
-                console.log(profiles);
+                console.log(_.mapValues(profiles, _.partialRight(_.pick, props)));
             } else if (_.isEmpty(profiles)) {
                 throw Cli.error.hint('No webtask profiles found. To get started:\n'
                     + Chalk.bold('$ wt init'));
             }
             else {
+                var i = 0;
                 _.forEach(profiles, function (profile, profileName) {
-                    printProfile(profile, { details: args.details, token: args.token });
-                    console.log();
+                    if (i++) console.log();
+                    PrintProfile(profile, { details: args.details, token: args.token });
                 });
             }
         });

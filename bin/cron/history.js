@@ -1,24 +1,14 @@
 var Cli = require('structured-cli');
-var ConfigFile = require('../../lib/config');
 var Pad = require('pad');
-var PrintCronJob = require('../../lib/printCronJob');
 var _ = require('lodash');
 
 
 module.exports = Cli.createCommand('history', {
     description: 'Review cron job history',
-    handler: handleCronHistory,
+    plugins: [
+        require('../_plugins/profile'),
+    ],
     options: {
-        profile: {
-            alias: 'p',
-            description: 'Webtask profile to use',
-            type: 'string',
-        },
-        container: {
-            alias: 'c',
-            description: 'Overwrite the profile\'s webtask container',
-            type: 'string',
-        },
         output: {
             alias: 'o',
             description: 'Set the output format',
@@ -47,28 +37,24 @@ module.exports = Cli.createCommand('history', {
             type: 'string',
             required: true,
         }
-    }
+    },
+    handler: handleCronHistory,
 });
 
 
 // Command handler
 
 function handleCronHistory(args) {
-    var config = new ConfigFile();
-
-    return config.getProfile(args.profile)
-        .then(onProfile);
-        
+    var profile = args.profile;
     
-    function onProfile(profile) {
-        return profile.getCronJobHistory({
-            container: args.container || profile.container,
-            name: args.name,
-            offset: args.offset,
-            limit: args.limit,
-        })
-            .then(onCronJobHistory, onCronError);
-    }
+    return profile.getCronJobHistory({
+        container: args.container || profile.container,
+        name: args.name,
+        offset: args.offset,
+        limit: args.limit,
+    })
+        .then(onCronJobHistory, onCronError);
+
     
     function onCronJobHistory(results) {
         if (args.output === 'json') {

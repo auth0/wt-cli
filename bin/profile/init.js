@@ -2,48 +2,25 @@ var Bluebird = require('bluebird');
 var Chalk = require('chalk');
 var Cli = require('structured-cli');
 var ConfigFile = require('../../lib/config');
+var PrintProfile = require('../../lib/PrintProfile');
 var Promptly = Bluebird.promisifyAll(require('promptly'));
 var Sandbox = require('sandboxjs');
 var UserVerifier = require('../../lib/userVerifier');
 var _ = require('lodash');
 
 
-var printProfile = require('./printProfile');
-
-
 module.exports = Cli.createCommand('init', {
     description: 'Create and update webtask profiles',
-    handler: handleProfileInit,
-    options: {
-        token: {
-            alias: 't',
-            description: 'Webtask token used to issue new tokens',
-            type: 'string',
-        },
-        container: {
-            alias: 'c',
-            description: 'Default webtask container',
-            type: 'string',
-        },
-        url: {
-            alias: 'u',
-            defaultValue: 'https://webtask.it.auth0.com',
-            description: 'Webtask service URL',
-            type: 'string',
-        },
-        profile: {
-            alias: 'p',
-            defaultValue: 'default',
-            description: 'Wame of the profile to set up',
-            type: 'string',
-        },
-    },
+    plugins: [
+        require('../_plugins/profileOptions'),
+    ],
     params: {
         'email_or_phone': {
             description: 'Email or phone number that will be used to configure a new webtask profile',
             type: 'string',
         },
     },
+    handler: handleProfileInit,
 });
 
 
@@ -66,7 +43,7 @@ function handleProfileInit(args) {
         console.log('You already have the `' + args.profile
             + '` profile:');
 
-        printProfile(profile);
+        PrintProfile(profile);
 
         return Promptly.confirmAsync('Do you want to override it? [y/N]', {
             'default': false,
@@ -79,13 +56,13 @@ function handleProfileInit(args) {
     }
     
     function verifyUserOrReturnProfile() {
-        return (args.token && args.container && args.url)
+        return (args.token && args.container && args.cluster)
             ? Sandbox.init(args)
             : getVerifiedProfile(args);
     }
     
     function updateProfile(profile) {
-        config.setProfile(args.profile, {
+        return config.setProfile(args.profile, {
             url: profile.url,
             token: profile.token,
             container: profile.container,

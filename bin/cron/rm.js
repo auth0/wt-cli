@@ -1,23 +1,13 @@
 var Cli = require('structured-cli');
-var ConfigFile = require('../../lib/config');
-var PrintCronJob = require('../../lib/printCronJob');
 var _ = require('lodash');
 
 
 module.exports = Cli.createCommand('rm', {
     description: 'Remove a scheduled webtask',
-    handler: handleCronRm,
+    plugins: [
+        require('../_plugins/profile'),
+    ],
     options: {
-        profile: {
-            alias: 'p',
-            description: 'Webtask profile to use',
-            type: 'string',
-        },
-        container: {
-            alias: 'c',
-            description: 'List scheduled webtasks in this container',
-            type: 'string',
-        },
         output: {
             alias: 'o',
             description: 'Set the output format',
@@ -31,23 +21,19 @@ module.exports = Cli.createCommand('rm', {
             type: 'string',
             required: true,
         }
-    }
+    },
+    handler: handleCronRm,
 });
 
 
 // Command handler
 
 function handleCronRm(args) {
-    var config = new ConfigFile();
-
-    return config.getProfile(args.profile)
-        .then(onProfile);
-        
+    var profile = args.profile;
     
-    function onProfile(profile) {
-        return profile.removeCronJob({ container: args.container || profile.container, name: args.name })
-            .then(onCronJobRemoved, onCronError);
-    }
+    return profile.removeCronJob({ container: args.container || profile.container, name: args.name })
+        .then(onCronJobRemoved, onCronError);
+
     
     function onCronJobRemoved() {
         if (args.output === 'json') {

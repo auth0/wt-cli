@@ -6,7 +6,6 @@ var _ = require('lodash');
 
 module.exports = Cli.createCommand('rm', {
     description: 'Remove a saved webtask profile',
-    handler: handleProfileRemove,
     options: {
         silent: {
             alias: 's',
@@ -21,6 +20,7 @@ module.exports = Cli.createCommand('rm', {
             defaultValue: 'default',
         },
     },
+    handler: handleProfileRemove,
 });
 
 

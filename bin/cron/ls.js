@@ -1,46 +1,35 @@
 var Cli = require('structured-cli');
-var ConfigFile = require('../../lib/config');
 var PrintCronJob = require('../../lib/printCronJob');
 var _ = require('lodash');
 
 
 module.exports = Cli.createCommand('ls', {
     description: 'List scheduled webtasks',
-    handler: handleCronLs,
-    options: {
-        profile: {
-            alias: 'p',
-            description: 'Webtask profile to use',
-            type: 'string',
+    plugins: [
+        require('../_plugins/profile'),
+    ],
+    optionGroups: {
+        'Output options': {
+            output: {
+                alias: 'o',
+                description: 'Set the output format',
+                choices: ['json'],
+                type: 'string',
+            },
         },
-        container: {
-            alias: 'c',
-            description: 'Overwrite the profile\'s webtask container',
-            type: 'string',
-        },
-        output: {
-            alias: 'o',
-            description: 'Set the output format',
-            choices: ['json'],
-            type: 'string',
-        }
     },
+    handler: handleCronLs,
 });
 
 
 // Command handler
 
 function handleCronLs(args) {
-    var config = new ConfigFile();
-
-    return config.getProfile(args.profile)
-        .then(onProfile);
-        
+    var profile = args.profile;
     
-    function onProfile(profile) {
-        return profile.listCronJobs({ container: args.container || profile.container })
-            .then(onCronListing);
-    }
+    return profile.listCronJobs({ container: args.container || profile.container })
+        .then(onCronListing);
+    
     
     function onCronListing(jobs) {
         if (args.output === 'json') {

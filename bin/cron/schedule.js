@@ -1,5 +1,4 @@
 var Cli = require('structured-cli');
-var ConfigFile = require('../../lib/config');
 var Logs = require('../../lib/logs');
 var PrintCronJob = require('../../lib/printCronJob');
 var ValidateCreateArgs = require('../../lib/validateCreateArgs');
@@ -12,7 +11,9 @@ var createCommand = require('../create');
 
 module.exports = Cli.createCommand('schedule', {
     description: 'Schedule a webtask to run periodically',
-    handler: handleCronSchedule,
+    plugins: [
+        require('../_plugins/profile'),
+    ],
     options: _.extend({}, createCommand.options.options, {
         
     }),
@@ -23,58 +24,53 @@ module.exports = Cli.createCommand('schedule', {
             required: true,
         },
     }, createCommand.options.params),
+    handler: handleCronSchedule,
 });
 
 
 // Command handler
 
 function handleCronSchedule(args) {
+    var profile = args.profile;
+    
     args = ValidateCreateArgs(args);
     
-    var config = new ConfigFile();
+    var createWebtask = WebtaskCreator(args, {
+        onGeneration: onGeneration,
+    });
+    var logger = createLogger(args, profile);
 
-    return config.getProfile(args.profile)
-        .then(onProfile);
-        
-    
-    function onProfile(profile) {
-        var createWebtask = WebtaskCreator(args, {
-            onGeneration: onGeneration,
-        });
-        var logger = createLogger(args, profile);
-
-        return createWebtask(profile);
+    return createWebtask(profile);
         
         
-        function onGeneration(build) {
-            if (args.watch) {
-                logger.log({ generation: build.generation, container: build.webtask.container }, 'Webtask created: %s. Scheduling cron job...', build.webtask.url);
-            }
+    function onGeneration(build) {
+        if (args.watch) {
+            logger.log({ generation: build.generation, container: build.webtask.container }, 'Webtask created: %s. Scheduling cron job...', build.webtask.url);
+        }
+        
+        return build.webtask.createCronJob({ schedule: args.schedule })
+            .then(onCronScheduled, onCronError);
             
-            return build.webtask.createCronJob({ schedule: args.schedule })
-                .then(onCronScheduled, onCronError);
-                
-            
-            function onCronScheduled(job) {
-                args.watch
-                    ?   logger.log({
-                            generation: build.generation,
-                            container: job.container,
-                            state: job.state,
-                            schedule: job.schedule,
-                            next_available_at: new Date(job.next_available_at).toLocaleString(),
-                            created_at: new Date(job.created_at).toLocaleString(),
-                            run_count: job.run_count,
-                            error_count: job.error_count,
-                        }, 'Cron job scheduled')
-                    :   PrintCronJob(job, logger);
-            }
-            
-            function onCronError(err) {
-                switch (err.statusCode) {
-                    case 400: throw Cli.error.invalid('Invalid cron job; please check that the schedule is a valid cron schedule');
-                    default: throw err;
-                }
+        
+        function onCronScheduled(job) {
+            args.watch
+                ?   logger.log({
+                        generation: build.generation,
+                        container: job.container,
+                        state: job.state,
+                        schedule: job.schedule,
+                        next_available_at: new Date(job.next_available_at).toLocaleString(),
+                        created_at: new Date(job.created_at).toLocaleString(),
+                        run_count: job.run_count,
+                        error_count: job.error_count,
+                    }, 'Cron job scheduled')
+                :   PrintCronJob(job, logger);
+        }
+        
+        function onCronError(err) {
+            switch (err.statusCode) {
+                case 400: throw Cli.error.invalid('Invalid cron job; please check that the schedule is a valid cron schedule');
+                default: throw err;
             }
         }
     }

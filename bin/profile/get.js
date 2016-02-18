@@ -1,35 +1,37 @@
 var Chalk = require('chalk');
 var Cli = require('structured-cli');
 var ConfigFile = require('../../lib/config');
+var PrintProfile = require('../../lib/printProfile');
 var _ = require('lodash');
 
 
-var printProfile = require('./printProfile');
 
 
 module.exports = Cli.createCommand('get', {
     description: 'Get information about an existing webtask profile',
     handler: handleProfileGet,
-    options: {
-        json: {
-            alias: 'j',
-            description: 'JSON output',
-            type: 'boolean',
-        },
-        details: {
-            alias: 'd',
-            description: 'Show more details',
-            type: 'boolean',
-        },
-        field: {
-            alias: 'f',
-            description: 'Return only the indicated field',
-            type: 'string',
-        },
-        token: {
-            alias: 't',
-            description: 'Show tokens (hidden by default)',
-            type: 'boolean',
+    optionGroups: {
+        'Output options': {
+            output: {
+                alias: 'o',
+                description: 'Set the output format',
+                choices: ['json'],
+                type: 'string',
+            },
+            details: {
+                alias: 'd',
+                description: 'Show more details',
+                type: 'boolean',
+            },
+            field: {
+                alias: 'f',
+                description: 'Return only the indicated field',
+                type: 'string',
+            },
+            'show-token': {
+                description: 'Show tokens (hidden by default)',
+                type: 'boolean',
+            },
         },
     },
     params: {
@@ -56,10 +58,10 @@ function handleProfileGet(args) {
                     + 'exist');
                 }
 
-                console.log(args.json ? JSON.stringify(value) : value);
+                console.log(args.output === 'json' ? JSON.stringify(value) : value);
             } else {
-                if (args.json) console.log(profile);
-                else printProfile(profile, { details: args.details, token: args.token });
+                if (args.output === 'json') console.log(profile);
+                else PrintProfile(profile, { details: args.details, token: args.token });
             }
         });
 }

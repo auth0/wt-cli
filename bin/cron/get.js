@@ -1,22 +1,13 @@
 var Cli = require('structured-cli');
-var ConfigFile = require('../../lib/config');
 var PrintCronJob = require('../../lib/printCronJob');
 
 
 module.exports = Cli.createCommand('get', {
     description: 'Get information about a scheduled webtask',
-    handler: handleCronGet,
+    plugins: [
+        require('../_plugins/profile'),
+    ],
     options: {
-        profile: {
-            alias: 'p',
-            description: 'Webtask profile to use',
-            type: 'string',
-        },
-        container: {
-            alias: 'c',
-            description: 'Overwrite the profile\'s webtask container',
-            type: 'string',
-        },
         output: {
             alias: 'o',
             description: 'Set the output format',
@@ -30,23 +21,19 @@ module.exports = Cli.createCommand('get', {
             type: 'string',
             required: true,
         }
-    }
+    },
+    handler: handleCronGet,
 });
 
 
 // Command handler
 
 function handleCronGet(args) {
-    var config = new ConfigFile();
-
-    return config.getProfile(args.profile)
-        .then(onProfile);
-        
+    var profile = args.profile;
     
-    function onProfile(profile) {
-        return profile.getCronJob({ container: args.container || profile.container, name: args.name })
-            .then(onCronJob, onCronError);
-    }
+    return profile.getCronJob({ container: args.container || profile.container, name: args.name })
+        .then(onCronJob, onCronError);
+
     
     function onCronJob(job) {
         if (args.output === 'json') {
