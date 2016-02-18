@@ -1,11 +1,11 @@
 {
   "name": "wt-cli",
   "author": {
-    "name": "Tomasz Janczuk <tomasz@janczuk.org>",
-    "url": "http://tomasz.janczuk.org",
-    "twitter": "tjanczuk"
+    "name": "Geoff Goodman <geoff@auth0.com>",
+    "url": "https://github.com/ggoodman",
+    "twitter": "filearts"
   },
-  "version": "1.1.4",
+  "version": "2.0.0-beta.0",
   "description": "Webtask Command Line Interface",
   "tags": [
     "nodejs",
