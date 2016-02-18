@@ -55,7 +55,7 @@ function handleProfileList(args) {
                 var i = 0;
                 _.forEach(profiles, function (profile, profileName) {
                     if (i++) console.log();
-                    PrintProfile(profile, { details: args.details, token: args.token });
+                    PrintProfile(profile, { details: args.details, token: args.showToken });
                 });
             }
         });

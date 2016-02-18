@@ -30,6 +30,7 @@ module.exports = Cli.createCommand('get', {
             },
             'show-token': {
                 description: 'Show tokens (hidden by default)',
+                dest: 'showToken',
                 type: 'boolean',
             },
         },
@@ -61,7 +62,7 @@ function handleProfileGet(args) {
                 console.log(args.output === 'json' ? JSON.stringify(value) : value);
             } else {
                 if (args.output === 'json') console.log(profile);
-                else PrintProfile(profile, { details: args.details, token: args.token });
+                else PrintProfile(profile, { details: args.details, token: args.showToken });
             }
         });
 }
