@@ -1,3 +1,4 @@
+var Chalk = require('chalk');
 var Cli = require('structured-cli');
 var PrintCronJob = require('../../lib/printCronJob');
 var _ = require('lodash');
@@ -41,6 +42,11 @@ function handleCronLs(args) {
                 
                 PrintCronJob(job);
             });
+            
+            if (!jobs.length) {
+                console.log('No scheduled webtasks found. To create one:');
+                console.log(Chalk.bold('$ wt cron schedule [options] "* * * * *" [file_or_url]'));
+            }
         }
     }
 }
