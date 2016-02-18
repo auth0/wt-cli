@@ -1,3 +1,4 @@
+var Chalk = require('chalk');
 var Cli = require('structured-cli');
 var _ = require('lodash');
 
@@ -105,6 +106,7 @@ module.exports = Cli.createCommand('create', {
             description: 'Provide your own base set of claims as a JSON string'
         },
     },
+    epilog: Chalk.bold('For detailed information on creating webtask tokens, see: https://webtask.io/docs/api_issue'),
     handler: handleTokenCreate,
 });
 
