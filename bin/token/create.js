@@ -14,7 +14,8 @@ var RAW_CLAIMS = {
         type: 'string', 
     },
     code: {
-        type: 'string', 
+        type: 'string',
+        description: '',
     },
     ectx: {
         action: 'append',

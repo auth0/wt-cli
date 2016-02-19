@@ -16,7 +16,7 @@ module.exports = Cli.createCommand('init', {
     ],
     params: {
         'email_or_phone': {
-            description: 'Email or phone number that will be used to configure a new webtask profile',
+            description: 'Email or phone number that will be used to configure a new webtask profile.',
             type: 'string',
         },
     },

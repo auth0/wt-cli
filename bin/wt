@@ -9,6 +9,11 @@ var _ = require('lodash');
 var cli = Cli.createApp({
     description: Package.description,
     version: Package.version,
+    epilog: Chalk.underline('Sample usage:') + '\n'
+        + '1. Set up a webtask profile:' + '\n'
+        + Chalk.bold('  $ wt init') + '\n'
+        + '2. Create a basic webtask:' + '\n'
+        + Chalk.bold('  $ wt create ./sample-webtasks/hello-world.js') + '\n'
 });
 
 

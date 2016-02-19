@@ -10,14 +10,14 @@ module.exports = Cli.createCommand('get', {
     options: {
         output: {
             alias: 'o',
-            description: 'Set the output format',
+            description: 'Set the output format.',
             choices: ['json'],
             type: 'string',
         }
     },
     params: {
         name: {
-            description: 'Name of the cron job',
+            description: 'Name of the cron job to inspect.',
             type: 'string',
             required: true,
         }

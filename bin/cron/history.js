@@ -8,32 +8,36 @@ module.exports = Cli.createCommand('history', {
     plugins: [
         require('../_plugins/profile'),
     ],
-    options: {
-        output: {
-            alias: 'o',
-            description: 'Set the output format',
-            choices: ['json'],
-            type: 'string',
+    outputGroups: {
+        'Output options': {
+            output: {
+                alias: 'o',
+                description: 'Set the output format',
+                choices: ['json'],
+                type: 'string',
+            },
+            fields: {
+                description: 'Only print the indicated fields (comma-separated list).',
+                defaultValue: 'scheduled_at,started_at,completed_at,type,statusCode,body',
+                type: 'string',
+            },
         },
-        fields: {
-            description: 'Only print the indicated fields (comma-separated list)',
-            defaultValue: 'scheduled_at,started_at,completed_at,type,statusCode,body',
-            type: 'string',
-        },
-        offset: {
-            description: 'Skip this many history entries',
-            type: 'number',
-            defaultValue: 0,
-        },
-        limit: {
-            description: 'Limit the result-set to this many entries',
-            type: 'number',
-            defaultValue: 20,
+        'Pagination': {
+            offset: {
+                description: 'Skip this many history entries.',
+                type: 'number',
+                defaultValue: 0,
+            },
+            limit: {
+                description: 'Limit the result-set to this many entries.',
+                type: 'number',
+                defaultValue: 20,
+            },
         },
     },
     params: {
         name: {
-            description: 'Name of the cron job',
+            description: 'Name of the cron job to inspect.',
             type: 'string',
             required: true,
         }
