@@ -7,3 +7,4 @@ var category = module.exports = Cli.createCategory('token', {
 
 category.addChild(require('./token/create'));
 category.addChild(require('./token/inspect'));
+category.addChild(require('./token/revoke'));

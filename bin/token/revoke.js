@@ -1,24 +1,13 @@
+var Chalk = require('chalk');
 var Cli = require('structured-cli');
 
 
-module.exports = Cli.createCommand('inspect', {
-    description: 'Inspect webtask tokens',
+module.exports = Cli.createCommand('revoke', {
+    description: 'Revoke a webtask token',
     plugins: [
         require('../_plugins/profile'),
     ],
-    handler: handleTokenCreate,
     optionGroups: {
-        'Inspect options': {
-            'decrypt': {
-                type: 'boolean',
-                description: 'Return the decrypted secrets',
-            },
-            'fetch-code': {
-                type: 'boolean',
-                description: 'Return the webtask code',
-                dest: 'fetchCode',
-            },
-        },
         'Output options': {
             output: {
                 alias: 'o',
@@ -28,9 +17,10 @@ module.exports = Cli.createCommand('inspect', {
             },
         },
     },
+    handler: handleTokenRevoke,
     params: {
         subject: {
-            description: 'The subject token to be inspected',
+            description: 'The subject token to be revoked',
             type: 'string',
             required: true,
         },
@@ -40,10 +30,10 @@ module.exports = Cli.createCommand('inspect', {
 
 // Command handler
 
-function handleTokenCreate(args) {
+function handleTokenRevoke(args) {
     var profile = args.profile;
     
-    return profile.inspectToken({ token: args.subject, decrypt: args.decrypt, fetch_code: args.fetchCode })
+    return profile.revokeToken(args.subject)
         .catch(function (err) {
             if (err.statusCode >= 500) throw Cli.error.serverError(err.message);
             if (err.statusCode >= 400) throw Cli.error.badRequest(err.message);
@@ -55,9 +45,9 @@ function handleTokenCreate(args) {
     
     function onTokenData(data) {
         if (args.output === 'json') {
-            console.log(JSON.stringify(data, null, 2));
+            console.log(true);
         } else {
-            console.log(data);
+            console.log(Chalk.green('Token revoked.'));
         }
     }
 }
