@@ -1,6 +1,6 @@
+var Chalk = require('chalk');
 var Cli = require('structured-cli');
 var Open = require('open');
-var _ = require('lodash');
 
 
 module.exports = Cli.createCommand('edit', {
@@ -25,7 +25,7 @@ function handleEdit(args) {
     var profile = args.profile;
     var url = profile.url + '/edit/webtask/' + profile.container + '/' + args.name + '#token=' + profile.token;
     
-    console.log('Opening ' + url + ' in your browser...');
+    console.log('Opening ' + Chalk.underline(args.name) + ' in your browser...');
     
     Open(url);
 }
