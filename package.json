@@ -42,7 +42,7 @@
     "sandboxjs": "^2.2.0",
     "structured-cli": "^1.0.3",
     "superagent": "^1.7.2",
-    "webtask-bundle": "^1.2.1"
+    "webtask-bundle": "^1.3.2"
   },
   "bin": {
     "wt": "./bin/wt",
