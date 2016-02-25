@@ -2,7 +2,7 @@ var Express = require('express');
 var Webtask = require('webtask-tools');
 
 var app = Express();
-var externalData = require('./bundled-webtask/data');
+var externalData = require('./data');
 
 
 module.exports = Webtask.fromExpress(app);

@@ -63,9 +63,11 @@ module.exports = Cli.createCommand('create', {
                 description: 'Use `webtask-bundle` to bundle your code into a single file. This tool can compile ES2015 (ES6) code via Babel as well as packaging up a webtask composed of multiple files into a single file. The tool will scan your package.json for dependencies and will automatically bundle those that are not available on the webtask platform. Enabling --bundle-loose will prevent this check from doing strict semver range comparisons on dependencies.',
                 type: 'boolean',
             },
-            'bundle-loose': {
-                description: 'Skip strict semver matching for bundling with `webtask-bundle`',
+            'bundle-strict': {
+                description: 'Enforce strict semver matching for bundling with `webtask-bundle`',
                 dest: 'loose',
+                action: 'storeFalse',
+                defaultValue: true,
                 type: 'boolean',
             },
             'capture': {
