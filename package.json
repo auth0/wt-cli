@@ -33,7 +33,6 @@
     "cron-parser": "^0.6.3",
     "dotenv": "^1.2.0",
     "filewatcher": "^3.0.0",
-    "jws": "^3.0.0",
     "jwt-decode": "^1.5.1",
     "lodash": "^4.5.0",
     "open": "0.0.5",
