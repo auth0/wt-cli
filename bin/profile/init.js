@@ -56,9 +56,9 @@ function handleProfileInit(args) {
     }
     
     function verifyUserOrReturnProfile() {
-        return (args.token && args.container && args.cluster)
-            ? Sandbox.init(args)
-            : getVerifiedProfile(args);
+        return (args.token && args.container && args.url)
+            ?   Sandbox.init(args)
+            :   getVerifiedProfile(args);
     }
     
     function updateProfile(profile) {
