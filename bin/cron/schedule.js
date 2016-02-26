@@ -59,6 +59,9 @@ module.exports = Cli.createCommand('schedule', {
     plugins: [
         require('../_plugins/profile'),
     ],
+    optionGroups: _.extend({}, createCommand.optionGroups, {
+        
+    }),
     options: _.extend({}, createCommand.options, {
         
     }),
