@@ -1,20 +1,84 @@
 #!/usr/bin/env node
-
-var Cli = require('nested-yargs');
+var Bluebird = require('bluebird');
+var Chalk = require('chalk');
+var Cli = require('structured-cli');
 var Package = require('../package.json');
+var _ = require('lodash');
 
-var wt = Cli.createApp({
-	examples: {
-	  'create a webtask named "foo" from the file "file.js"': '$0 create --name foo file.js',
-	  'create a webtask named "bar" from a file on github': '$0 create --name bar https://raw.githubusercontent.com/auth0/webtask-examples/master/hello-world.js',
-	},
-	version: Package.version,
+
+var cli = Cli.createApp({
+    description: Package.description,
+    version: Package.version,
+    epilog: Chalk.underline('Sample usage:') + '\n'
+        + '1. Set up a webtask profile:' + '\n'
+        + Chalk.bold('  $ wt init') + '\n'
+        + '2. Create a basic webtask:' + '\n'
+        + Chalk.bold('  $ wt create ./sample-webtasks/hello-world.js') + '\n'
 });
 
-wt.command(require('./init'));
-wt.command(require('./create'));
-wt.command(require('./logs'));
-wt.command(require('./cron'));
-wt.command(require('./profile'));
 
-var argv = Cli.run(wt);
+cli.addChild(require('./init'));
+cli.addChild(require('./create'));
+cli.addChild(require('./edit'));
+cli.addChild(require('./profile'));
+cli.addChild(require('./cron'));
+cli.addChild(require('./logs'));
+cli.addChild(require('./token'));
+
+
+Cli.run(cli)
+    .timeout(1000 * 60 * 30, Cli.error.timeout('Command timed out after 30 min'))
+    // Code: 1
+    .catch(_.matchesProperty('code', 'E_CANCELLED'), function (err) {
+        console.error(err.message);
+        
+        process.exit(1);
+    })
+    // Code: 2
+    .catch(_.matchesProperty('code', 'E_INVALID'), function (err) {
+        console.error(err.parser.formatUsage());
+        console.error(Chalk.red(err.message));
+        
+        process.exit(2);
+    })
+    // Code: 3
+    .catch(_.matchesProperty('code', 'E_HINT'), function (err) {
+        console.error(err.message);
+        
+        process.exit(3);
+    })
+    // Code: 4
+    .catch(_.matchesProperty('code', 'E_TIMEOUT'), function (err) {
+        console.error(Chalk.red(err.message));
+        
+        process.exit(4);
+    })
+    // Code: 5
+    .catch(_.matchesProperty('code', 'E_NOTFOUND'), function (err) {
+        console.error(Chalk.red(err.message));
+        
+        process.exit(5);
+    })
+    // Code: 6
+    .catch(_.matchesProperty('code', 'E_BADREQUEST'), function (err) {
+        console.error(Chalk.red(err.message));
+        
+        process.exit(6);
+    })
+    // Code: 7
+    .catch(_.matchesProperty('code', 'E_SERVERERROR'), function (err) {
+        console.error(Chalk.red(err.message));
+        
+        process.exit(7);
+    })
+    // Code: 99
+    .catch(function (err) {
+        console.error(Chalk.red('Uncaught error: ', err.message));
+        console.error(err.stack);
+        console.error('Please report this at: https://github.com/auth0/wt-cli/issues');
+        
+        process.exit(99);
+    })
+    .then(function () {
+        process.exit(0);
+    });
