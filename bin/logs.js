@@ -22,6 +22,11 @@ module.exports = Cli.createCommand('logs', {
                 type: 'boolean',
             },
         },
+        browser: {
+            alias: 'b',
+            description: 'create URL to see logs in a browser',
+            type: 'boolean',
+        },
     },
     handler: handleLogs,
 });
@@ -34,6 +39,6 @@ function handleLogs(args) {
     
     Logs.createLogStream(profile, args);
     
-    return Bluebird.delay(30 * 60 * 1000);
+    return Bluebird.delay(30 * 60 * 1000, Cli.error.timeout('Command timed out after 30 min'));
 }
 

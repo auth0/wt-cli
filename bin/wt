@@ -27,7 +27,7 @@ cli.addChild(require('./token'));
 
 
 Cli.run(cli)
-    .timeout(1000 * 60 * 40, Cli.error.timeout('Command timed out after 30 min'))
+    .timeout(1000 * 60 * 30, Cli.error.timeout('Command timed out after 30 min'))
     // Code: 1
     .catch(_.matchesProperty('code', 'E_CANCELLED'), function (err) {
         console.error(err.message);
