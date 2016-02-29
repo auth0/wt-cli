@@ -39,6 +39,7 @@ function handleLogs(args) {
     
     Logs.createLogStream(profile, args);
     
-    return Bluebird.delay(30 * 60 * 1000, Cli.error.timeout('Command timed out after 30 min'));
+    return Bluebird.resolve()
+        .delay(30 * 60 * 1000, Cli.error.timeout('Command timed out after 30 min'));
 }
 
