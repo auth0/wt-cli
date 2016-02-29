@@ -1,9 +1,19 @@
 #!/usr/bin/env node
-var Bluebird = require('bluebird');
 var Chalk = require('chalk');
 var Cli = require('structured-cli');
 var Package = require('../package.json');
+var Updates = require('update-notifier');
 var _ = require('lodash');
+
+
+var notifier = Updates({
+    pkg: {
+        name: Package.name,
+        version: Package.version,
+    },
+});
+
+notifier.notify();
 
 
 var cli = Cli.createApp({
