@@ -40,7 +40,7 @@ function handleProfileInit(args) {
     
     
     function confirmProfileOverwrite(profile) {
-        console.log('You already have the `' + args.profile
+        console.log('You already have the `' + profile.name
             + '` profile:');
 
         PrintProfile(profile);
