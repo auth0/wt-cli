@@ -8,7 +8,7 @@ var RAW_CLAIMS = {
         type: 'string', 
     },
     dd: {
-        type: 'number',
+        type: 'int',
     },
     'code-url': {
         type: 'string', 
@@ -19,13 +19,13 @@ var RAW_CLAIMS = {
     },
     ectx: {
         action: 'append',
-        defaultValue: [],
+        defaultValue: null,
         metavar: 'KEY=VALUE',
         type: 'string',
     },
     pctx: {
         action: 'append',
-        defaultValue: [],
+        defaultValue: null,
         metavar: 'KEY=VALUE',
         type: 'string',
     },
@@ -131,8 +131,8 @@ function handleTokenCreate(args) {
         }
     }
     
-    claims.ectx = parseTuples(claims.ectx);
-    claims.pctx = parseTuples(claims.pctx);
+    if (claims.ectx) claims.ectx = parseTuples(claims.ectx);
+    if (claims.pctx) claims.pctx = parseTuples(claims.pctx);
 
     return profile.createTokenRaw(claims)
         .catch(function (err) {
