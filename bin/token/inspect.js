@@ -1,12 +1,13 @@
 var Cli = require('structured-cli');
+var Decode = require('jwt-decode');
 
 
 module.exports = Cli.createCommand('inspect', {
-    description: 'Inspect webtask tokens',
+    description: 'Inspect named webtasks and webtask tokens',
     plugins: [
         require('../_plugins/profile'),
     ],
-    handler: handleTokenCreate,
+    handler: handleTokenInspect,
     optionGroups: {
         'Inspect options': {
             'decrypt': {
@@ -30,7 +31,7 @@ module.exports = Cli.createCommand('inspect', {
     },
     params: {
         subject: {
-            description: 'The subject token to be inspected',
+            description: 'The subject token or webtask name to be inspected',
             type: 'string',
             required: true,
         },
@@ -40,10 +41,19 @@ module.exports = Cli.createCommand('inspect', {
 
 // Command handler
 
-function handleTokenCreate(args) {
+function handleTokenInspect(args) {
     var profile = args.profile;
+    var claims;
     
-    return profile.inspectToken({ token: args.subject, decrypt: args.decrypt, fetch_code: args.fetchCode })
+    try {
+        claims = Decode(args.subject);
+    } catch (__) { }
+    
+    var inspection$ = claims
+        ?   profile.inspectToken({ token: args.subject, decrypt: args.decrypt, fetch_code: args.fetchCode })
+        :   profile.inspectWebtask({ name: args.subject, decrypt: args.decrypt, fetch_code: args.fetchCode });
+    
+    return inspection$
         .catch(function (err) {
             if (err.statusCode >= 500) throw Cli.error.serverError(err.message);
             if (err.statusCode >= 400) throw Cli.error.badRequest(err.message);
