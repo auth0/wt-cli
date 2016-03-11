@@ -172,7 +172,7 @@ function handleCreate(args) {
             
             log(output, 'Webtask created: %s', url);
         } else if (args.output === 'json') {
-            output = { url: url, name: build.webtask.claims.jtn, container: build.webtas.container };
+            output = { url: url, name: build.webtask.claims.jtn, container: build.webtask.container };
             
             if (args.showToken) {
                 output.token = build.webtask.token;
