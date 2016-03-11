@@ -29,7 +29,10 @@ var cli = Cli.createApp({
 
 cli.addChild(require('./init'));
 cli.addChild(require('./create'));
+cli.addChild(require('./ls'));
+cli.addChild(require('./rm'));
 cli.addChild(require('./edit'));
+cli.addChild(require('./inspect'));
 cli.addChild(require('./profile'));
 cli.addChild(require('./cron'));
 cli.addChild(require('./logs'));
