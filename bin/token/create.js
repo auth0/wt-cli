@@ -123,6 +123,10 @@ function handleTokenCreate(args) {
         delete claims['code-url'];
     }
     
+    if (claims.dr) claims.dr = 1;
+    if (claims.mb) claims.mb = 1;
+    if (claims.pb) claims.pb = 1;
+    
     if (args.claims) {
         try {
             claims = _.defaultsDeep(claims, JSON.parse(args.claims));
