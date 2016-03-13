@@ -8,7 +8,7 @@ module.exports = Cli.createCommand('history', {
     plugins: [
         require('../_plugins/profile'),
     ],
-    outputGroups: {
+    optionGroups: {
         'Output options': {
             output: {
                 alias: 'o',
@@ -25,12 +25,12 @@ module.exports = Cli.createCommand('history', {
         'Pagination': {
             offset: {
                 description: 'Skip this many history entries.',
-                type: 'number',
+                type: 'int',
                 defaultValue: 0,
             },
             limit: {
                 description: 'Limit the result-set to this many entries.',
-                type: 'number',
+                type: 'int',
                 defaultValue: 20,
             },
         },
