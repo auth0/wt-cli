@@ -1,5 +1,6 @@
 var Cli = require('structured-cli');
 var Decode = require('jwt-decode');
+var PrintTokenDetails = require('../../lib/printTokenDetails');
 
 
 module.exports = Cli.createCommand('inspect', {
@@ -67,7 +68,7 @@ function handleTokenInspect(args) {
         if (args.output === 'json') {
             console.log(JSON.stringify(data, null, 2));
         } else {
-            console.log(data);
+            PrintTokenDetails(data);
         }
     }
 }
