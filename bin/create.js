@@ -33,6 +33,14 @@ module.exports = Cli.createCommand('create', {
                 metavar: 'KEY=VALUE',
                 type: 'string',
             },
+            'param': {
+                action: 'append',
+                defaultValue: [],
+                description: 'Param(s) exposed to your code as `params` on the webtask context object. The properties will be signed and protected from interference but not encrypted.',
+                dest: 'params',
+                metavar: 'KEY=VALUE',
+                type: 'string',
+            },
             'name': {
                 alias: 'n',
                 description: 'Name of the webtask. When specified, the resulting webtask token can be run at a special named webtask url and additional path segments are allowed (/api/run/{container}/{name}/*). This is important when using `webtask-tools` to expose an Express server as a webtask.',
@@ -101,8 +109,7 @@ module.exports = Cli.createCommand('create', {
 
 function handleCreate(args) {
     args = ValidateCreateArgs(args);
-    
+
     return CreateWebtask(args, { action: 'created' });
 }
-
 
