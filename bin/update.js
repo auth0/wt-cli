@@ -65,19 +65,20 @@ module.exports = Cli.createCommand('update', {
 
 function handleUpdate(args) {
     args = ValidateCreateArgs(args);
-    
+
     var profile = args.profile;
-    
+
     return profile.inspectWebtask({ name: args.name, decrypt: true })
         .then(onClaims);
-        
-    
+
+
     function onClaims(claims) {
         // Set the user-defined options from the inspected webtask's claims
         args.merge = claims.mb;
         args.parse = claims.pb;
         args.secrets = claims.ectx;
-        
+        args.params = claims.pctx;
+
         // Defer to the functionality of the create command
         return CreateWebtask(args, { action: 'updated' });
     }
