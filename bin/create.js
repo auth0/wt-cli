@@ -83,9 +83,10 @@ module.exports = Cli.createCommand('create', {
                 description: 'Allow the webtask server to cache code. When disabled, your code will be loaded on each request by the webtask runtime environment, introducing additional latency. Leaving this disabled is useful while developing.',
                 type: 'boolean',
             },
-            'minify': {
+            'bundle-minify': {
                 description: 'Generate a minified production build',
                 type: 'boolean',
+                dest: 'minify'
             },
 
         },
