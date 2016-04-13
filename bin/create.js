@@ -83,12 +83,15 @@ module.exports = Cli.createCommand('create', {
                 description: 'Allow the webtask server to cache code. When disabled, your code will be loaded on each request by the webtask runtime environment, introducing additional latency. Leaving this disabled is useful while developing.',
                 type: 'boolean',
             },
+            'host': {
+                description: 'Allow the webtask to be called using a custom domain name. Using this option requires proof of domain ownership. This can be done by adding a TXT record type to the DNS of the chosen domain. The value of the record must be `webtask:container:{container}`, where {container} is the webtask container name to be associated with the custom domain. Many such TXT records can be created as needed.',
+                type: 'string'
+            },
             'bundle-minify': {
                 description: 'Generate a minified production build',
                 type: 'boolean',
                 dest: 'minify'
             },
-
         },
     },
     params: {
