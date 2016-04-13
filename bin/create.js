@@ -92,6 +92,10 @@ module.exports = Cli.createCommand('create', {
                 type: 'boolean',
                 dest: 'minify'
             },
+            'protected': {
+                description: 'Generate a protected webtask',
+                type: 'boolean'
+            },
         },
     },
     params: {
