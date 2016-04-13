@@ -35,6 +35,9 @@ var RAW_CLAIMS = {
     exp: {
         type: 'string',
     },
+    host: {
+        type: 'string'
+    },
     mb: {
         type: 'boolean',
     },
