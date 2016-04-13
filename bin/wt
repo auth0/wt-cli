@@ -85,7 +85,12 @@ Cli.run(cli)
         
         process.exit(7);
     })
-    // Code: 99
+    // Code: 8
+    .catch(_.matchesProperty('code', 'E_NOTAUTHORIZED'), function (err) {
+        console.error(Chalk.red(err.message));
+        
+        process.exit(8);
+    })    // Code: 99
     .catch(function (err) {
         console.error(Chalk.red('Uncaught error: ', err.message));
         console.error(err.stack);
