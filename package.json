@@ -42,7 +42,7 @@
     "structured-cli": "^1.0.4",
     "superagent": "^1.7.2",
     "update-notifier": "^0.6.1",
-    "webtask-bundle": "^2.1.0"
+    "webtask-bundle": "^2.1.1"
   },
   "bin": {
     "wt": "./bin/wt",
