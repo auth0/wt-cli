@@ -55,6 +55,10 @@ module.exports = Cli.createCommand('serve', {
                 description: 'Disable automatic parsing of the incoming request body. Important: when using webtask-tools with Express and the body-parser middleware, automatic body parsing must be disabled.',
                 dest: 'parseBody',
             },
+            'storage-file': {
+                description: 'Provide a file that will be used to initialize and persist webtask storage data',
+                dest: 'storageFile',
+            },
         },
     },
     params: {
@@ -99,6 +103,7 @@ function handleWebtaskServe(args) {
                     secrets: args.secrets,
                     params: args.params,
                     shortcutFavicon: true,
+                    storageFile: args.storageFile,
                 });
                 
                 return resolve(Bluebird.promisifyAll(server));
