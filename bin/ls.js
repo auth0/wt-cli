@@ -2,6 +2,7 @@ var Chalk = require('chalk');
 var Cli = require('structured-cli');
 var PrintWebtask = require('../lib/printWebtask');
 var _ = require('lodash');
+var keyValList2Object = require('../lib/keyValList2Object');
 
 
 module.exports = Cli.createCommand('ls', {
@@ -22,6 +23,17 @@ module.exports = Cli.createCommand('ls', {
                 description: 'Limit the results to this many named webtasks',
                 defaultValue: 10,
             },
+        },
+        'Filtering': {
+            'meta': {
+                action: 'append',
+                defaultValue: [],
+                description: 'Metadata describing the webtask. This is a set of string key value pairs. Only webtasks with matching metadata will be returned.',
+                dest: 'meta',
+                metavar: 'KEY=VALUE',
+                type: 'string',
+            },
+
         },
         'Output options': {
             'output': {
@@ -49,8 +61,10 @@ module.exports = Cli.createCommand('ls', {
 
 function handleTokenCreate(args) {
     var profile = args.profile;
+
+    keyValList2Object(args, 'meta');
     
-    return profile.listWebtasks({ offset: args.offset, limit: args.limit })
+    return profile.listWebtasks({ offset: args.offset, limit: args.limit, meta: args.meta })
         .catch(function (err) {
             if (err.statusCode >= 500) throw Cli.error.serverError(err.message);
             if (err.statusCode >= 400) throw Cli.error.badRequest(err.message);
@@ -69,6 +83,9 @@ function handleTokenCreate(args) {
                     name: json.name,
                     url: webtask.url,
                 };
+                if (webtask.meta) {
+                    record.meta = webtask.meta
+                }
                 
                 if (args.showToken) record.token = json.token;
                 

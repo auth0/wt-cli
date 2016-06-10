@@ -119,7 +119,7 @@ function handleCronSchedule(args) {
         
         schedule = type.encode(frequencyValue);
     }
-    
+
     var createWebtask = WebtaskCreator(args, {
         onGeneration: onGeneration,
     });
@@ -133,7 +133,7 @@ function handleCronSchedule(args) {
             logger.log({ generation: build.generation, container: build.webtask.container }, 'Webtask created: %s. Scheduling cron job...', build.webtask.url);
         }
         
-        return build.webtask.createCronJob({ schedule: args.schedule })
+        return build.webtask.createCronJob({ schedule: args.schedule, meta: args.meta })
             .then(onCronScheduled, onCronError);
             
         
@@ -148,6 +148,7 @@ function handleCronSchedule(args) {
                         created_at: new Date(job.created_at).toLocaleString(),
                         run_count: job.run_count,
                         error_count: job.error_count,
+                        meta: job.meta,
                     }, 'Cron job scheduled')
                 :   PrintCronJob(job, logger);
         }
