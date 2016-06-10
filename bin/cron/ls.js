@@ -2,6 +2,7 @@ var Chalk = require('chalk');
 var Cli = require('structured-cli');
 var PrintCronJob = require('../../lib/printCronJob');
 var _ = require('lodash');
+var keyValList2Object = require('../../lib/keyValList2Object');
 
 
 module.exports = Cli.createCommand('ls', {
@@ -10,6 +11,17 @@ module.exports = Cli.createCommand('ls', {
         require('../_plugins/profile'),
     ],
     optionGroups: {
+        'Filtering': {
+            'meta': {
+                action: 'append',
+                defaultValue: [],
+                description: 'Metadata describing the scheduled webtask. This is a set of string key value pairs. Only scheduled webtasks with matching metadata will be returned.',
+                dest: 'meta',
+                metavar: 'KEY=VALUE',
+                type: 'string',
+            },
+
+        },
         'Output options': {
             output: {
                 alias: 'o',
@@ -27,8 +39,10 @@ module.exports = Cli.createCommand('ls', {
 
 function handleCronLs(args) {
     var profile = args.profile;
+
+    keyValList2Object(args, 'meta');
     
-    return profile.listCronJobs({ container: args.container || profile.container })
+    return profile.listCronJobs({ container: args.container || profile.container, meta: args.meta })
         .then(onCronListing);
     
     

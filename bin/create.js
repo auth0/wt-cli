@@ -41,6 +41,14 @@ module.exports = Cli.createCommand('create', {
                 metavar: 'KEY=VALUE',
                 type: 'string',
             },
+            'meta': {
+                action: 'append',
+                defaultValue: [],
+                description: 'Metadata describing the webtask. This is a set of string key value pairs.',
+                dest: 'meta',
+                metavar: 'KEY=VALUE',
+                type: 'string',
+            },
             'name': {
                 alias: 'n',
                 description: 'Name of the webtask. When specified, the resulting webtask token can be run at a special named webtask url and additional path segments are allowed (/api/run/{container}/{name}/*). This is important when using `webtask-tools` to expose an Express server as a webtask.',
