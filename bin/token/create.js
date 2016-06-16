@@ -119,7 +119,7 @@ module.exports = Cli.createCommand('create', {
 
 function handleTokenCreate(args) {
     var profile = args.profile;
-    var claims = _.pick(_.pickBy(args, Boolean), Object.keys(RAW_CLAIMS));
+    var claims = _.pick(_.pickBy(args, v => v !== null), Object.keys(RAW_CLAIMS));
     
     if (claims['code-url']) {
         claims.url = claims['code-url'];
@@ -127,8 +127,13 @@ function handleTokenCreate(args) {
     }
     
     if (claims.dr) claims.dr = 1;
+    else delete claims.dr;
+    
     if (claims.mb) claims.mb = 1;
+    else delete claims.mb;
+    
     if (claims.pb) claims.pb = 1;
+    else delete claims.pb;
     
     if (args.claims) {
         try {
