@@ -48,7 +48,6 @@ function handleWebtaskMove(args) {
     });
 }
 
-// TODO: validate new and remove original webtask
 function moveWebtask(profile, name, target) {
     var source = {
         name: name,
@@ -63,10 +62,14 @@ function moveWebtask(profile, name, target) {
     return read(profile, name)
         .then(function(webtask) {
             return copy(profile, webtask, target);
+        })
+        .then(function() {
+            return profile.removeWebtask({
+                name: name
+            });
         });
 }
 
-// TODO: harden
 function equal(source, target) {
     return source.name == target.name && !target.container && !target.profile;
 }
@@ -89,9 +92,10 @@ function read(profile, name) {
 }
 
 // TODO: copy between profiles
+// TODO: copy built-in data
 // TODO: copy cronjobs schedules
 function copy(profile, webtask, target) {
-    var hasInlineCode = url.parse(webtask.url).protocol === 'webtask';
+    var hasInlineCode = url.parse(webtask.url).protocol === 'webtask:';
     var claims = _(webtask).omit(['jti', 'iat', 'ca']).value();
 
     if (hasInlineCode) {
