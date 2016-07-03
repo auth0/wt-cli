@@ -2,6 +2,7 @@ var url = require('url');
 var _ = require('lodash');
 var Chalk = require('chalk');
 var Cli = require('structured-cli');
+var ConfigFile = require('../lib/config');
 
 module.exports = Cli.createCommand('mv', {
     description: 'Move a named webtask',
@@ -91,24 +92,37 @@ function read(profile, name) {
         });
 }
 
-// TODO: copy between profiles
 // TODO: copy built-in data
 // TODO: copy cronjobs schedules
 function copy(profile, webtask, target) {
-    var hasInlineCode = url.parse(webtask.url).protocol === 'webtask:';
+    var create;
     var claims = _(webtask).omit(['jti', 'iat', 'ca']).value();
-
+    var hasInlineCode = url.parse(webtask.url).protocol === 'webtask:';
     if (hasInlineCode) {
         delete claims.url;
     } else {
         delete claims.code;
     }
-
     claims.jtn = target.name || claims.jtn;
     claims.ten = target.container || claims.ten;
 
-    return profile.createRaw(claims)
+    if (target.profile) {
+        create = loadProfile(target.profile)
+            .then(function(profile) {
+                return profile.createRaw(claims);
+            });
+    } else {
+        create = profile.createRaw(claims);
+    }
+
+    return create
         .catch(function(err) {
             throw Cli.error.cancelled('Failed to create webtask. ' + err);
         });
+}
+
+function loadProfile(name) {
+    var config = new ConfigFile();
+
+    return config.getProfile(name);
 }
