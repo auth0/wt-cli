@@ -23,12 +23,12 @@ module.exports = Cli.createCommand('mv', {
     },
     params: {
         'source': {
-            description: 'Webtask name',
+            description: 'Source webtask name',
             type: 'string',
             required: true,
         },
         'target': {
-            description: 'Webtask name',
+            description: 'Target webtask name',
             type: 'string',
             required: false,
         },
@@ -72,7 +72,11 @@ function moveWebtask(profile, name, target) {
 }
 
 function equal(source, target) {
-    return source.name == target.name && !target.container && !target.profile;
+    return _.isEqual(source, {
+        name: target.name,
+        container: target.container || source.container,
+        profile: target.profile || source.profile
+    });
 }
 
 function read(profile, name) {
@@ -106,7 +110,7 @@ function copy(profile, webtask, target) {
     if (target.profile) {
         create = loadProfile(target.profile)
             .then(function(profile) {
-                claims.ten = target.container || profile.container;
+                claims.ten = target.container || profile.container || claims.ten;
                 return profile.createRaw(claims);
             });
     } else {
