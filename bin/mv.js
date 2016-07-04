@@ -106,7 +106,7 @@ function copy(profile, webtask, target) {
     if (target.profile) {
         create = loadProfile(target.profile)
             .then(function(profile) {
-                claims.ten = profile.container || claims.ten;
+                claims.ten = target.container || profile.container;
                 return profile.createRaw(claims);
             });
     } else {
