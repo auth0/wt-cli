@@ -86,9 +86,6 @@ function read(profile, name) {
                 throw Cli.error.notFound('No such webtask: ' + Chalk.bold(name));
             }
             throw err;
-        })
-        .then(function(webtask) {
-            return webtask;
         });
 }
 
@@ -109,6 +106,7 @@ function copy(profile, webtask, target) {
     if (target.profile) {
         create = loadProfile(target.profile)
             .then(function(profile) {
+                claims.ten = profile.container || claims.ten;
                 return profile.createRaw(claims);
             });
     } else {
