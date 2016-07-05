@@ -1,5 +1,8 @@
+'use strict';
+
 var url = require('url');
 var _ = require('lodash');
+var coroutine = require('bluebird').coroutine;
 var Chalk = require('chalk');
 var Cli = require('structured-cli');
 var ConfigFile = require('../lib/config');
@@ -93,10 +96,8 @@ function read(profile, name) {
         });
 }
 
-// TODO: copy built-in data
-// TODO: copy cronjobs schedules
 function copy(profile, webtask, target) {
-    var create;
+    var targetProfile = profile;
     var claims = _(webtask).omit(['jti', 'iat', 'ca']).value();
     var hasInlineCode = url.parse(webtask.url).protocol === 'webtask:';
     if (hasInlineCode) {
@@ -107,17 +108,25 @@ function copy(profile, webtask, target) {
     claims.jtn = target.name || claims.jtn;
     claims.ten = target.container || claims.ten;
 
+    var pendingCreate;
     if (target.profile) {
-        create = loadProfile(target.profile)
+        pendingCreate = loadProfile(target.profile)
             .then(function(profile) {
+                targetProfile = profile;
                 claims.ten = target.container || profile.container || claims.ten;
-                return profile.createRaw(claims);
+                return targetProfile.createRaw(claims);
             });
     } else {
-        create = profile.createRaw(claims);
+        pendingCreate = targetProfile.createRaw(claims);
     }
 
-    return create
+    return pendingCreate
+        .then(function() {
+            target.profile = targetProfile;
+            target.name = claims.jtn;
+            return moveCronJob(profile, webtask.jtn, target);
+        })
+        // .then(copyStorage)
         .catch(function(err) {
             throw Cli.error.cancelled('Failed to create webtask. ' + err);
         });
@@ -128,3 +137,32 @@ function loadProfile(name) {
 
     return config.getProfile(name);
 }
+
+function moveCronJob(profile, name, target) {
+    return coroutine(function*() {
+        var cronJobs = yield profile.listCronJobs();
+
+        for (let job of cronJobs) {
+            if (job.name === name) {
+                let token = yield profile.getWebtask({
+                    name: target.name
+                });
+                yield target.profile.createCronJob({
+                    name: target.name,
+                    container: target.container,
+                    token: token.token,
+                    schedule: job.schedule
+                });
+                yield profile.removeCronJob({
+                    name: name
+                });
+                break;
+            }
+        }
+    })();
+}
+
+// TODO: copy built-in data
+// function copyStorage() {
+//     console.log('DEBUG: copyStorage:');
+// }
