@@ -97,6 +97,9 @@ function read(profile, name) {
 }
 
 function copy(profile, webtask, target) {
+    if (!webtask.jtn) {
+        throw Cli.error.cancelled('Not a named webtask.');
+    }
     var targetProfile = profile;
     var claims = _(webtask).omit(['jti', 'iat', 'ca']).value();
     var hasInlineCode = url.parse(webtask.url).protocol === 'webtask:';
