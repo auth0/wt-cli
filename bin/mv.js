@@ -125,9 +125,16 @@ function copy(profile, webtask, target) {
 
     return pendingCreate
         .then(function() {
+            return profile.getWebtask({
+                name: webtask.jtn
+            });
+        })
+        .then(function(token) {
             target.profile = targetProfile;
             target.name = claims.jtn;
-            return moveCronJob(profile, webtask.jtn, target);
+            return moveCronJob(profile, webtask.jtn, target, {
+                verify: token.token
+            });
         })
         // .then(copyStorage)
         .catch(function(err) {
@@ -141,27 +148,39 @@ function loadProfile(name) {
     return config.getProfile(name);
 }
 
-function moveCronJob(profile, name, target) {
+function moveCronJob(profile, name, target, options) {
     return coroutine(function*() {
-        var cronJobs = yield profile.listCronJobs();
+        var job;
 
-        for (let job of cronJobs) {
-            if (job.name === name) {
-                let token = yield profile.getWebtask({
-                    name: target.name
-                });
-                yield target.profile.createCronJob({
-                    name: target.name,
-                    container: target.container,
-                    token: token.token,
-                    schedule: job.schedule
-                });
-                yield profile.removeCronJob({
-                    name: name
-                });
-                break;
+        try {
+            job = yield profile.getCronJob({
+                name: name
+            });
+        } catch (err) {
+            if (err.statusCode === 404) {
+                return;
             }
+            throw err;
         }
+
+        let token = yield profile.getWebtask({
+            name: target.name
+        });
+
+        if (job.token !== _.get(options, 'verify')) {
+            throw Cli.error.cancelled('Failed to verify the cron job token (no match).');
+        }
+
+        yield target.profile.createCronJob({
+            name: target.name,
+            container: target.container,
+            token: token.token,
+            schedule: job.schedule
+        });
+
+        yield profile.removeCronJob({
+            name: name
+        });
     })();
 }
 
