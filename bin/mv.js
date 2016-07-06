@@ -203,8 +203,9 @@ function importStorage(webtask, data) {
     var code = `module.exports = function(ctx, done) {
         ctx.storage.get(function(err, data) {
             if (err) { return done(err); }
-            if (!ctx.data.import) { return done(); }
-            ctx.storage.set(JSON.parse(ctx.data.import), { force: 1 }, function(err) {
+            console.log('import: data=%j', ctx.body);
+            if (!ctx.body) { return done(); }
+            ctx.storage.set(ctx.body, { force: 1 }, function(err) {
                 if (err) { return done(err); } done();
             });
         });
@@ -227,7 +228,11 @@ function cloneWebtaskData(data) {
     return clone;
 }
 
-function ephemeralRun(webtask, code, query) {
+function ephemeralRun(webtask, code, body, headers) {
+    headers = headers || {
+        'Content-Type': 'application/json'
+    };
+
     return coroutine(function*() {
         let data = yield webtask.inspect({
             decrypt: true,
@@ -241,7 +246,8 @@ function ephemeralRun(webtask, code, query) {
         try {
             yield webtask.sandbox.createRaw(claims);
             return yield webtask.run({
-                query: query
+                body: body,
+                headers: headers
             });
         } finally {
             yield webtask.sandbox.createRaw(cloneWebtaskData(data));
