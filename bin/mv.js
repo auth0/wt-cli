@@ -53,19 +53,18 @@ function handleWebtaskMove(args) {
 }
 
 function moveWebtask(profile, name, target) {
-    var source = {
-        name: name,
-        container: profile.container,
-        profile: profile.name
-    };
 
-    if (equal(source, target)) {
+    if (equal({
+            name: name,
+            container: profile.container,
+            profile: profile.name
+        }, target)) {
         throw Cli.error.invalid('Webtasks are identical. Use a different target name, container or profile.');
     }
 
     return read(profile, name)
-        .then(function(webtask) {
-            return copy(profile, webtask, target);
+        .then(function(claims) {
+            return copy(profile, claims, target);
         })
         .then(function() {
             return profile.removeWebtask({
@@ -74,11 +73,11 @@ function moveWebtask(profile, name, target) {
         });
 }
 
-function equal(source, target) {
-    return _.isEqual(source, {
-        name: target.name,
-        container: target.container || source.container,
-        profile: target.profile || source.profile
+function equal(sourceParams, targetParams) {
+    return _.isEqual(sourceParams, {
+        name: targetParams.name,
+        container: targetParams.container || sourceParams.container,
+        profile: targetParams.profile || sourceParams.profile
     });
 }
 
@@ -96,47 +95,48 @@ function read(profile, name) {
         });
 }
 
-function copy(profile, webtask, target) {
-    if (!webtask.jtn) {
+function copy(profile, claims, target) {
+    if (!claims.jtn) {
         throw Cli.error.cancelled('Not a named webtask.');
     }
-    var targetProfile = profile;
-    var claims = _(webtask).omit(['jti', 'iat', 'ca']).value();
-    var hasInlineCode = url.parse(webtask.url).protocol === 'webtask:';
-    if (hasInlineCode) {
-        delete claims.url;
+
+    var targetClaims = _(claims).omit(['jti', 'iat', 'ca']).value();
+    if (url.parse(claims.url).protocol === 'webtask:') {
+        delete targetClaims.url;
     } else {
-        delete claims.code;
+        delete targetClaims.code;
     }
-    claims.jtn = target.name || claims.jtn;
-    claims.ten = target.container || claims.ten;
+    targetClaims.jtn = target.name || targetClaims.jtn;
+    targetClaims.ten = target.container || targetClaims.ten;
 
     var pendingCreate;
     if (target.profile) {
         pendingCreate = loadProfile(target.profile)
             .then(function(profile) {
-                targetProfile = profile;
-                claims.ten = target.container || profile.container || claims.ten;
-                return targetProfile.createRaw(claims);
+                target.profile = profile;
+                targetClaims.ten = target.container || profile.container || targetClaims.ten;
+                return target.profile.createRaw(targetClaims);
             });
     } else {
-        pendingCreate = targetProfile.createRaw(claims);
+        target.profile = profile;
+        pendingCreate = target.profile.createRaw(targetClaims);
     }
 
     return pendingCreate
         .then(function() {
             return profile.getWebtask({
-                name: webtask.jtn
+                name: claims.jtn
             });
         })
-        .then(function(token) {
-            target.profile = targetProfile;
-            target.name = claims.jtn;
-            return moveCronJob(profile, webtask.jtn, target, {
-                verify: token.token
+        .then(function(webtask) {
+            target.name = targetClaims.jtn;
+            return moveCronJob(profile, claims.jtn, target, {
+                verify: webtask.token
             });
         })
-        // .then(copyStorage)
+        .then(function() {
+            return copyStorage(profile, claims.jtn, target);
+        })
         .catch(function(err) {
             throw Cli.error.cancelled('Failed to create webtask. ' + err);
         });
@@ -163,7 +163,7 @@ function moveCronJob(profile, name, target, options) {
             throw err;
         }
 
-        let token = yield profile.getWebtask({
+        let webtask = yield profile.getWebtask({
             name: target.name
         });
 
@@ -174,7 +174,7 @@ function moveCronJob(profile, name, target, options) {
         yield target.profile.createCronJob({
             name: target.name,
             container: target.container,
-            token: token.token,
+            token: webtask.token,
             schedule: job.schedule
         });
 
@@ -185,6 +185,6 @@ function moveCronJob(profile, name, target, options) {
 }
 
 // TODO: copy built-in data
-// function copyStorage() {
-//     console.log('DEBUG: copyStorage:');
-// }
+function copyStorage(profile, name, target) {
+    console.log('copyStorage: profile=%j, name=%j, target=%j', profile, name, target); // TODO: remove
+}
