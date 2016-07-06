@@ -182,20 +182,35 @@ function copyStorage(webtask, target) {
             container: target.container
         });
         let data = yield exportStorage(webtask);
-
-        // TODO: import data
-        console.log('copyStorage: webtask=%j, targetWebtask=%j, data=%j', webtask, targetWebtask, data);
+        yield importStorage(targetWebtask, data);
     })();
 }
 
 function exportStorage(webtask) {
-    var exportCode = `module.exports = function(ctx, done) {
-            ctx.storage.get(function(err, data) {
-                if (err) { return done(err); } done(null, data || {});
-            });
-        }`;
+    var code = `module.exports = function(ctx, done) {
+        ctx.storage.get(function(err, data) {
+            if (err) { return done(err); } done(null, data || {});
+        });
+    }`;
 
-    return ephemeralRun(webtask, exportCode)
+    return ephemeralRun(webtask, code)
+        .then(function(res) {
+            return JSON.parse(_.get(res, 'text', '{}'));
+        });
+}
+
+function importStorage(webtask, data) {
+    var code = `module.exports = function(ctx, done) {
+        ctx.storage.get(function(err, data) {
+            if (err) { return done(err); }
+            if (!ctx.data.import) { return done(); }
+            ctx.storage.set(JSON.parse(ctx.data.import), { force: 1 }, function(err) {
+                if (err) { return done(err); } done();
+            });
+        });
+    }`;
+
+    return ephemeralRun(webtask, code, data)
         .then(function(res) {
             return JSON.parse(_.get(res, 'text', '{}'));
         });
@@ -212,7 +227,7 @@ function cloneWebtaskData(data) {
     return clone;
 }
 
-function ephemeralRun(webtask, code) {
+function ephemeralRun(webtask, code, query) {
     return coroutine(function*() {
         let data = yield webtask.inspect({
             decrypt: true,
@@ -225,7 +240,9 @@ function ephemeralRun(webtask, code) {
 
         try {
             yield webtask.sandbox.createRaw(claims);
-            return yield webtask.run();
+            return yield webtask.run({
+                query: query
+            });
         } finally {
             yield webtask.sandbox.createRaw(cloneWebtaskData(data));
         }
