@@ -158,8 +158,8 @@ function moveCronJob(profile, name, target, options) {
             container: target.container
         });
 
-        if (job.token !== _.get(options, 'verify')) {
-            console.log(Chalk.yellow('Warning: ') + 'failed to verify the cron job token (no match).');
+        if (_.get(options, 'verify') && job.token !== options.verify) {
+            console.log(Chalk.bold('* Warning: failed to verify the cron job token (no match).'));
         }
 
         yield target.profile.createCronJob({
@@ -203,7 +203,6 @@ function importStorage(webtask, data) {
     var code = `module.exports = function(ctx, done) {
         ctx.storage.get(function(err, data) {
             if (err) { return done(err); }
-            console.log('import: data=%j', ctx.body);
             if (!ctx.body) { return done(); }
             ctx.storage.set(ctx.body, { force: 1 }, function(err) {
                 if (err) { return done(err); } done();
