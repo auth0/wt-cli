@@ -35,6 +35,7 @@
     "filewatcher": "^3.0.0",
     "jwt-decode": "^1.5.1",
     "lodash": "^4.5.0",
+    "npm-package-arg": "^4.2.0",
     "open": "0.0.5",
     "pad": "^1.0.0",
     "promptly": "^0.2.1",

@@ -5,22 +5,23 @@ var Semver = require('semver');
 var Superagent = require('superagent');
 var Request = require('sandboxjs/lib/issueRequest');
 var npmRunner = require('../../lib/npmRunner');
-
+var npa = require('npm-package-arg');
 module.exports = Cli.createCommand('install', {
-    description: 'Installs a package',
+    description: 'Installs one or more npm packages based on versions supported by the platform',
     handler: handleInstall,
     options: {
       // provided as convienience
       save: {
+        description: 'Saves the exact version of the package resolved to package.json',
         action: 'storeTrue'
       }
     },
     params: {
       varargs: {
-          description: 'Libraries to install',
+          description: 'Packages to install',
           type: 'string',
           required: true,
-          nargs: '*'
+          nargs: '*',
       }
     }
 });
@@ -41,8 +42,10 @@ function handleInstall (args) {
   var requestedLibs = args.varargs.filter(isNotOption).map(toLibObject);
   var passThroughArgs = args.varargs.filter(isOption);
 
+  requestedLibs.forEach(ensureNpmPackage);
+
   if (args.save) {
-    passThroughArgs.unshift('--save');
+    passThroughArgs.unshift('--save-exact');
   }
 
   return getAvailableModules().then(function (libraries) {
@@ -50,15 +53,15 @@ function handleInstall (args) {
       var resolvedLibs = requestedLibs.map(function (lib) {
         var remoteLibs = findLibByName(libraries, lib.name);
         var availableVers = remoteLibs.map(getVersion);
-        var errorMessage = lib.original + ' is not available.';
+        var errorMessage = lib.raw + ' is not available.';
         if (availableVers.length) {
-          var resolvedVersion = Semver.maxSatisfying(availableVers, lib.version);
+          var resolvedVersion = Semver.maxSatisfying(availableVers, lib.spec);
           if (resolvedVersion) {
             resolvedLib = lib.name + '@' + resolvedVersion;
             return resolvedLib;
           }
 
-          errorMessage = 'No compatible version found for ' + lib.original + '\n';
+          errorMessage = 'No compatible version found for ' + lib.raw + '\n';
           errorMessage += 'Available versions are: ';
           errorMessage += availableVers.join(', ');
         }
@@ -79,24 +82,40 @@ function handleInstall (args) {
 }
 
 function modulesFailed () {
-  throw Cli.error.serverError('Library not available on webtask');
+  throw Cli.error.serverError('Failed to load list of avialable packages');
 }
 
-// converts lib@x.x.x to an object {library: library, version: version}
-function toLibObject (libraryStr) {
-  var parts = libraryStr.split('@');
-  return {
-    original: libraryStr,
-    version: parts[1] || '*',
-    name: parts[0]
+// Wrapper to check repository
+function ensureNpmPackage (pkg) {
+  var unsupportedTypes = ['git', 'hosted', 'local', 'remote'];
+  var errorMessage = '';
+
+  if(unsupportedTypes.indexOf(pkg.type) !== -1){
+    errorMessage = pkg.raw + ' is a ' + pkg.type + 'package\n';
   }
+
+  if(pkg.scope !== null){
+    errorMessage = pkg.raw + ' is a scoped package \n';
+  }
+
+  if(errorMessage){
+    errorMessage += 'We only support unscoped packages hosted originally on npm.\n';
+    errorMessage += 'Please use npm install to install the package instead';
+    throw Cli.error.badRequest(errorMessage);
+  }
+}
+
+
+// Wrapper to parse npm packages
+function toLibObject (rawStr) {
+  return npa(rawStr);
 }
 
 // Helpers to find library in webtask
 function findLibByName (libraries, name) {
   return libraries.filter(function(el){
     return el.name === name;
-  }).reverse();
+  });
 }
 
 function getVersion (lib) {
@@ -104,9 +123,9 @@ function getVersion (lib) {
 }
 
 function isOption (arg) {
-  return arg.indexOf('--') === 0;
+  return arg.indexOf('-') === 0;
 }
 
 function isNotOption (arg) {
-  return arg.indexOf('--') === -1;
+  return arg.indexOf('-') === -1;
 }
