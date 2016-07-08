@@ -30,7 +30,7 @@ function getAvailableModules () {
   var request = Superagent.get(LIST_MODULES_URL);
   return Request(request)
           .get('body')
-          .then(function(body){
+          .then(function (body) {
             return body.modules;
           });
 }
@@ -41,7 +41,7 @@ function handleInstall (args) {
   var requestedLibs = args.varargs.filter(isNotOption).map(toLibObject);
   var passThroughArgs = args.varargs.filter(isOption);
 
-  if(args.save){
+  if (args.save) {
     passThroughArgs.unshift('--save');
   }
 
@@ -78,7 +78,7 @@ function handleInstall (args) {
 
 }
 
-function modulesFailed(){
+function modulesFailed () {
   throw Cli.error.serverError('Library not available on webtask');
 }
 
