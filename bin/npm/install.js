@@ -50,7 +50,7 @@ function handleInstall (args) {
       var resolvedLibs = requestedLibs.map(function (lib) {
         var remoteLibs = findLibByName(libraries, lib.name);
         var availableVers = remoteLibs.map(getVersion);
-        var errorMessage = lib.original + ' is not available on webtask. However, you can still bundle it.';
+        var errorMessage = lib.original + ' is not available.';
         if (availableVers.length) {
           var resolvedVersion = Semver.maxSatisfying(availableVers, lib.version);
           if (resolvedVersion) {
@@ -58,8 +58,8 @@ function handleInstall (args) {
             return resolvedLib;
           }
 
-          errorMessage = 'No compatible version found \n';
-          errorMessage += 'Available versions are: \n';
+          errorMessage = 'No compatible version found for ' + lib.original + '\n';
+          errorMessage += 'Available versions are: ';
           errorMessage += availableVers.join(', ');
         }
 
@@ -68,7 +68,7 @@ function handleInstall (args) {
 
       if (resolvedLibs.length) {
         console.log(Chalk.green(
-          'Found ' + resolvedLibs.join(', ') + '\n' +
+          'Installing ' + resolvedLibs.join(', ') + '\n' +
           'Running npm install\n'
         ));
         return npmRunner('install', resolvedLibs.concat(passThroughArgs));
