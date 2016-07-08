@@ -129,5 +129,5 @@ function isOption (arg) {
 }
 
 function isNotOption (arg) {
-  return arg.indexOf('-') === -1;
+  return !isOption(arg);
 }
