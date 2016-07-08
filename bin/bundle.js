@@ -7,3 +7,4 @@ var category = module.exports = Cli.createCategory('bundle', {
 
 category.addChild(require('./bundle/analyze'));
 category.addChild(require('./bundle/sync'));
+category.addChild(require('./npm/npm'));
