@@ -43,7 +43,7 @@
     "superagent": "^1.7.2",
     "update-notifier": "^0.6.1",
     "webtask-bundle": "^2.1.1",
-    "webtask-runtime": "^1.1.0"
+    "webtask-runtime": "^1.2.0"
   },
   "bin": {
     "wt": "./bin/wt",
