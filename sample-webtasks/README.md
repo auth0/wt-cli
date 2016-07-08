@@ -50,7 +50,7 @@ $ wt cron schedule -n mongocron \
 
 ### Express.js
 
-You can use the [express](https://expressjs.org) framework inside a webtask. Specify `--no-parse` and `--no-merge` modifiers to keep the request raw.
+You can use the [express](https://expressjs.com) framework inside a webtask. Specify `--no-parse` and `--no-merge` modifiers to keep the request raw.
 
 ```bash
 $ wt create express.js --no-parse --no-merge
