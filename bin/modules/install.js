@@ -45,6 +45,7 @@ function handleInstall (args) {
   requestedLibs.forEach(ensureNpmPackage);
 
   if (args.save) {
+    passThroughArgs.unshift('--save');
     passThroughArgs.unshift('--save-exact');
   }
 
@@ -55,7 +56,8 @@ function handleInstall (args) {
         var availableVers = remoteLibs.map(getVersion);
         var errorMessage = lib.raw + ' is not available.';
         if (availableVers.length) {
-          var resolvedVersion = Semver.maxSatisfying(availableVers, lib.spec);
+          var spec = lib.spec === 'latest'? '*' : lib.spec;
+          var resolvedVersion = Semver.maxSatisfying(availableVers, spec);
           if (resolvedVersion) {
             resolvedLib = lib.name + '@' + resolvedVersion;
             return resolvedLib;
