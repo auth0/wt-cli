@@ -78,6 +78,7 @@ function handleUpdate(args) {
         args.parse = claims.pb;
         args.secrets = claims.ectx;
         args.params = claims.pctx;
+        args.meta = claims.meta;
 
         // Defer to the functionality of the create command
         return CreateWebtask(args, { action: 'updated' });
