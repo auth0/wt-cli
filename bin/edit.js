@@ -23,11 +23,8 @@ module.exports = Cli.createCommand('edit', {
 
 function handleEdit(args) {
     var profile = args.profile;
-    var url = profile.url + '/edit/webtask/' + profile.container + '/' + args.name + '#token=' + profile.token;
-    
+    var url = profile.url + '/edit/' + profile.container + '#/token/' + profile.token + '/' + args.name;
     console.log('Opening ' + Chalk.underline(args.name) + ' in your browser...');
     
     Open(url);
 }
-
-
