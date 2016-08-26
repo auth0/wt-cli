@@ -5,7 +5,7 @@
     "url": "https://github.com/ggoodman",
     "twitter": "filearts"
   },
-  "version": "3.2.1",
+  "version": "3.3.0",
   "description": "Webtask Command Line Interface",
   "tags": [
     "nodejs",
@@ -43,7 +43,7 @@
     "superagent": "^1.7.2",
     "update-notifier": "^0.6.1",
     "webtask-bundle": "^2.1.1",
-    "webtask-runtime": "^1.1.0"
+    "webtask-runtime": "^1.2.0"
   },
   "bin": {
     "wt": "./bin/wt",
