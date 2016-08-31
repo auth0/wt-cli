@@ -23,7 +23,7 @@ module.exports = Cli.createCommand('edit', {
 
 function handleEdit(args) {
     var profile = args.profile;
-    var url = profile.url + '/edit/' + profile.container + '#/token/' + profile.token + '/' + args.name;
+    var url = profile.url + '/edit/' + profile.container + '#/' + args.name + '/' + profile.token;
     console.log('Opening ' + Chalk.underline(args.name) + ' in your browser...');
     
     Open(url);
