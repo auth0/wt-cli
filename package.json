@@ -38,7 +38,7 @@
     "open": "0.0.5",
     "pad": "^1.0.0",
     "promptly": "^0.2.1",
-    "sandboxjs": "^2.5.0",
+    "sandboxjs": "^3.0.2",
     "structured-cli": "^1.0.4",
     "superagent": "^1.7.2",
     "update-notifier": "^0.6.1",
