@@ -1,16 +1,16 @@
 'use strict';
 
-var url = require('url');
-var _ = require('lodash');
-var coroutine = require('bluebird').coroutine;
-var Chalk = require('chalk');
-var Cli = require('structured-cli');
-var ConfigFile = require('../lib/config');
+const url = require('url');
+const _ = require('lodash');
+const coroutine = require('bluebird').coroutine;
+const Chalk = require('chalk');
+const Cli = require('structured-cli');
+const ConfigFile = require('../lib/config');
 
 module.exports = Cli.createCommand('mv', {
     description: 'Move a named webtask',
     plugins: [
-        require('./_plugins/profile'),
+        require('./_plugins/profile')
     ],
     options: {
         'target-container': {
@@ -40,20 +40,20 @@ module.exports = Cli.createCommand('mv', {
 });
 
 function handleWebtaskMove(args) {
-    var options = _(args).pick(['targetContainer', 'targetProfile']).omitBy(_.isNull).value();
-    var targetName = args.target || args.source;
+    let options = _(args).pick(['targetContainer', 'targetProfile']).omitBy(_.isNull).value();
+    let targetName = args.target || args.source;
 
     return moveWebtask(args.profile, args.source, {
         profile: options.targetProfile,
         container: options.targetContainer,
         name: targetName
-    }).then(function() {
+    }).then(function () {
         console.log(Chalk.green('Moved webtask: %s'), Chalk.bold(targetName));
     });
 }
 
 function moveWebtask(profile, name, target) {
-    var sourceWebtask;
+    let sourceWebtask;
 
     if (equal({
             name: name,
@@ -64,25 +64,25 @@ function moveWebtask(profile, name, target) {
     }
 
     return profile.getWebtask({
-            name: name
-        })
-        .catch(function(err) {
+        name: name
+    })
+        .catch(function (err) {
             if (err.statusCode === 404) {
                 throw Cli.error.notFound('No such webtask: ' + Chalk.bold(name));
             }
             throw err;
         })
-        .then(function(webtask) {
+        .then(function (webtask) {
             sourceWebtask = webtask;
             return webtask.inspect({
                 decrypt: true,
                 fetch_code: true
             });
         })
-        .then(function(data) {
+        .then(function (data) {
             return copy(sourceWebtask, data, target);
         })
-        .then(function() {
+        .then(function () {
             return sourceWebtask.remove();
         });
 }
@@ -100,14 +100,14 @@ function copy(webtask, data, target) {
         throw Cli.error.cancelled('Not a named webtask.');
     }
 
-    var claims = cloneWebtaskData(data);
+    let claims = cloneWebtaskData(data);
     claims.jtn = target.name || claims.jtn;
     claims.ten = target.container || claims.ten;
 
-    var pendingCreate;
+    let pendingCreate;
     if (target.profile) {
         pendingCreate = loadProfile(target.profile)
-            .then(function(profile) {
+            .then(function (profile) {
                 target.profile = profile;
                 claims.ten = target.container || profile.container || claims.ten;
                 return target.profile.createRaw(claims);
@@ -118,29 +118,29 @@ function copy(webtask, data, target) {
     }
 
     return pendingCreate
-        .then(function() {
+        .then(function () {
             target.name = claims.jtn;
             return moveCronJob(webtask.sandbox, data.jtn, target, {
                 verify: webtask.token
             });
         })
-        .then(function() {
+        .then(function () {
             return copyStorage(webtask, target);
         })
-        .catch(function(err) {
+        .catch(function (err) {
             throw Cli.error.cancelled('Failed to create webtask. ' + err);
         });
 }
 
 function loadProfile(name) {
-    var config = new ConfigFile();
+    let config = new ConfigFile();
 
     return config.getProfile(name);
 }
 
 function moveCronJob(profile, name, target, options) {
     return coroutine(function*() {
-        var job;
+        let job;
 
         try {
             job = yield profile.getCronJob({
@@ -187,37 +187,39 @@ function copyStorage(webtask, target) {
 }
 
 function exportStorage(webtask) {
-    var code = `module.exports = function(ctx, done) {
-        ctx.storage.get(function(err, data) {
-            if (err) { return done(err); } done(null, data || {});
-        });
-    }`;
-
-    return ephemeralRun(webtask, code)
-        .then(function(res) {
-            return JSON.parse(_.get(res, 'text', '{}'));
-        });
+    // TODO: use GET /api/webtask/${ten}/${jtn}/data
+    // let code = `module.exports = function(ctx, done) {
+    //     ctx.storage.get(function(err, data) {
+    //         if (err) { return done(err); } done(null, data || {});
+    //     });
+    // }`;
+    //
+    // return ephemeralRun(webtask, code)
+    //     .then(function (res) {
+    //         return JSON.parse(_.get(res, 'text', '{}'));
+    //     });
 }
 
 function importStorage(webtask, data) {
-    var code = `module.exports = function(ctx, done) {
-        ctx.storage.get(function(err, data) {
-            if (err) { return done(err); }
-            if (!ctx.body) { return done(); }
-            ctx.storage.set(ctx.body, { force: 1 }, function(err) {
-                if (err) { return done(err); } done();
-            });
-        });
-    }`;
-
-    return ephemeralRun(webtask, code, data)
-        .then(function(res) {
-            return JSON.parse(_.get(res, 'text', '{}'));
-        });
+    // TODO: use PUT /api/webtask/${ten}/${jtn}/data
+    // let code = `module.exports = function(ctx, done) {
+    //     ctx.storage.get(function(err, data) {
+    //         if (err) { return done(err); }
+    //         if (!ctx.body) { return done(); }
+    //         ctx.storage.set(ctx.body, { force: 1 }, function(err) {
+    //             if (err) { return done(err); } done();
+    //         });
+    //     });
+    // }`;
+    //
+    // return ephemeralRun(webtask, code, data)
+    //     .then(function (res) {
+    //         return JSON.parse(_.get(res, 'text', '{}'));
+    //     });
 }
 
 function cloneWebtaskData(data) {
-    var clone = _(_.clone(data)).omit(['jti', 'iat', 'ca']).value();
+    let clone = _(_.clone(data)).omit(['jti', 'iat', 'ca']).value();
     if (url.parse(data.url).protocol === 'webtask:') {
         delete clone.url;
     } else {
@@ -227,29 +229,29 @@ function cloneWebtaskData(data) {
     return clone;
 }
 
-function ephemeralRun(webtask, code, body, headers) {
-    headers = headers || {
-        'Content-Type': 'application/json'
-    };
-
-    return coroutine(function*() {
-        let data = yield webtask.inspect({
-            decrypt: true,
-            fetch_code: true
-        });
-        let claims = cloneWebtaskData(data);
-
-        claims.code = code;
-        delete claims.url;
-
-        try {
-            yield webtask.sandbox.createRaw(claims);
-            return yield webtask.run({
-                body: body,
-                headers: headers
-            });
-        } finally {
-            yield webtask.sandbox.createRaw(cloneWebtaskData(data));
-        }
-    })();
-}
+// function ephemeralRun(webtask, code, body, headers) {
+//     headers = headers || {
+//             'Content-Type': 'application/json'
+//         };
+//
+//     return coroutine(function*() {
+//         let data = yield webtask.inspect({
+//             decrypt: true,
+//             fetch_code: true
+//         });
+//         let claims = cloneWebtaskData(data);
+//
+//         claims.code = code;
+//         delete claims.url;
+//
+//         try {
+//             yield webtask.sandbox.createRaw(claims);
+//             return yield webtask.run({
+//                 body: body,
+//                 headers: headers
+//             });
+//         } finally {
+//             yield webtask.sandbox.createRaw(cloneWebtaskData(data));
+//         }
+//     })();
+// }
