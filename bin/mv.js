@@ -78,7 +78,7 @@ function moveWebtask(profile, name, target) {
             });
         })
         .then(function (data) {
-            return copy(profile, sourceWebtask, data, target);
+            return copy(sourceWebtask, data, target);
         })
         .then(function () {
             return sourceWebtask.remove();
@@ -93,7 +93,7 @@ function equal(sourceParams, targetParams) {
     });
 }
 
-function copy(profile, webtask, data, target) {
+function copy(webtask, data, target) {
     debug('copy: webtask=%j, data=%j, target=%j', webtask, data, target);
 
     if (!data.jtn) {
