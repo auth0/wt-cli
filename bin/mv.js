@@ -3,7 +3,9 @@
 const url = require('url');
 const _ = require('lodash');
 const coroutine = require('bluebird').coroutine;
-const Chalk = require('chalk');
+const debug = require('debug')('wt-cli:mv');
+const request = require('superagent');
+const chalk = require('chalk');
 const Cli = require('structured-cli');
 const ConfigFile = require('../lib/config');
 
@@ -48,27 +50,23 @@ function handleWebtaskMove(args) {
         container: options.targetContainer,
         name: targetName
     }).then(function () {
-        console.log(Chalk.green('Moved webtask: %s'), Chalk.bold(targetName));
+        console.log(chalk.green('Moved webtask: %s'), chalk.bold(targetName));
     });
 }
 
 function moveWebtask(profile, name, target) {
+    debug('moveWebtask: profile=%j, name=%s, target=%j', profile, name, target);
+
     let sourceWebtask;
 
-    if (equal({
-            name: name,
-            container: profile.container,
-            profile: profile.name
-        }, target)) {
+    if (equal({name: name, container: profile.container, profile: profile.name}, target)) {
         throw Cli.error.invalid('Webtasks are identical. Use a different target name, container or profile.');
     }
 
-    return profile.getWebtask({
-        name: name
-    })
+    return profile.getWebtask({name: name})
         .catch(function (err) {
             if (err.statusCode === 404) {
-                throw Cli.error.notFound('No such webtask: ' + Chalk.bold(name));
+                throw Cli.error.notFound('No such webtask: ' + chalk.bold(name));
             }
             throw err;
         })
@@ -80,7 +78,7 @@ function moveWebtask(profile, name, target) {
             });
         })
         .then(function (data) {
-            return copy(sourceWebtask, data, target);
+            return copy(profile, sourceWebtask, data, target);
         })
         .then(function () {
             return sourceWebtask.remove();
@@ -95,7 +93,9 @@ function equal(sourceParams, targetParams) {
     });
 }
 
-function copy(webtask, data, target) {
+function copy(profile, webtask, data, target) {
+    debug('copy: webtask=%j, data=%j, target=%j', webtask, data, target);
+
     if (!data.jtn) {
         throw Cli.error.cancelled('Not a named webtask.');
     }
@@ -133,12 +133,16 @@ function copy(webtask, data, target) {
 }
 
 function loadProfile(name) {
+    debug('loadProfile: name=%s', name);
+
     let config = new ConfigFile();
 
     return config.getProfile(name);
 }
 
 function moveCronJob(profile, name, target, options) {
+    debug('moveCronJob: profile=%j, name=%s, target=%j, options=%j', profile, name, target, options);
+
     return coroutine(function*() {
         let job;
 
@@ -159,7 +163,7 @@ function moveCronJob(profile, name, target, options) {
         });
 
         if (_.get(options, 'verify') && job.token !== options.verify) {
-            console.log(Chalk.bold('* Warning: failed to verify the cron job token (no match).'));
+            console.log(chalk.bold('* Warning: failed to verify the cron job token (no match).'));
         }
 
         yield target.profile.createCronJob({
@@ -176,46 +180,47 @@ function moveCronJob(profile, name, target, options) {
 }
 
 function copyStorage(webtask, target) {
+    debug('copyStorage:webtask=%j, target=%j', webtask, target);
+
     return coroutine(function*() {
         let targetWebtask = yield target.profile.getWebtask({
             name: target.name,
             container: target.container
         });
-        let data = yield exportStorage(webtask);
-        yield importStorage(targetWebtask, data);
+        let body = yield exportStorage(webtask);
+        let data = _.get(body, 'store.data');
+        if (!_.isEmpty(data)) {
+            yield importStorage(targetWebtask, {data});
+        }
     })();
 }
 
 function exportStorage(webtask) {
-    // TODO: use GET /api/webtask/${ten}/${jtn}/data
-    // let code = `module.exports = function(ctx, done) {
-    //     ctx.storage.get(function(err, data) {
-    //         if (err) { return done(err); } done(null, data || {});
-    //     });
-    // }`;
-    //
-    // return ephemeralRun(webtask, code)
-    //     .then(function (res) {
-    //         return JSON.parse(_.get(res, 'text', '{}'));
-    //     });
+    debug('exportStorage: webtask=%j', webtask);
+
+    return coroutine(function*() {
+        let url = `${webtask.sandbox.url}/api/webtask/${webtask.container}/${webtask.claims.jtn}/data`;
+        let res = yield request.get(url).set('Authorization', `Bearer ${webtask.sandbox.token}`);
+
+        debug('exportStorage: res.body=%j', res.body);
+
+        return res.body;
+    })();
 }
 
 function importStorage(webtask, data) {
-    // TODO: use PUT /api/webtask/${ten}/${jtn}/data
-    // let code = `module.exports = function(ctx, done) {
-    //     ctx.storage.get(function(err, data) {
-    //         if (err) { return done(err); }
-    //         if (!ctx.body) { return done(); }
-    //         ctx.storage.set(ctx.body, { force: 1 }, function(err) {
-    //             if (err) { return done(err); } done();
-    //         });
-    //     });
-    // }`;
-    //
-    // return ephemeralRun(webtask, code, data)
-    //     .then(function (res) {
-    //         return JSON.parse(_.get(res, 'text', '{}'));
-    //     });
+    debug('importStorage: webtask=%j, data=%j', webtask, data);
+
+    return coroutine(function*() {
+        let url = `${webtask.sandbox.url}/api/webtask/${webtask.container}/${webtask.claims.jtn}/data`;
+        let res = yield request.put(url)
+            .set('Authorization', `Bearer ${webtask.sandbox.token}`)
+            .send(data);
+
+        debug('exportStorage: res.body=%j', res.body);
+
+        return res.body;
+    })();
 }
 
 function cloneWebtaskData(data) {
@@ -228,30 +233,3 @@ function cloneWebtaskData(data) {
 
     return clone;
 }
-
-// function ephemeralRun(webtask, code, body, headers) {
-//     headers = headers || {
-//             'Content-Type': 'application/json'
-//         };
-//
-//     return coroutine(function*() {
-//         let data = yield webtask.inspect({
-//             decrypt: true,
-//             fetch_code: true
-//         });
-//         let claims = cloneWebtaskData(data);
-//
-//         claims.code = code;
-//         delete claims.url;
-//
-//         try {
-//             yield webtask.sandbox.createRaw(claims);
-//             return yield webtask.run({
-//                 body: body,
-//                 headers: headers
-//             });
-//         } finally {
-//             yield webtask.sandbox.createRaw(cloneWebtaskData(data));
-//         }
-//     })();
-// }

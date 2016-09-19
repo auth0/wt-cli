@@ -31,6 +31,7 @@
     "chalk": "^1.1.1",
     "concat-stream": "^1.5.1",
     "cron-parser": "^0.6.3",
+    "debug": "^2.2.0",
     "dotenv": "^1.2.0",
     "filewatcher": "^3.0.0",
     "jwt-decode": "^1.5.1",
