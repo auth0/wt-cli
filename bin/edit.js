@@ -25,7 +25,12 @@ function handleEdit(args) {
     var profile = args.profile;
     var wtName  = args.name ? args.name + '/' : '';
     var url     = profile.url + '/edit/' + profile.container + '#/' + wtName + profile.token;
-    console.log('Opening ' + Chalk.underline(args.name) + ' in your browser...');
+
+    if (args.name) {
+        console.log('Opening ' + Chalk.underline(args.name) + ' in your browser...');
+    } else {
+        console.log('Opening Webtask Editor');
+    }
     
     Open(url);
 }
