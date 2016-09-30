@@ -55,7 +55,8 @@ function handleWebtaskMove(args) {
 }
 
 function moveWebtask(profile, name, target) {
-    debug('moveWebtask: profile=%j, name=%s, target=%j', profile, name, target);
+    debug('moveWebtask: profile=%j, name=%s, target=%j',
+        _.omit(profile, 'token'), name, target);
 
     let sourceWebtask;
 
@@ -94,7 +95,8 @@ function equal(sourceParams, targetParams) {
 }
 
 function copy(webtask, data, target) {
-    debug('copy: webtask=%j, data=%j, target=%j', webtask, data, target);
+    debug('copy: webtask=%j, data=%j, target=%j',
+        _.omit(webtask, 'token'), data, target);
 
     if (!data.jtn) {
         throw Cli.error.cancelled('Not a named webtask.');
@@ -109,11 +111,13 @@ function copy(webtask, data, target) {
         pendingCreate = loadProfile(target.profile)
             .then(function (profile) {
                 target.profile = profile;
-                claims.ten = target.container || profile.container || claims.ten;
+                target.container = profile.container;
+                claims.ten = target.container || claims.ten;
                 return target.profile.createRaw(claims);
             });
     } else {
         target.profile = webtask.sandbox;
+        target.container = webtask.sandbox.container;
         pendingCreate = target.profile.createRaw(claims);
     }
 
@@ -141,7 +145,8 @@ function loadProfile(name) {
 }
 
 function moveCronJob(profile, name, target, options) {
-    debug('moveCronJob: profile=%j, name=%s, target=%j, options=%j', profile, name, target, options);
+    debug('moveCronJob: profile=%j, name=%s, target=%j, options=%j',
+        _.omit(profile, 'token'), name, target, options);
 
     return coroutine(function*() {
         let job;
@@ -180,23 +185,21 @@ function moveCronJob(profile, name, target, options) {
 }
 
 function copyStorage(webtask, target) {
-    debug('copyStorage:webtask=%j, target=%j', webtask, target);
+    debug('copyStorage:webtask=%j, target=%j',
+        _.omit(webtask, 'token'), target);
 
     return coroutine(function*() {
-        let targetWebtask = yield target.profile.getWebtask({
-            name: target.name,
-            container: target.container
-        });
         let body = yield exportStorage(webtask);
-        let data = _.get(body, 'store.data');
+        let data = _.get(body, 'data');
         if (!_.isEmpty(data)) {
-            yield importStorage(targetWebtask, {data});
+            yield importStorage(target, {data});
         }
     })();
 }
 
 function exportStorage(webtask) {
-    debug('exportStorage: webtask=%j', webtask);
+    debug('exportStorage: webtask=%j',
+        _.omit(webtask, 'token'));
 
     return coroutine(function*() {
         let url = `${webtask.sandbox.url}/api/webtask/${webtask.container}/${webtask.claims.jtn}/data`;
@@ -209,15 +212,16 @@ function exportStorage(webtask) {
 }
 
 function importStorage(webtask, data) {
-    debug('importStorage: webtask=%j, data=%j', webtask, data);
+    debug('importStorage: webtask=%j, data=%j',
+        _.omit(webtask, 'token'), data);
 
     return coroutine(function*() {
-        let url = `${webtask.sandbox.url}/api/webtask/${webtask.container}/${webtask.claims.jtn}/data`;
+        let url = `${webtask.profile.url}/api/webtask/${webtask.container}/${webtask.name}/data`;
         let res = yield request.put(url)
-            .set('Authorization', `Bearer ${webtask.sandbox.token}`)
+            .set('Authorization', `Bearer ${webtask.profile.token}`)
             .send(data);
 
-        debug('exportStorage: res.body=%j', res.body);
+        debug('importStorage: res.body=%j', res.body);
 
         return res.body;
     })();
