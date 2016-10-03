@@ -228,7 +228,7 @@ function importStorage(webtask, data) {
 }
 
 function cloneWebtaskData(data) {
-    let clone = _(_.clone(data)).omit(['jti', 'iat', 'ca']).value();
+    let clone = _(_.clone(data)).omit(['jti', 'iat', 'ca', 'webtask_url']).value();
     if (url.parse(data.url).protocol === 'webtask:') {
         delete clone.url;
     } else {
