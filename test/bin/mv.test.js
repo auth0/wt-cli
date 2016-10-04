@@ -8,23 +8,45 @@
 const lab = exports.lab = require('lab').script();
 const describe = lab.describe;
 const it = lab.it;
+const beforeEach = lab.beforeEach;
+const afterEach = lab.afterEach;
 const proxyquire = require('proxyquire');
 const sinon = require('sinon');
 const request = require('superagent');
 const stubs = require('../stubs');
 
 describe('mv.handler', () => {
-    it('renames', done => {
-        let profile = stubs.profile();
-        let sourceWebtask = stubs.webtask();
-        let targetWebtask = stubs.webtask();
+    // Stubs
+    let profile, sourceWebtask, targetWebtask;
 
-        let body = {data: '{"counter": 1}'};
+    // Expectations
+    let profileMock, sourceWebtaskMock, requestMock;
+
+    beforeEach(done => {
+        profile = stubs.profile();
+        sourceWebtask = stubs.webtask();
+        targetWebtask = stubs.webtask();
+
+        requestMock = sinon.mock(request);
+        profileMock = sinon.mock(profile);
+        sourceWebtaskMock = sinon.mock(sourceWebtask);
 
         profile.token = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...';
         profile.url = 'http://webtask-proxy.test';
         profile.container = 'wt-test-0';
 
+        done();
+    });
+
+    afterEach(done => {
+        requestMock.restore();
+        profileMock.restore();
+        sourceWebtaskMock.restore();
+
+        done();
+    });
+
+    it('moves to a target name', done => {
         sourceWebtask.name = 'demo';
         sourceWebtask.claims = {jtn: 'demo', ten: 'wt-test-0', url: 'https://serverless.test/demo.js'};
         sourceWebtask.sandbox = profile;
@@ -33,19 +55,39 @@ describe('mv.handler', () => {
         targetWebtask.claims = {};
         targetWebtask.sandbox = profile;
 
-        let profileMock = sinon.mock(profile);
+        // Webtask expectations
+        sourceWebtaskMock.expects('inspect')
+            .withExactArgs({decrypt: true, fetch_code: true})
+            .returns(Promise.resolve(sourceWebtask.claims));
+        // Superagent expectations
+        requestMock.expects('get')
+            .withExactArgs(`${profile.url}/api/webtask/${profile.container}/${sourceWebtask.name}/data`)
+            .returns({set: stubs.wrap({body: {data: '{"counter": 1}'}})});
+
+        requestMock.expects('put')
+            .withExactArgs(`${profile.url}/api/webtask/${profile.container}/${targetWebtask.name}/data`)
+            .returns({
+                set: () => {
+                    return {send: stubs.wrap({body: {etag: 'testEtagValue'}})};
+                }
+            });
+        // Profile expectations
         profileMock.expects('getWebtask')
             .withExactArgs({name: sourceWebtask.name})
             .returns(Promise.resolve(sourceWebtask));
+
         profileMock.expects('createRaw')
             .withExactArgs({jtn: targetWebtask.name, ten: sourceWebtask.claims.ten, url: sourceWebtask.claims.url})
             .returns(Promise.resolve(targetWebtask));
+
         profileMock.expects('getCronJob')
             .withExactArgs({name: sourceWebtask.name})
             .returns(Promise.resolve({}));
+
         profileMock.expects('getWebtask')
             .withExactArgs({name: targetWebtask.name, container: profile.container})
             .returns(Promise.resolve(targetWebtask));
+
         profileMock.expects('createCronJob')
             .withExactArgs({
                 name: targetWebtask.name,
@@ -58,38 +100,99 @@ describe('mv.handler', () => {
             .withExactArgs({name: sourceWebtask.name})
             .returns(Promise.resolve(true));
 
-        let sourceWebtaskMock = sinon.mock(sourceWebtask);
+        let mv = proxyquire('../../bin/mv', {
+            'superagent': request
+        });
+
+        mv.handler({
+            source: sourceWebtask.name,
+            target: targetWebtask.name,
+            profile: profile
+        }).then(() => {
+            profileMock.verify();
+            sourceWebtaskMock.verify();
+
+            done();
+        }).catch((err) => {
+            done(err);
+        });
+
+    });
+
+    it('moves to a target container', done => {
+        sourceWebtask.name = 'demo';
+        targetWebtask.container = 'wt-test-0';
+        sourceWebtask.claims = {jtn: 'demo', ten: 'wt-test-0', url: 'https://serverless.test/demo.js'};
+        sourceWebtask.sandbox = profile;
+
+        targetWebtask.name = 'demo';
+        targetWebtask.container = 'wt-test-1';
+        targetWebtask.claims = {};
+        targetWebtask.sandbox = profile;
+
+        // Webtask expectations
         sourceWebtaskMock.expects('inspect')
             .withExactArgs({decrypt: true, fetch_code: true})
             .returns(Promise.resolve(sourceWebtask.claims));
-
-        let requestMock = sinon.mock(request);
+        // Superagent expectations
         requestMock.expects('get')
             .withExactArgs(`${profile.url}/api/webtask/${profile.container}/${sourceWebtask.name}/data`)
-            .returns({set: stubs.wrap({body: body})});
+            .returns({set: stubs.wrap({body: {data: '{"counter": 1}'}})});
+
         requestMock.expects('put')
-            .withExactArgs(`${profile.url}/api/webtask/${profile.container}/${targetWebtask.name}/data`)
+            .withExactArgs(`${profile.url}/api/webtask/${targetWebtask.container}/${targetWebtask.name}/data`)
             .returns({
                 set: () => {
                     return {send: stubs.wrap({body: {etag: 'testEtagValue'}})};
                 }
             });
+        // Profile expectations
+        profileMock.expects('getWebtask')
+            .withExactArgs({name: sourceWebtask.name})
+            .returns(Promise.resolve(sourceWebtask));
 
-        let args = {source: sourceWebtask.name, target: targetWebtask.name, profile: profile};
+        profileMock.expects('createRaw')
+            .withExactArgs({jtn: targetWebtask.name, ten: targetWebtask.container, url: sourceWebtask.claims.url})
+            .returns(Promise.resolve(targetWebtask));
+
+        profileMock.expects('getCronJob')
+            .withExactArgs({name: sourceWebtask.name})
+            .returns(Promise.resolve({}));
+
+        profileMock.expects('getWebtask')
+            .withExactArgs({name: targetWebtask.name, container: targetWebtask.container})
+            .returns(Promise.resolve(targetWebtask));
+
+        profileMock.expects('createCronJob')
+            .withExactArgs({
+                name: targetWebtask.name,
+                container: targetWebtask.container,
+                schedule: undefined,
+                token: undefined
+            })
+            .returns(Promise.resolve({}));
+        profileMock.expects('removeCronJob')
+            .withExactArgs({name: sourceWebtask.name})
+            .returns(Promise.resolve(true));
+
         let mv = proxyquire('../../bin/mv', {
             'superagent': request
         });
 
-        mv.handler(args)
-            .then(() => {
-                profileMock.verify();
-                sourceWebtaskMock.verify();
-                done();
-            });
+        // Action
+        mv.handler({
+            source: sourceWebtask.name,
+            targetContainer: targetWebtask.container,
+            profile: profile
+        }).then(() => {
+            profileMock.verify();
+            sourceWebtaskMock.verify();
 
+            done();
+        }).catch((err) => {
+            done(err);
+        });
     });
 
-    it('moves between containers');
-
-    it('moves between profiles');
+    it('moves to a target profile');
 });
