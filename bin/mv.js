@@ -82,6 +82,7 @@ function moveWebtask(profile, name, target) {
             return copy(sourceWebtask, data, target);
         })
         .then(function () {
+            debug('remove: webtask=%j', sourceWebtask);
             return sourceWebtask.remove();
         });
 }
@@ -202,7 +203,7 @@ function exportStorage(webtask) {
         _.omit(webtask, 'token'));
 
     return coroutine(function*() {
-        let url = `${webtask.sandbox.url}/api/webtask/${webtask.container}/${webtask.claims.jtn}/data`;
+        let url = `${webtask.sandbox.url}/api/webtask/${webtask.claims.ten}/${webtask.claims.jtn}/data`;
         let res = yield request.get(url).set('Authorization', `Bearer ${webtask.sandbox.token}`);
 
         debug('exportStorage: res.body=%j', res.body);
