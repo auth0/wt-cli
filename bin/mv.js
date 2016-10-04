@@ -101,6 +101,7 @@ function copy(webtask, data, target) {
     return coroutine(function*() {
         target.profile = target.profile ? yield loadProfile(target.profile) : webtask.sandbox;
         target.container = target.container || target.profile.container;
+        debug('copy: target.profile=%j', target.profile);
 
         let claims = cloneWebtaskData(data);
         claims.jtn = target.name || claims.jtn;
@@ -157,7 +158,7 @@ function moveCronJob(profile, name, target, options) {
 }
 
 function copyStorage(webtask, target) {
-    debug('copyStorage:webtask=%j, target=%j',
+    debug('copyStorage: webtask=%j, target=%j',
         _.omit(webtask, 'token'), target);
 
     return coroutine(function*() {
