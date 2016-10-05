@@ -20,6 +20,16 @@ module.exports = Cli.createCommand('mv', {
             type: 'string',
             dest: 'targetContainer'
         },
+        'target-url': {
+            description: 'Target url',
+            type: 'string',
+            dest: 'targetUrl'
+        },
+        'target-token': {
+            description: 'Target token',
+            type: 'string',
+            dest: 'targetToken'
+        },
         'target-profile': {
             description: 'Target profile',
             type: 'string',
@@ -30,7 +40,7 @@ module.exports = Cli.createCommand('mv', {
         'source': {
             description: 'Source webtask name',
             type: 'string',
-            required: true,
+            required: false,
         },
         'target': {
             description: 'Target webtask name',
@@ -42,16 +52,44 @@ module.exports = Cli.createCommand('mv', {
 });
 
 function handleWebtaskMove(args) {
-    let options = _(args).pick(['targetContainer', 'targetProfile']).omitBy(_.isNull).value();
-    let targetName = args.target || args.source;
+    debug('handleWebtaskMove: args=%j', args);
 
-    return moveWebtask(args.profile, args.source, {
-        profile: options.targetProfile,
-        container: options.targetContainer,
-        name: targetName
-    }).then(function () {
+    return coroutine(function*() {
+        //TODO: overwrite target the token and url
+        let options = _(args).pick([
+            'targetContainer',
+            'targetUrl',
+            'targetToken',
+            'targetProfile'
+        ]).omitBy(_.isNull).value();
+
+        let targetList = [];
+
+        if (args.source) {
+            targetList.push(args.source);
+        }
+
+        if (targetList.length === 0) {
+            for (const webtask of yield args.profile.listWebtasks({})) {
+                targetList.push(webtask.name);
+            }
+        }
+
+        let targetName = args.target || args.source;
+
+        debug('handleWebtaskMove: targetName=%j, targetList=%j', targetName, targetList);
+
+        for (const name of targetList) {
+            yield moveWebtask(args.profile, name, {
+                profile: options.targetProfile,
+                container: options.targetContainer,
+                name: targetName || name
+            });
+
+        }
+
         console.log(chalk.green('Moved webtask: %s'), chalk.bold(targetName));
-    });
+    })();
 }
 
 function moveWebtask(profile, name, target) {

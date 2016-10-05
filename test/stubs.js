@@ -4,7 +4,7 @@
 //
 
 function noop() {
-    return Promise.resolve(true);
+    return Promise.resolve(undefined);
 }
 
 module.exports = {
@@ -19,7 +19,8 @@ module.exports = {
             createRaw: noop,
             getCronJob: noop,
             createCronJob: noop,
-            removeCronJob: noop
+            removeCronJob: noop,
+            listWebtasks: noop
         };
     },
     webtask: function () {
