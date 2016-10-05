@@ -35,6 +35,11 @@ module.exports = Cli.createCommand('mv', {
             type: 'string',
             dest: 'targetProfile'
         },
+        'no-delete': {
+            description: 'Do not delete the source',
+            type: 'boolean',
+            dest: 'noDelete'
+        }
     },
     params: {
         'source': {
@@ -52,8 +57,6 @@ module.exports = Cli.createCommand('mv', {
 });
 
 function handleWebtaskMove(args) {
-    debug('handleWebtaskMove: args=%j', args);
-
     return coroutine(function*() {
         //TODO: overwrite target the token and url
         let options = _(args).pick([
@@ -71,7 +74,7 @@ function handleWebtaskMove(args) {
 
         if (targetList.length === 0) {
             for (const webtask of yield args.profile.listWebtasks({})) {
-                targetList.push(webtask.name);
+                targetList.push(webtask.claims.jtn);
             }
         }
 
@@ -84,15 +87,14 @@ function handleWebtaskMove(args) {
                 profile: options.targetProfile,
                 container: options.targetContainer,
                 name: targetName || name
-            });
-
+            }, {noDelete: args.noDelete});
+            console.log(chalk.green('Moved webtask: %s'), chalk.bold(name));
         }
 
-        console.log(chalk.green('Moved webtask: %s'), chalk.bold(targetName));
     })();
 }
 
-function moveWebtask(profile, name, target) {
+function moveWebtask(profile, name, target, options) {
     debug('moveWebtask: profile=%j, name=%s, target=%j', _.omit(profile, 'token'), name, target);
 
     let sourceWebtask;
@@ -116,9 +118,10 @@ function moveWebtask(profile, name, target) {
             });
         })
         .then(function (data) {
-            return copy(sourceWebtask, data, target);
+            return copy(sourceWebtask, data, target, options);
         })
         .then(function () {
+            if (options.noDelete) return;
             debug('remove: webtask=%j', sourceWebtask);
             return sourceWebtask.remove();
         });
@@ -132,7 +135,7 @@ function equal(sourceParams, targetParams) {
     });
 }
 
-function copy(webtask, data, target) {
+function copy(webtask, data, target, options) {
     debug('copy: webtask=%j, data=%j, target=%j', _.omit(webtask, 'token'), data, target);
     if (!data.jtn) throw Cli.error.cancelled('Not a named webtask.');
 
@@ -147,7 +150,7 @@ function copy(webtask, data, target) {
 
         try {
             yield target.profile.createRaw(claims);
-            yield moveCronJob(webtask.sandbox, data.jtn, target, {verify: webtask.token});
+            yield moveCronJob(webtask.sandbox, data.jtn, target, {verify: webtask.token}, options);
             yield copyStorage(webtask, target);
         } catch (err) {
             throw Cli.error.cancelled('Failed to create webtask. ' + err);
@@ -190,9 +193,7 @@ function moveCronJob(profile, name, target, options) {
             state: job.state
         });
 
-        yield profile.removeCronJob({
-            name: name
-        });
+        if (!options.noDelete) yield profile.removeCronJob({name: name});
     })();
 }
 
