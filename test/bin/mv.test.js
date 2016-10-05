@@ -19,7 +19,7 @@ const ConfigFile = require('../../lib/config');
 
 describe('mv.handler', () => {
     // Stubs
-    let sourceProfile, targetProfile, sourceWebtask, targetWebtask;
+    let sourceProfile, targetProfile, sourceWebtask, targetWebtask, sourceCronJob;
 
     // Expectations
     let sourceProfileMock, targetProfileMock, sourceWebtaskMock, requestMock;
@@ -35,13 +35,28 @@ describe('mv.handler', () => {
         targetProfileMock = sinon.mock(targetProfile);
         sourceWebtaskMock = sinon.mock(sourceWebtask);
 
-        sourceProfile.token = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...';
+        sourceProfile.token = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.0';
         sourceProfile.url = 'http://source-proxy.test';
         sourceProfile.container = 'wt-test-0';
 
-        targetProfile.token = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...';
+        targetProfile.token = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.0';
         targetProfile.url = 'http://target-proxy.test';
         targetProfile.container = 'wt-test-0';
+
+        sourceCronJob = {
+            container: sourceProfile.container,
+            created_at: '2016-07-07T10:18:56.813Z',
+            error_count: 0,
+            last_scheduled_at: '2016-10-05T12:50:00.110Z',
+            meta: {},
+            name: '',
+            next_available_at: '2016-10-05T12:50:00.110Z',
+            results: [],
+            run_count: 0,
+            schedule: '*/5 * * * *',
+            state: 'active'
+        };
+
 
         done();
     });
@@ -59,10 +74,12 @@ describe('mv.handler', () => {
         sourceWebtask.name = 'demo';
         sourceWebtask.claims = {jtn: 'demo', ten: 'wt-test-0', url: 'https://serverless.test/demo.js'};
         sourceWebtask.sandbox = sourceProfile;
+        sourceWebtask.token = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.1';
 
         targetWebtask.name = 'demo2';
         targetWebtask.claims = {};
         targetWebtask.sandbox = sourceProfile;
+        targetWebtask.token = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.2';
 
         // Webtask expectations
         sourceWebtaskMock.expects('inspect')
@@ -89,7 +106,7 @@ describe('mv.handler', () => {
             .returns(Promise.resolve(targetWebtask));
         sourceProfileMock.expects('getCronJob')
             .withExactArgs({name: sourceWebtask.name})
-            .returns(Promise.resolve({}));
+            .returns(Promise.resolve(sourceCronJob));
         sourceProfileMock.expects('getWebtask')
             .withExactArgs({name: targetWebtask.name, container: sourceProfile.container})
             .returns(Promise.resolve(targetWebtask));
@@ -97,19 +114,19 @@ describe('mv.handler', () => {
             .withExactArgs({
                 name: targetWebtask.name,
                 container: sourceProfile.container,
-                schedule: undefined,
-                token: undefined
+                schedule: sourceCronJob.schedule,
+                state: sourceCronJob.state,
+                token: targetWebtask.token
             })
             .returns(Promise.resolve({}));
         sourceProfileMock.expects('removeCronJob')
             .withExactArgs({name: sourceWebtask.name})
             .returns(Promise.resolve(true));
 
+        // Action
         let mv = proxyquire('../../bin/mv', {
             'superagent': request
         });
-
-        // Action
         mv.handler({
             source: sourceWebtask.name,
             target: targetWebtask.name,
@@ -162,7 +179,7 @@ describe('mv.handler', () => {
             .returns(Promise.resolve(targetWebtask));
         sourceProfileMock.expects('getCronJob')
             .withExactArgs({name: sourceWebtask.name})
-            .returns(Promise.resolve({}));
+            .returns(Promise.resolve(sourceCronJob));
         sourceProfileMock.expects('getWebtask')
             .withExactArgs({name: targetWebtask.name, container: targetWebtask.container})
             .returns(Promise.resolve(targetWebtask));
@@ -170,19 +187,19 @@ describe('mv.handler', () => {
             .withExactArgs({
                 name: targetWebtask.name,
                 container: targetWebtask.container,
-                schedule: undefined,
-                token: undefined
+                schedule: sourceCronJob.schedule,
+                state: sourceCronJob.state,
+                token: targetWebtask.token
             })
             .returns(Promise.resolve({}));
         sourceProfileMock.expects('removeCronJob')
             .withExactArgs({name: sourceWebtask.name})
             .returns(Promise.resolve(true));
 
+        // Action
         let mv = proxyquire('../../bin/mv', {
             'superagent': request
         });
-
-        // Action
         mv.handler({
             source: sourceWebtask.name,
             targetContainer: targetWebtask.container,
@@ -220,7 +237,7 @@ describe('mv.handler', () => {
         sourceWebtaskMock.expects('inspect')
             .withExactArgs({decrypt: true, fetch_code: true})
             .returns(Promise.resolve(sourceWebtask.claims));
-        // // Superagent expectations
+        // Superagent expectations
         requestMock.expects('get')
             .withExactArgs(`${sourceProfile.url}/api/webtask/${sourceProfile.container}/${sourceWebtask.name}/data`)
             .returns({set: stubs.wrap({body: {data: '{"counter": 1}'}})});
@@ -238,7 +255,7 @@ describe('mv.handler', () => {
             .returns(Promise.resolve(sourceWebtask));
         sourceProfileMock.expects('getCronJob')
             .withExactArgs({name: sourceWebtask.name})
-            .returns(Promise.resolve({}));
+            .returns(Promise.resolve(sourceCronJob));
         sourceProfileMock.expects('getWebtask')
             .withExactArgs({name: targetWebtask.name, container: targetWebtask.container})
             .returns(Promise.resolve(targetWebtask));
@@ -251,20 +268,20 @@ describe('mv.handler', () => {
         targetProfileMock.expects('createCronJob')
             .withExactArgs({
                 name: targetWebtask.name,
-                container: targetWebtask.container,
-                schedule: undefined,
-                token: undefined
+                container: sourceProfile.container,
+                schedule: sourceCronJob.schedule,
+                state: sourceCronJob.state,
+                token: targetWebtask.token
             })
             .returns(Promise.resolve({}));
 
+        // Action
         let mv = proxyquire('../../bin/mv', {
             'superagent': request,
             '../lib/config': function () {
                 return config;
             }
         });
-
-        // Action
         mv.handler({
             source: sourceWebtask.name,
             targetProfile: targetWebtask.profile,
@@ -278,5 +295,26 @@ describe('mv.handler', () => {
         }).catch((err) => {
             done(err);
         });
+    });
+
+    it.skip('moves a whole container', done => {
+        let mv = proxyquire('../../bin/mv', {
+            'superagent': request
+
+        });
+
+        // Action
+        mv.handler({
+            targetContainer: targetWebtask.container,
+            profile: sourceProfile
+        }).then(() => {
+            sourceProfileMock.verify();
+            sourceWebtaskMock.verify();
+
+            done();
+        }).catch((err) => {
+            done(err);
+        });
+
     });
 });

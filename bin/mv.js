@@ -148,7 +148,8 @@ function moveCronJob(profile, name, target, options) {
             name: target.name,
             container: target.container,
             token: webtask.token,
-            schedule: job.schedule
+            schedule: job.schedule,
+            state: job.state
         });
 
         yield profile.removeCronJob({

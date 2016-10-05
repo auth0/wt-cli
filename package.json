@@ -24,7 +24,8 @@
     }
   ],
   "scripts": {
-    "test": "lab -v ./test/bin/"
+    "test": "lab -v ./test/bin/",
+    "coverage": "lab -v -r html -o coverage/index.html ./test/bin/"
   },
   "dependencies": {
     "bluebird": "^2.10.2",
