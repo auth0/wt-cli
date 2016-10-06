@@ -72,7 +72,9 @@ function handleWebtaskMove(args) {
         }
 
         if (targetList.length === 0) {
-            for (const webtask of yield args.profile.listWebtasks({})) {
+            let webtaskList = yield args.profile.listWebtasks({});
+            if (!webtaskList) return;
+            for (const webtask of webtaskList) {
                 targetList.push(webtask.claims.jtn);
             }
         }

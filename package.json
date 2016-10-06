@@ -66,7 +66,7 @@
     "url": "http://github.com/auth0/wt-cli/issues"
   },
   "devDependencies": {
-    "code": "^1.5.0",
+    "code": "^4.0.0",
     "lab": "^11.1.0",
     "mailinator": "^1.0.2",
     "proxyquire": "^1.7.10",

@@ -6,6 +6,8 @@
 'use strict';
 
 const lab = exports.lab = require('lab').script();
+const expect = require('code').expect;
+const fail = require('code').fail;
 const describe = lab.describe;
 const it = lab.it;
 const beforeEach = lab.beforeEach;
@@ -74,6 +76,7 @@ describe('mv.handler', () => {
         sourceWebtask.claims = {jtn: 'demo', ten: 'wt-test-0', url: 'https://serverless.test/demo.js'};
         sourceWebtask.sandbox = sourceProfile;
         sourceWebtask.token = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.1';
+        sourceCronJob.token = sourceWebtask.token;
 
         targetWebtask.name = 'demo2';
         targetWebtask.claims = {};
@@ -135,7 +138,77 @@ describe('mv.handler', () => {
             sourceWebtaskMock.verify();
 
             done();
-        }).catch((err) => {
+        }).catch(err => {
+            done(err);
+        });
+    });
+
+    it('moves to a target name without deleting', done => {
+        sourceWebtask.name = 'demo';
+        sourceWebtask.claims = {jtn: 'demo', ten: 'wt-test-0', url: 'https://serverless.test/demo.js'};
+        sourceWebtask.sandbox = sourceProfile;
+        sourceWebtask.token = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.1';
+        sourceCronJob.token = sourceWebtask.token;
+
+        targetWebtask.name = 'demo2';
+        targetWebtask.claims = {};
+        targetWebtask.sandbox = sourceProfile;
+        targetWebtask.token = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.2';
+
+        // Webtask expectations
+        sourceWebtaskMock.expects('inspect')
+            .withExactArgs({decrypt: true, fetch_code: true})
+            .returns(Promise.resolve(sourceWebtask.claims));
+        // Superagent expectations
+        requestMock.expects('get')
+            .withExactArgs(`${sourceProfile.url}/api/webtask/${sourceProfile.container}/${sourceWebtask.name}/data`)
+            .returns({set: stubs.wrap({body: {data: '{"counter": 1}'}})});
+        requestMock.expects('put')
+            .withExactArgs(`${sourceProfile.url}/api/webtask/${sourceProfile.container}/${targetWebtask.name}/data`)
+            .returns({
+                set: () => {
+                    return {send: stubs.wrap({body: {etag: 'testEtagValue'}})};
+                }
+            });
+        // Profile expectations
+        sourceProfileMock.expects('getWebtask')
+            .withExactArgs({name: sourceWebtask.name})
+            .returns(Promise.resolve(sourceWebtask));
+        sourceProfileMock.expects('createRaw')
+            .withExactArgs({jtn: targetWebtask.name, ten: sourceWebtask.claims.ten, url: sourceWebtask.claims.url})
+            .returns(Promise.resolve(targetWebtask));
+        sourceProfileMock.expects('getCronJob')
+            .withExactArgs({name: sourceWebtask.name})
+            .returns(Promise.resolve(sourceCronJob));
+        sourceProfileMock.expects('getWebtask')
+            .withExactArgs({name: targetWebtask.name, container: sourceProfile.container})
+            .returns(Promise.resolve(targetWebtask));
+        sourceProfileMock.expects('createCronJob')
+            .withExactArgs({
+                name: targetWebtask.name,
+                container: sourceProfile.container,
+                schedule: sourceCronJob.schedule,
+                state: sourceCronJob.state,
+                token: targetWebtask.token
+            })
+            .returns(Promise.resolve({}));
+
+        // Action
+        let mv = proxyquire('../../bin/mv', {
+            'superagent': request
+        });
+        mv.handler({
+            source: sourceWebtask.name,
+            target: targetWebtask.name,
+            profile: sourceProfile,
+            noDelete: true
+        }).then(() => {
+            sourceProfileMock.verify();
+            targetProfileMock.verify();
+            sourceWebtaskMock.verify();
+
+            done();
+        }).catch(err => {
             done(err);
         });
     });
@@ -206,7 +279,7 @@ describe('mv.handler', () => {
             sourceWebtaskMock.verify();
 
             done();
-        }).catch((err) => {
+        }).catch(err => {
             done(err);
         });
     });
@@ -288,7 +361,7 @@ describe('mv.handler', () => {
             sourceWebtaskMock.verify();
 
             done();
-        }).catch((err) => {
+        }).catch(err => {
             done(err);
         });
     });
@@ -361,8 +434,41 @@ describe('mv.handler', () => {
             sourceWebtaskMock.verify();
 
             done();
-        }).catch((err) => {
+        }).catch(err => {
             done(err);
         });
+    });
+
+    it('fails if webtask does not exist', () => {
+        let name = 'missingWebtaskName';
+
+        // Profile expectations
+        sourceProfileMock.expects('getWebtask')
+            .withExactArgs({name})
+            .returns(Promise.reject({message: 'Not Found', statusCode: 404}));
+
+        let mv = require('../../bin/mv');
+
+        return mv.handler({source: name, target: 'other', profile: sourceProfile})
+            .then(() => {
+                fail('did not throw');
+            }, err => {
+                sourceProfileMock.verify();
+                expect(err).to.include({isCli: true});
+                expect(err.message).to.include('No such webtask:');
+            });
+    });
+
+    it('fails if webtasks are identical', () => {
+        let mv = require('../../bin/mv');
+
+        return mv.handler({source: 'sameName', target: 'sameName', profile: sourceProfile})
+            .then(() => {
+                fail('did not throw');
+            }, err => {
+                sourceProfileMock.verify();
+                expect(err).to.include({isCli: true});
+                expect(err.message).to.include('Webtasks are identical');
+            });
     });
 });

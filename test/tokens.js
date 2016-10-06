@@ -37,7 +37,7 @@ lab.experiment('webtask profiles', function () {
             })
             .finally(function () {
                 expect(found).to.be.undefined();
-                expect(error).to.deep.include({isBoom: true, output: {statusCode: 404}});
+                expect(error).to.part.include({isBoom: true, output: {statusCode: 404}});
             })
             .nodeify(done);
     });
