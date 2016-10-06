@@ -58,7 +58,6 @@ module.exports = Cli.createCommand('mv', {
 
 function handleWebtaskMove(args) {
     return coroutine(function*() {
-        //TODO: overwrite target the token and url
         let options = _(args).pick([
             'targetContainer',
             'targetUrl',
@@ -82,6 +81,7 @@ function handleWebtaskMove(args) {
 
         debug('handleWebtaskMove: targetName=%j, targetList=%j', targetName, targetList);
 
+        //TODO: overwrite the target token and url
         for (const name of targetList) {
             yield moveWebtask(args.profile, name, {
                 profile: options.targetProfile,
@@ -150,7 +150,7 @@ function copy(webtask, data, target, options) {
 
         try {
             yield target.profile.createRaw(claims);
-            yield moveCronJob(webtask.sandbox, data.jtn, target, {verify: webtask.token}, options);
+            yield moveCronJob(webtask.sandbox, data.jtn, target, _.merge({verify: webtask.token}, options));
             yield copyStorage(webtask, target);
         } catch (err) {
             throw Cli.error.cancelled('Failed to create webtask. ' + err);
@@ -198,8 +198,7 @@ function moveCronJob(profile, name, target, options) {
 }
 
 function copyStorage(webtask, target) {
-    debug('copyStorage: webtask=%j, target=%j',
-        _.omit(webtask, 'token'), target);
+    debug('copyStorage: webtask=%j, target=%j', _.omit(webtask, 'token'), target);
 
     return coroutine(function*() {
         let body = yield exportStorage(webtask);
@@ -211,8 +210,7 @@ function copyStorage(webtask, target) {
 }
 
 function exportStorage(webtask) {
-    debug('exportStorage: webtask=%j',
-        _.omit(webtask, 'token'));
+    debug('exportStorage: webtask=%j', _.omit(webtask, 'token'));
 
     return coroutine(function*() {
         let url = `${webtask.sandbox.url}/api/webtask/${webtask.claims.ten}/${webtask.claims.jtn}/data`;
@@ -225,8 +223,7 @@ function exportStorage(webtask) {
 }
 
 function importStorage(webtask, data) {
-    debug('importStorage: webtask=%j, data=%j',
-        _.omit(webtask, 'token'), data);
+    debug('importStorage: webtask=%j, data=%j', _.omit(webtask, 'token'), data);
 
     return coroutine(function*() {
         let url = `${webtask.profile.url}/api/webtask/${webtask.container}/${webtask.name}/data`;

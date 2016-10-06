@@ -57,7 +57,6 @@ describe('mv.handler', () => {
             state: 'active'
         };
 
-
         done();
     });
 
@@ -89,7 +88,6 @@ describe('mv.handler', () => {
         requestMock.expects('get')
             .withExactArgs(`${sourceProfile.url}/api/webtask/${sourceProfile.container}/${sourceWebtask.name}/data`)
             .returns({set: stubs.wrap({body: {data: '{"counter": 1}'}})});
-
         requestMock.expects('put')
             .withExactArgs(`${sourceProfile.url}/api/webtask/${sourceProfile.container}/${targetWebtask.name}/data`)
             .returns({
@@ -140,7 +138,6 @@ describe('mv.handler', () => {
         }).catch((err) => {
             done(err);
         });
-
     });
 
     it('moves to a target container', done => {
@@ -162,7 +159,6 @@ describe('mv.handler', () => {
         requestMock.expects('get')
             .withExactArgs(`${sourceProfile.url}/api/webtask/${sourceProfile.container}/${sourceWebtask.name}/data`)
             .returns({set: stubs.wrap({body: {data: '{"counter": 1}'}})});
-
         requestMock.expects('put')
             .withExactArgs(`${sourceProfile.url}/api/webtask/${targetWebtask.container}/${targetWebtask.name}/data`)
             .returns({
