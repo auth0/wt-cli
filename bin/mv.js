@@ -154,7 +154,7 @@ function copy(webtask, data, target, options) {
     if (!data.jtn) throw Cli.error.cancelled('Not a named webtask.');
 
     return coroutine(function*() {
-        target.profile = loadProfile(target.profile, target.url, target.container, target.token) || webtask.sandbox;
+        target.profile = loadProfile(target.profile, target.url, target.token) || webtask.sandbox;
         target.container = target.container || target.profile.container;
         debug('copy: target.profile=%j', target.profile);
 
@@ -172,8 +172,8 @@ function copy(webtask, data, target, options) {
     })();
 }
 
-function loadProfile(name, url, container, token) {
-    debug('loadProfile: name=%s, url=%j, container=%j, token=%j', name, url, container, token);
+function loadProfile(name, url, token) {
+    debug('loadProfile: name=%s, url=%j, token=%j', name, url, token);
 
     let profile;
     let config;
@@ -187,7 +187,7 @@ function loadProfile(name, url, container, token) {
         profile = profile || {};
         profile = Sandbox.init({
             url: url || profile.url,
-            container: container || profile.container,
+            container: profile.container || 'default',
             token: token || profile.token
         });
     }
