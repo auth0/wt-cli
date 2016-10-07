@@ -15,6 +15,7 @@ const afterEach = lab.afterEach;
 const proxyquire = require('proxyquire');
 const sinon = require('sinon');
 const request = require('superagent');
+const Sandbox = require('sandboxjs');
 const stubs = require('../stubs');
 const ConfigFile = require('../../lib/config');
 
@@ -24,7 +25,7 @@ describe('mv.handler', () => {
     let sourceProfile, targetProfile, sourceWebtask, targetWebtask, sourceCronJob;
 
     // Expectations
-    let sourceProfileMock, targetProfileMock, sourceWebtaskMock, requestMock;
+    let sourceProfileMock, targetProfileMock, sourceWebtaskMock, requestMock, sandboxMock;
 
     beforeEach(done => {
         sourceProfile = stubs.profile();
@@ -33,6 +34,7 @@ describe('mv.handler', () => {
         targetWebtask = stubs.webtask();
 
         requestMock = sinon.mock(request);
+        sandboxMock = sinon.mock(Sandbox);
         sourceProfileMock = sinon.mock(sourceProfile);
         targetProfileMock = sinon.mock(targetProfile);
         sourceWebtaskMock = sinon.mock(sourceWebtask);
@@ -301,7 +303,7 @@ describe('mv.handler', () => {
         let configMock = sinon.mock(config);
         configMock.expects('getProfile')
             .withExactArgs(targetWebtask.profile)
-            .returns(Promise.resolve(targetProfile));
+            .returns(targetProfile);
         // Webtask expectations
         sourceWebtaskMock.expects('inspect')
             .withExactArgs({decrypt: true, fetch_code: true})

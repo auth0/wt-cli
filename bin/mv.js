@@ -5,6 +5,7 @@ const _ = require('lodash');
 const coroutine = require('bluebird').coroutine;
 const debug = require('debug')('wt-cli:mv');
 const request = require('superagent');
+const Sandbox = require('sandboxjs');
 const chalk = require('chalk');
 const Cli = require('structured-cli');
 const ConfigFile = require('../lib/config');
@@ -72,7 +73,7 @@ function handleWebtaskMove(args) {
         }
 
         if (targetList.length === 0) {
-            let webtaskList = yield args.profile.listWebtasks({});
+            let webtaskList = yield args.profile.listWebtasks({all: true});
             if (!webtaskList) return;
             for (const webtask of webtaskList) {
                 targetList.push(webtask.claims.jtn);
@@ -83,13 +84,15 @@ function handleWebtaskMove(args) {
 
         debug('handleWebtaskMove: targetName=%j, targetList=%j', targetName, targetList);
 
-        //TODO: overwrite the target token and url
         for (const name of targetList) {
-            yield moveWebtask(args.profile, name, {
+            let target = {
                 profile: options.targetProfile,
+                url: options.targetUrl,
+                token: options.targetToken,
                 container: options.targetContainer,
                 name: targetName || name
-            }, {noDelete: args.noDelete});
+            };
+            yield moveWebtask(args.profile, name, target, {noDelete: args.noDelete});
             console.log(chalk.green('Moved webtask: %s'), chalk.bold(name));
         }
 
@@ -100,8 +103,15 @@ function moveWebtask(profile, name, target, options) {
     debug('moveWebtask: profile=%j, name=%s, target=%j', _.omit(profile, 'token'), name, target);
 
     let sourceWebtask;
+    let sourceParams = {
+        name: name,
+        container: profile.container,
+        profile: profile.name,
+        url: profile.url,
+        token: profile.url
+    };
 
-    if (equal({name: name, container: profile.container, profile: profile.name}, target)) {
+    if (equal(sourceParams, target)) {
         throw Cli.error.invalid('Webtasks are identical. Use a different target name, container or profile.');
     }
 
@@ -133,7 +143,9 @@ function equal(sourceParams, targetParams) {
     return _.isEqual(sourceParams, {
         name: targetParams.name,
         container: targetParams.container || sourceParams.container,
-        profile: targetParams.profile || sourceParams.profile
+        profile: targetParams.profile || sourceParams.profile,
+        url: targetParams.url || sourceParams.url,
+        token: targetParams.token || sourceParams.token
     });
 }
 
@@ -142,7 +154,7 @@ function copy(webtask, data, target, options) {
     if (!data.jtn) throw Cli.error.cancelled('Not a named webtask.');
 
     return coroutine(function*() {
-        target.profile = target.profile ? yield loadProfile(target.profile) : webtask.sandbox;
+        target.profile = loadProfile(target.profile, target.url, target.container, target.token) || webtask.sandbox;
         target.container = target.container || target.profile.container;
         debug('copy: target.profile=%j', target.profile);
 
@@ -160,12 +172,29 @@ function copy(webtask, data, target, options) {
     })();
 }
 
-function loadProfile(name) {
-    debug('loadProfile: name=%s', name);
+function loadProfile(name, url, container, token) {
+    debug('loadProfile: name=%s, url=%j, container=%j, token=%j', name, url, container, token);
 
-    let config = new ConfigFile();
+    let profile;
+    let config;
 
-    return config.getProfile(name);
+    if (name) {
+        config = new ConfigFile();
+        profile = config.getProfile(name);
+    }
+
+    if (url || token) {
+        profile = profile || {};
+        profile = Sandbox.init({
+            url: url || profile.url,
+            container: container || profile.container,
+            token: token || profile.token
+        });
+    }
+
+    debug('loadProfile: profile=%j', profile);
+
+    return profile;
 }
 
 function moveCronJob(profile, name, target, options) {
