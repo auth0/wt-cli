@@ -12,7 +12,7 @@ module.exports = Cli.createCommand('edit', {
         'name': {
             description: 'The named webtask you want to edit',
             type: 'string',
-            required: true,
+            required: false
         },
     },
     handler: handleEdit,
@@ -23,11 +23,14 @@ module.exports = Cli.createCommand('edit', {
 
 function handleEdit(args) {
     var profile = args.profile;
-    var url = profile.url + '/edit/webtask/' + profile.container + '/' + args.name + '#token=' + profile.token;
-    
-    console.log('Opening ' + Chalk.underline(args.name) + ' in your browser...');
+    var wtName  = args.name ? args.name + '/' : '';
+    var url     = profile.url + '/edit/' + profile.container + '#/' + wtName + profile.token;
+
+    if (args.name) {
+        console.log('Opening ' + Chalk.underline(args.name) + ' in your browser...');
+    } else {
+        console.log('Opening Webtask Editor');
+    }
     
     Open(url);
 }
-
-
