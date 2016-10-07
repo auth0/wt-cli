@@ -43,15 +43,17 @@ module.exports = Cli.createCommand('mv', {
         }
     },
     params: {
-        'source': {
+        'source-webtask': {
             description: 'Source webtask name',
             type: 'string',
             required: false,
+            dest: 'source'
         },
-        'target': {
+        'target-webtask': {
             description: 'Target webtask name',
             type: 'string',
             required: false,
+            dest: 'target'
         },
     },
     handler: handleWebtaskMove,
@@ -65,6 +67,10 @@ function handleWebtaskMove(args) {
             'targetToken',
             'targetProfile'
         ]).omitBy(_.isNull).value();
+
+        if (!args.source && !args.target && _.isEmpty(options)) {
+            throw Cli.error.invalid('wt mv: error: too few arguments; specify a target.');
+        }
 
         let targetList = [];
 
