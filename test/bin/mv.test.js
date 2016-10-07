@@ -327,7 +327,7 @@ describe('mv.handler', () => {
         sourceProfileMock.expects('getCronJob')
             .withExactArgs({name: sourceWebtask.name})
             .returns(Promise.resolve(sourceCronJob));
-        sourceProfileMock.expects('getWebtask')
+        targetProfileMock.expects('getWebtask')
             .withExactArgs({name: targetWebtask.name, container: targetWebtask.container})
             .returns(Promise.resolve(targetWebtask));
         sourceProfileMock.expects('removeCronJob')

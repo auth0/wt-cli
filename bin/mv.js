@@ -210,7 +210,7 @@ function moveCronJob(profile, name, target, options) {
             throw err;
         }
 
-        let webtask = yield profile.getWebtask({name: target.name, container: target.container});
+        let webtask = yield target.profile.getWebtask({name: target.name, container: target.container});
 
         if (_.get(options, 'verify') && job.token !== options.verify) {
             console.log(chalk.bold('* Warning: failed to verify the cron job token (no match).'));
