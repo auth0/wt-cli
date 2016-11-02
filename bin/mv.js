@@ -78,7 +78,7 @@ function handleWebtaskMove(args) {
         }
 
         if (targetList.length === 0) {
-            let webtaskList = yield args.profile.listWebtasks({all: true});
+            let webtaskList = yield args.profile.listWebtasks({ all: true });
             if (!webtaskList) return;
             for (const webtask of webtaskList) {
                 targetList.push(webtask.claims.jtn);
@@ -97,7 +97,7 @@ function handleWebtaskMove(args) {
                 container: options.targetContainer,
                 name: targetName || name
             };
-            yield moveWebtask(args.profile, name, target, {noDelete: args.noDelete});
+            yield moveWebtask(args.profile, name, target, { noDelete: args.noDelete });
             console.log(chalk.green('Moved webtask: %s'), chalk.bold(name));
         }
 
@@ -120,24 +120,24 @@ function moveWebtask(profile, name, target, options) {
         throw Cli.error.invalid('Webtasks are identical. Use a different target name, container or profile.');
     }
 
-    return profile.getWebtask({name: name})
-        .catch(function (err) {
+    return profile.getWebtask({ name: name })
+        .catch(function(err) {
             if (err.statusCode === 404) {
                 throw Cli.error.notFound('No such webtask: ' + chalk.bold(name));
             }
             throw err;
         })
-        .then(function (webtask) {
+        .then(function(webtask) {
             sourceWebtask = webtask;
             return webtask.inspect({
                 decrypt: true,
                 fetch_code: true
             });
         })
-        .then(function (data) {
+        .then(function(data) {
             return copy(sourceWebtask, data, target, options);
         })
-        .then(function () {
+        .then(function() {
             if (options.noDelete) return;
             debug('remove: webtask=%j', sourceWebtask);
             return sourceWebtask.remove();
@@ -159,7 +159,7 @@ function copy(webtask, data, target, options) {
     if (!data.jtn) throw Cli.error.cancelled('Not a named webtask.');
 
     return coroutine(function*() {
-        target.profile = loadProfile(target.profile, target.url, target.token) || webtask.sandbox;
+        target.profile = (yield loadProfile(target.profile, target.url, target.token)) || webtask.sandbox;
         target.container = target.container || target.profile.container;
         debug('copy: target.profile=%j', target.profile);
 
@@ -169,7 +169,7 @@ function copy(webtask, data, target, options) {
 
         try {
             yield target.profile.createRaw(claims);
-            yield moveCronJob(webtask.sandbox, data.jtn, target, _.merge({verify: webtask.token}, options));
+            yield moveCronJob(webtask.sandbox, data.jtn, target, _.merge({ verify: webtask.token }, options));
             yield copyStorage(webtask, target);
         } catch (err) {
             throw Cli.error.cancelled('Failed to create webtask. ' + err);
@@ -180,24 +180,22 @@ function copy(webtask, data, target, options) {
 function loadProfile(name, url, token) {
     debug('loadProfile: name=%s, url=%j, token=%j', name, url, token);
 
-    let profile;
+    let profile = Promise.resolve(null);
     let config;
 
     if (name) {
         config = new ConfigFile();
-        profile = config.getProfile(name);
+        profile = Promise.resolve(config.getProfile(name));
     }
 
     if (url || token) {
-        profile = profile || {};
+        profile = profile || Promise.resolve({});
         profile = Sandbox.init({
             url: url || profile.url,
             container: profile.container || 'default',
             token: token || profile.token
         });
     }
-
-    debug('loadProfile: profile=%j', profile);
 
     return profile;
 }
@@ -209,13 +207,13 @@ function moveCronJob(profile, name, target, options) {
         let job;
 
         try {
-            job = yield profile.getCronJob({name: name});
+            job = yield profile.getCronJob({ name: name });
         } catch (err) {
             if (err.statusCode === 404) return;
             throw err;
         }
 
-        let webtask = yield target.profile.getWebtask({name: target.name, container: target.container});
+        let webtask = yield target.profile.getWebtask({ name: target.name, container: target.container });
 
         if (_.get(options, 'verify') && job.token !== options.verify) {
             console.log(chalk.bold('* Warning: failed to verify the cron job token (no match).'));
@@ -229,7 +227,7 @@ function moveCronJob(profile, name, target, options) {
             state: job.state
         });
 
-        if (!options.noDelete) yield profile.removeCronJob({name: name});
+        if (!options.noDelete) yield profile.removeCronJob({ name: name });
     })();
 }
 
@@ -240,7 +238,7 @@ function copyStorage(webtask, target) {
         let body = yield exportStorage(webtask);
         let data = _.get(body, 'data');
         if (!_.isEmpty(data)) {
-            yield importStorage(target, {data});
+            yield importStorage(target, { data });
         }
     })();
 }

@@ -15,7 +15,7 @@ const afterEach = lab.afterEach;
 const proxyquire = require('proxyquire');
 const sinon = require('sinon');
 const request = require('superagent');
-const Sandbox = require('sandboxjs');
+//const Sandbox = require('sandboxjs');
 const stubs = require('../stubs');
 const ConfigFile = require('../../lib/config');
 
@@ -25,7 +25,7 @@ describe('mv.handler', () => {
     let sourceProfile, targetProfile, sourceWebtask, targetWebtask, sourceCronJob;
 
     // Expectations
-    let sourceProfileMock, targetProfileMock, sourceWebtaskMock, requestMock, sandboxMock;
+    let sourceProfileMock, targetProfileMock, sourceWebtaskMock, requestMock;
 
     beforeEach(done => {
         sourceProfile = stubs.profile();
@@ -34,7 +34,6 @@ describe('mv.handler', () => {
         targetWebtask = stubs.webtask();
 
         requestMock = sinon.mock(request);
-        sandboxMock = sinon.mock(Sandbox);
         sourceProfileMock = sinon.mock(sourceProfile);
         targetProfileMock = sinon.mock(targetProfile);
         sourceWebtaskMock = sinon.mock(sourceWebtask);
