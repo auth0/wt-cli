@@ -68,7 +68,7 @@ function handleUpdate(args) {
 
     var profile = args.profile;
 
-    return profile.inspectWebtask({ name: args.name, decrypt: true })
+    return profile.inspectWebtask({ name: args.name, decrypt: true, meta: true })
         .then(onClaims);
 
 
@@ -78,6 +78,7 @@ function handleUpdate(args) {
         args.parse = claims.pb;
         args.secrets = claims.ectx;
         args.params = claims.pctx;
+        args.meta = claims.meta;
 
         // Defer to the functionality of the create command
         return CreateWebtask(args, { action: 'updated' });
