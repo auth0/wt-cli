@@ -7,8 +7,8 @@ const Cli = require('structured-cli');
 const Path = require('path');
 const Runtime = require('webtask-runtime');
 const spawn = require('child_process').spawn;
-const _ = require('lodash');
 const process = require('process');
+const _ = require('lodash');
 
 var i = null;
 
