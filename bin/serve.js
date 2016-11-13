@@ -8,6 +8,8 @@ const Path = require('path');
 const Runtime = require('webtask-runtime');
 const spawn = require('child_process').spawn;
 const _ = require('lodash');
+const process = require('process');
+
 var i = null;
 
 module.exports = Cli.createCommand('serve', {
@@ -107,7 +109,7 @@ function handleWebtaskServe(args) {
     
     
     function handleDebug() {
-        process = require('process');
+        //process = require('process');
         
         i = process.argv.findIndex((item) => {return item.startsWith("--debugtask")});
         i = i > -1 ? i : process.argv.findIndex((i) => {return i.startsWith("-d=")});
