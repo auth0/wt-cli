@@ -20,7 +20,6 @@ config.optionGroups.ExecutionOptions =
         }
     };
 
-
 module.exports = Cli.createCommand('debug', config);
 
 function handleDebug(args) {

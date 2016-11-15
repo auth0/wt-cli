@@ -1,5 +1,4 @@
 module.exports = {
-    description: 'Run a webtask as a local http server',
     optionGroups: {
         'Server options': {
             port: {

@@ -66,7 +66,6 @@ function handleWebtaskServe(args) {
 
             return _.set(acc, parts.shift(), parts.join('='));
         }, {});
-    }
-    
+    }    
 }
 
