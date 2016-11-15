@@ -6,7 +6,7 @@ const Cli = require('structured-cli');
 const Path = require('path');
 const Runtime = require('webtask-runtime');
 const _ = require('lodash');
-const config = require('./serveCommon')
+const config = require('./serveCommon')();
 
 config.description = "Run a webtask as a local http server";
 config.handler = handleWebtaskServe;

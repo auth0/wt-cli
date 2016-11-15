@@ -4,7 +4,7 @@ const Bluebird = require('bluebird');
 const Cli = require('structured-cli');
 const spawn = require('child_process').spawn;
 const _ = require('lodash');
-const config = require('./serveCommon')
+const config = require('./serveCommon')();
 var newArgs = null;;
 
 config.description = "Debug a webtask";
