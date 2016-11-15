@@ -33,6 +33,7 @@ cli.addChild(require('./ls'));
 cli.addChild(require('./mv'));
 cli.addChild(require('./rm'));
 cli.addChild(require('./serve'));
+cli.addChild(require('./debug'));
 cli.addChild(require('./edit'));
 cli.addChild(require('./inspect'));
 cli.addChild(require('./update'));
