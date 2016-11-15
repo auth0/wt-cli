@@ -20,7 +20,13 @@ var secret = {
 
 var twitter = new Twitter(secret);
 
+// GET tweets
+app.get('*', function (req, res) {
+  twitter.get('search/tweets', { q: 'auth0' }, function (error, tweets) {
+    console.log(tweets);
+    res.json(tweets);
+  });  
+});
 
 // expose this express app as a webtask-compatible function
 module.exports = Webtask.fromExpress(app);
-
