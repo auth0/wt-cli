@@ -7,7 +7,7 @@ const _ = require('lodash');
 const config = require('./serveCommon')
 var newArgs = null;;
 
-config.description = "Run Run a webtask as a local http server";
+config.description = "Debug a webtask";
 config.handler = handleDebug;
 config.optionGroups.ExecutionOptions =
     {
