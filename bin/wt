@@ -35,6 +35,7 @@ cli.addChild(require('./rm'));
 cli.addChild(require('./serve'));
 cli.addChild(require('./debug'));
 cli.addChild(require('./edit'));
+cli.addChild(require('./browse'));
 cli.addChild(require('./inspect'));
 cli.addChild(require('./update'));
 cli.addChild(require('./profile'));
