@@ -66,10 +66,13 @@ module.exports = Cli.createCommand('create', {
                 dest: 'merge',
             },
             'no-parse': {
-                action: 'storeFalse',
-                defaultValue: true,
-                description: 'Disable automatic parsing of the incoming request body. Important: when using webtask-tools with Express and the body-parser middleware, automatic body parsing must be disabled.',
-                dest: 'parse',
+                description: 'Deprecated and ignored.',
+                type: 'boolean'
+            },
+            'parse-body': {
+                description: 'Automatically parse JSON and application/x-www-form-urlencoded request bodies. Use this with (ctx, req, res) webtask signatures if you want webtask runtime to parse the reqeust body and store it in ctx.body.',
+                type: 'boolean',
+                dest: 'parseBody'
             },
             'bundle': {
                 alias: 'b',
@@ -115,8 +118,8 @@ module.exports = Cli.createCommand('create', {
         + '2. Create a webtask with one secret:' + '\n'
         + Chalk.bold('  $ wt create --secret name=webtask ./sample-webtasks/html-response.js') + '\n'
         + '\n'
-        + '3. Create a webtask that is bundled before deploying. Note that --no-parse is needed since we are using webtask-tools with Express and body-parser:' + '\n'
-        + Chalk.bold('  $ wt create --secret name=webtask --bundle --no-parse ./sample-webtasks/bundled-webtask.js') + '\n'
+        + '3. Create a webtask that is bundled before deploying:' + '\n'
+        + Chalk.bold('  $ wt create --secret name=webtask --bundle ./sample-webtasks/bundled-webtask.js') + '\n'
     ,
     handler: handleCreate,
 });

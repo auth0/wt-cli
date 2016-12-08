@@ -39,10 +39,12 @@ module.exports = () => {
                     dest: 'mergeBody',
                 },
                 'no-parse': {
-                    action: 'storeFalse',
-                    defaultValue: true,
-                    description: 'Disable automatic parsing of the incoming request body. Important: when using webtask-tools with Express and the body-parser middleware, automatic body parsing must be disabled.',
-                    dest: 'parseBody',
+                    description: 'Deprecated and ignored.'
+                },
+                'parse-body': {
+                    descrption: 'Automatically parse JSON and application/x-www-form-urlencoded request bodies. Use this with (ctx, req, res) webtask signatures if you want webtask runtime to parse the reqeust body and store it in ctx.body.',
+                    type: 'boolean',
+                    dest: 'parseBody'
                 },
                 'storage-file': {
                     description: 'Provide a file that will be used to initialize and persist webtask storage data',
