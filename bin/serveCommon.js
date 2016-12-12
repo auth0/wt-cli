@@ -42,7 +42,7 @@ module.exports = () => {
                     description: 'Deprecated and ignored.'
                 },
                 'parse-body': {
-                    descrption: 'Automatically parse JSON and application/x-www-form-urlencoded request bodies. Use this with (ctx, req, res) webtask signatures if you want webtask runtime to parse the reqeust body and store it in ctx.body.',
+                    descrption: 'Automatically parse JSON and application/x-www-form-urlencoded request bodies. Use this with (ctx, req, res) webtask signatures if you want webtask runtime to parse the request body and store it in ctx.body.',
                     type: 'boolean',
                     dest: 'parseBody'
                 },
