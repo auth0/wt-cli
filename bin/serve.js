@@ -37,7 +37,7 @@ function handleWebtaskServe(args) {
             try {
                 const webtask = require(Path.resolve(process.cwd(), args.filename)); 
                 const server = Runtime.createServer(webtask, {
-                    parseBody: args.parseBody,
+                    parseBody: args.parseBody ? Runtime.PARSE_ALWAYS : undefined,
                     mergeBody: args.mergeBody,
                     secrets: args.secrets,
                     params: args.params,

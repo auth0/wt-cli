@@ -5,7 +5,7 @@
     "url": "https://github.com/ggoodman",
     "twitter": "filearts"
   },
-  "version": "3.8.0",
+  "version": "3.9.0",
   "description": "Webtask Command Line Interface",
   "tags": [
     "nodejs",
@@ -44,13 +44,13 @@
     "open": "0.0.5",
     "pad": "^1.0.0",
     "promptly": "^0.2.1",
-    "sandboxjs": "^3.1.0",
+    "sandboxjs": "^3.2.0",
     "structured-cli": "^1.0.5",
     "superagent": "^1.7.2",
     "through2": "^2.0.1",
     "update-notifier": "^0.6.1",
     "webtask-bundle": "^2.3.0",
-    "webtask-runtime": "^1.2.0",
+    "webtask-runtime": "^1.4.0",
     "wreck": "^10.0.0"
   },
   "bin": {

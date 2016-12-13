@@ -42,7 +42,7 @@ var RAW_CLAIMS = {
         type: 'boolean',
     },
     pb: {
-        type: 'boolean',
+        type: 'int',
     },
     dr: {
         type: 'boolean',
@@ -131,10 +131,7 @@ function handleTokenCreate(args) {
     
     if (claims.mb) claims.mb = 1;
     else delete claims.mb;
-    
-    if (claims.pb) claims.pb = 1;
-    else delete claims.pb;
-    
+        
     if (args.claims) {
         try {
             claims = _.defaultsDeep(claims, JSON.parse(args.claims));
