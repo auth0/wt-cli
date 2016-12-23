@@ -31,6 +31,6 @@ function handleEdit(args) {
     } else {
         console.log('Opening Webtask Editor');
     }
-    
+    console.log('If nothing happens, open this url: ' + url);
     Open(url);
 }
