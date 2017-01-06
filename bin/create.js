@@ -33,6 +33,12 @@ module.exports = Cli.createCommand('create', {
                 metavar: 'KEY=VALUE',
                 type: 'string',
             },
+            'secrets-file': {
+                description: 'A file containing one secret per line in KEY=VALUE format',
+                dest: 'secretsFile',
+                metavar: 'FILENAME',
+                type: 'string',
+            },
             'param': {
                 action: 'append',
                 defaultValue: [],
@@ -79,6 +85,11 @@ module.exports = Cli.createCommand('create', {
                 description: 'Use `webtask-bundle` to bundle your code into a single file. This tool can compile ES2015 (ES6) code via Babel as well as packaging up a webtask composed of multiple files into a single file. The tool will scan your package.json for dependencies and will automatically bundle those that are not available on the webtask platform. Enabling --bundle-loose will prevent this check from doing strict semver range comparisons on dependencies.',
                 type: 'boolean',
             },
+            'bundle-minify': {
+                description: 'Generate a minified production build',
+                type: 'boolean',
+                dest: 'minify'
+            },
             'bundle-strict': {
                 description: 'Enforce strict semver matching for bundling with `webtask-bundle`',
                 dest: 'loose',
@@ -97,11 +108,6 @@ module.exports = Cli.createCommand('create', {
             'host': {
                 description: 'Allow the webtask to be called using a custom domain name. Using this option requires proof of domain ownership. This can be done by adding a TXT record type to the DNS of the chosen domain. The value of the record must be `webtask:container:{container}`, where {container} is the webtask container name to be associated with the custom domain. Many such TXT records can be created as needed.',
                 type: 'string'
-            },
-            'bundle-minify': {
-                description: 'Generate a minified production build',
-                type: 'boolean',
-                dest: 'minify'
             },
         },
     },

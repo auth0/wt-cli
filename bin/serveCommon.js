@@ -24,6 +24,12 @@ module.exports = () => {
                     metavar: 'KEY=VALUE',
                     type: 'string',
                 },
+                'secrets-file': {
+                    description: 'A file containing one secret per line in KEY=VALUE format',
+                    dest: 'secretsFile',
+                    metavar: 'FILENAME',
+                    type: 'string',
+                },
                 'param': {
                     action: 'append',
                     defaultValue: [],

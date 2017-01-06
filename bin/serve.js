@@ -3,6 +3,9 @@
 const Bluebird = require('bluebird');
 const Chalk = require('chalk');
 const Cli = require('structured-cli');
+const Dotenv = require('dotenv');
+const Fs = require('fs');
+const keyValList2Object = require('../lib/keyValList2Object');
 const Path = require('path');
 const Runtime = require('webtask-runtime');
 const _ = require('lodash');
@@ -16,9 +19,24 @@ module.exports = Cli.createCommand('serve', config);
 // Command handler
 
 function handleWebtaskServe(args) {
-    parseKeyValList(args, 'secrets');
-    parseKeyValList(args, 'params');
-    
+    keyValList2Object(args, 'secrets');
+    keyValList2Object(args, 'params');
+
+    if (args.secretsFile) {
+        try {
+            const filename = Path.resolve(process.cwd(), args.secretsFile);
+            const content = Fs.readFileSync(filename, 'utf8');
+            const secrets = Dotenv.parse(content);
+
+            for (let secret in secrets) {
+                if (!args.secrets.hasOwnProperty(secret)) {
+                    args.secrets[secret] = secrets[secret];
+                }
+            }
+        } catch (e) {
+            throw Cli.error.invalid(`Error loading secrets file: ${e.message}`);
+        }
+    }
     return Bluebird.using(createServer(), server => {
         return server.listenAsync(args.port, args.hostname)
             .tap(() => {
@@ -27,7 +45,7 @@ function handleWebtaskServe(args) {
                 console.log('Your webtask is now listening for %s traffic on %s:%s', Chalk.green(address.family), Chalk.green.bold(address.address), Chalk.green.bold(address.port));
             })
             .delay(1000 * 60 * 30)
-            .then(server => {
+            .then(() => {
                 console.log('Automatically shutting down your webtask server after 30m');
             });
     }).timeout(1000 * 60 * 30);
@@ -59,13 +77,5 @@ function handleWebtaskServe(args) {
                     :   Bluebird.resolve();
             });
     }
-
-    function parseKeyValList(args, field) {
-        args[field] = _.reduce(args[field], function (acc, entry) {
-            var parts = entry.split('=');
-
-            return _.set(acc, parts.shift(), parts.join('='));
-        }, {});
-    }    
 }
 
