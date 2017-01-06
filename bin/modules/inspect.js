@@ -5,8 +5,8 @@ const Cli = require('structured-cli');
 const _ = require('lodash');
 
 
-module.exports = Cli.createCommand('search', {
-    description: 'Search for modules available on the platform',
+module.exports = Cli.createCommand('inspect', {
+    description: 'Inspect the versions of modules available on the platform',
     plugins: [
         require('../_plugins/profile'),
     ],
@@ -30,8 +30,8 @@ module.exports = Cli.createCommand('search', {
         },
     },
     params: {
-        query: {
-            description: 'The prefix of the search term to use for discovering modules and versions',
+        name: {
+            description: 'The name of the npm module whose available and queued versions you would like to inspect',
             type: 'string',
             required: true,
         },
@@ -43,7 +43,12 @@ module.exports = Cli.createCommand('search', {
 
 function handleModulesSearch(args) {
     const profile = args.profile;
-    const modules$ = profile.searchModules({ query: args.query });
+    const modules$ = profile.listVersions({ name: args.name });
+    const stateToColor = {
+        queued: Chalk.blue,
+        available: Chalk.green,
+        failed: Chalk.red,
+    };
 
     return modules$
         .then(onListing);
@@ -56,29 +61,18 @@ function handleModulesSearch(args) {
         }
 
         if (!modules.length) {
-            console.log(Chalk.green(`No modules found matching the term: ${Chalk.bold(args.query)}*`));
+            console.log(Chalk.green(`No versions found for the module: ${Chalk.bold(args.name)}`));
             return;
         }
 
-        const moduleVersions = modules.reduce((acc, entry) => {
-            if (!acc[entry.name]) {
-                acc[entry.name] = [];
-            }
+        const versionsCount = modules.length;
+        const versionsPluralization = versionsCount === 1 ? 'version' : 'versions';
 
-            acc[entry.name].push(entry.version);
+        console.log(Chalk.green(`We found ${Chalk.bold(versionsCount)} ${versionsPluralization} for the module: ${Chalk.bold(args.name)}`));
 
-            return acc;
-        }, {});
-
-        const modulesCount = Object.keys(moduleVersions).length;
-        const modulePluralization = modulesCount === 1 ? 'module' : 'modules';
-
-        console.log(Chalk.green(`Found ${Chalk.bold(modulesCount)} matching ${modulePluralization} for the term: ${Chalk.bold(args.query)}*`));
-
-        Object.keys(moduleVersions).forEach(name => {
-            const versions = moduleVersions[name];
-
-            console.log(`${Chalk.bold(name)}: ${versions.join(', ')}`);
+        modules.forEach(module => {
+            const color = stateToColor[module.state] || Chalk.white;
+            console.log(`${Chalk.bold(module.version)}: ${color(module.state)}`);
         });
     }
 }

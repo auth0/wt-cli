@@ -6,4 +6,4 @@ var category = module.exports = Cli.createCategory('modules', {
 });
 
 category.addChild(require('./modules/add'));
-category.addChild(require('./modules/search'));
+category.addChild(require('./modules/inspect'));
