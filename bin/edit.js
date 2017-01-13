@@ -1,6 +1,6 @@
 var Chalk = require('chalk');
 var Cli = require('structured-cli');
-var Open = require('open');
+var Open = require('opn');
 
 
 module.exports = Cli.createCommand('edit', {
@@ -32,5 +32,5 @@ function handleEdit(args) {
         console.log('Opening Webtask Editor');
     }
     
-    Open(url);
+    return Open(url);
 }
