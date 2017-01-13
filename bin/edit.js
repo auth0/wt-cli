@@ -26,11 +26,11 @@ function handleEdit(args) {
     var wtName  = args.name ? args.name + '/' : '';
     var url     = profile.url + '/edit/' + profile.container + '#/' + wtName + profile.token;
 
-    if (args.name) {
-        console.log('Opening ' + Chalk.underline(args.name) + ' in your browser...');
-    } else {
-        console.log('Opening Webtask Editor');
-    }
+    console.log('Attempting to open the following url in your browser: ');
+    console.log();
+    console.log(Chalk.underline(url));
+    console.log();
+    console.log('If the webtask editor does not automatically open, please copy this address and paste it into your browser.');
     
-    return Open(url);
+    return Open(url, { wait: false });
 }
