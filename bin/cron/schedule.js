@@ -133,7 +133,7 @@ function handleCronSchedule(args) {
             logger.log({ generation: build.generation, container: build.webtask.container }, 'Webtask created: %s. Scheduling cron job...', build.webtask.url);
         }
         
-        return build.webtask.createCronJob({ schedule: args.schedule, meta: args.meta })
+        return build.webtask.createCronJob({ schedule, meta: args.meta })
             .then(onCronScheduled, onCronError);
             
         
