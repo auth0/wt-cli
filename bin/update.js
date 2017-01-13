@@ -1,6 +1,7 @@
 var Cli = require('structured-cli');
 var CreateWebtask = require('../lib/createWebtask');
 var ValidateCreateArgs = require('../lib/validateCreateArgs');
+var _ = require('lodash');
 
 
 module.exports = Cli.createCommand('update', {
@@ -85,8 +86,25 @@ function handleUpdate(args) {
         args.params = claims.pctx;
         args.meta = claims.meta;
 
+        const moduleVersions = claims.meta['wt-node-dependencies']
+            ?   JSON.parse(claims.meta['wt-node-dependencies'])
+            :   null;
+        const moduleSpecs = moduleVersions && claims.meta['wt-node-module-specs']
+            ?   claims.meta['wt-node-module-specs']
+            :   null;
+        
+        const moduleResolutions = _.reduce(moduleVersions, (acc, version, name) => {
+            const spec = moduleSpecs[name];
+
+            if (spec) {
+                acc[`${name}@${spec}`] = version;
+            }
+
+            return acc;
+        }, {});
+
         // Defer to the functionality of the create command
-        return CreateWebtask(args, { action: 'updated' });
+        return CreateWebtask(args, { moduleResolutions, action: 'updated' });
     }
 }
 
