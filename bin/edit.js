@@ -32,5 +32,5 @@ function handleEdit(args) {
         console.log('Opening Webtask Editor');
     }
     
-    Open(url);
+    return Open(url);
 }
