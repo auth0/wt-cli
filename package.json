@@ -5,7 +5,7 @@
     "url": "https://github.com/ggoodman",
     "twitter": "filearts"
   },
-  "version": "3.10.2",
+  "version": "4.0.0",
   "description": "Webtask Command Line Interface",
   "tags": [
     "nodejs",
@@ -55,7 +55,8 @@
   },
   "bin": {
     "wt": "./bin/wt",
-    "wt-cli": "./bin/wt"
+    "wt-cli": "./bin/wt",
+    "auth0": "./bin/auth0"
   },
   "homepage": "http://github.com/auth0/wt-cli",
   "repository": {
