@@ -7,7 +7,7 @@ var Crypto = require('crypto');
 
 module.exports = function (extensionName) {
     return Cli.createCommand('create', {
-        description: 'Create and update Auth0 extension',
+        description: 'Create or update Auth0 Hook',
         plugins: [
             require('./_plugins/profile'),
         ],
@@ -92,9 +92,9 @@ function createHandleCreate(extensionName) {
         })
         .then(function (claims) {
             if (!claims.meta || claims['auth0-extension'] !== 'runtime')
-                throw Cli.error.invalid('Webtask ' + args.name + ' exists but is not an Auth0 extension. Please specify a different name using --name parameter.');
+                throw Cli.error.invalid('Webtask ' + args.name + ' exists but is not an Auth0 hook. Please specify a different name using --name parameter.');
             if (claims['auth0-extension-name'] !== extensionName)
-                throw Cli.error.invalid('Auth0 extension ' + args.name + ' exists but is of type ' + claims.meta['auth0-extension-name'] + '. Please specify a different name using --name parameter to avoid a conflict.');
+                throw Cli.error.invalid('Auth0 hook ' + args.name + ' exists but is of type ' + claims.meta['auth0-extension-name'] + '. Please specify a different name using --name parameter to avoid a conflict.');
             return _create();
         })
         .catch(function (e) {
@@ -118,7 +118,7 @@ function createHandleCreate(extensionName) {
             return CreateWebtask(args, { 
                 action: 'created', 
                 onOutput: function (log, build, url) {
-                    log(Chalk.green('Extension created in disabled state.') + ' To enable this extension to run in production, call:\n\n'
+                    log(Chalk.green('Auth0 hook created in disabled state.') + ' To enable this hook to run in production, call:\n\n'
                         + Chalk.green('$ auth0 ' + extensionName + ' enable ' + args.name));
                 } 
             });

@@ -7,7 +7,7 @@ var keyValList2Object = require('../lib/keyValList2Object');
 
 module.exports = (extensionName) => { 
     return Cli.createCommand('scaffold', {
-        description: 'Scaffold ' + extensionName + ' Auth0 extensions code',
+        description: 'Scaffold ' + extensionName + ' Auth0 hook code',
         handler: scaffoldHandler(extensionName),
     });
 

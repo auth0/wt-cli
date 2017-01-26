@@ -7,7 +7,7 @@ var keyValList2Object = require('../lib/keyValList2Object');
 
 module.exports = (extensionName) => { 
     return Cli.createCommand('ls', {
-        description: 'List ' + (extensionName ? extensionName + ' ' : '') + 'Auth0 extensions',
+        description: 'List ' + (extensionName ? extensionName + ' ' : '') + 'Auth0 hooks',
         plugins: [
             require('./_plugins/profile'),
         ],
@@ -16,12 +16,12 @@ module.exports = (extensionName) => {
             'Pagination': {
                 'offset': {
                     type: 'int',
-                    description: 'Skip this many extensions',
+                    description: 'Skip this many hooks',
                     defaultValue: 0,
                 },
                 'limit': {
                     type: 'int',
-                    description: 'Limit the results to this many extensions',
+                    description: 'Limit the results to this many hooks',
                     defaultValue: 10,
                 },
             },
@@ -103,16 +103,16 @@ module.exports = (extensionName) => {
                     
                     if (!typeNames.length) {
                         if (args.offset) {
-                            console.log('You have fewer than %s extensions.', Chalk.bold(args.offset));
+                            console.log('You have fewer than %s hooks.', Chalk.bold(args.offset));
                         } else {
-                            console.log(Chalk.green('You do not have any extensions. To get started, try:\n\n'
+                            console.log(Chalk.green('You do not have any hooks. To get started, try:\n\n'
                                 + Chalk.bold('$ auth0 ' + (extensionName || '{extension_type}') + ' scaffold\n')));
                         }
                     } else if (count === args.limit) {
-                        console.log(Chalk.green('Successfully listed extensions %s to %s. To list more try:'), Chalk.bold(args.offset + 1), Chalk.bold(args.offset + count));
+                        console.log(Chalk.green('Successfully listed hooks %s to %s. To list more try:'), Chalk.bold(args.offset + 1), Chalk.bold(args.offset + count));
                         console.log(Chalk.bold('$ auth0 ' + (extensionName ? extensionName + ' ' : '') + 'ls --offset %d'), args.offset + args.limit);
                     } else {
-                        console.log(Chalk.green('Successfully listed extensions %s to %s.'), Chalk.bold(args.offset + 1), Chalk.bold(args.offset + count));
+                        console.log(Chalk.green('Successfully listed hooks %s to %s.'), Chalk.bold(args.offset + 1), Chalk.bold(args.offset + count));
                     }
                 }
             }
