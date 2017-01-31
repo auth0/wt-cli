@@ -2,15 +2,15 @@
 
 const Chalk = require('chalk');
 const Cli = require('structured-cli');
-const _ = require('lodash');
+const Semver = require('semver');
 
 
-module.exports = Cli.createCommand('inspect', {
-    description: 'Inspect the versions of modules available on the platform',
+module.exports = Cli.createCommand('versions', {
+    description: 'List the versions of of a module that are currently available on the platform',
     plugins: [
         require('../_plugins/profile'),
     ],
-    handler: handleModulesSearch,
+    handler: handleModuleVersions,
     optionGroups: {
         'Modules options': {
             'env': {
@@ -31,7 +31,7 @@ module.exports = Cli.createCommand('inspect', {
     },
     params: {
         name: {
-            description: 'The name of the npm module whose available and queued versions you would like to inspect',
+            description: 'The name of an npm module',
             type: 'string',
             required: true,
         },
@@ -41,16 +41,19 @@ module.exports = Cli.createCommand('inspect', {
 
 // Command handler
 
-function handleModulesSearch(args) {
+function handleModuleVersions(args) {
     const profile = args.profile;
-    const modules$ = profile.listVersions({ name: args.name });
+    const modules$ = profile.listNodeModuleVersions({ name: args.name });
     const stateToColor = {
         queued: Chalk.blue,
         available: Chalk.green,
         failed: Chalk.red,
     };
 
+    console.error(`Searching for the versions of ${Chalk.bold(args.name)} that are already available on the platform...`);
+
     return modules$
+        .then(modules => modules.sort((a, b) => Semver.rcompare(a.version, b.version)))
         .then(onListing);
 
     
@@ -68,7 +71,7 @@ function handleModulesSearch(args) {
         const versionsCount = modules.length;
         const versionsPluralization = versionsCount === 1 ? 'version' : 'versions';
 
-        console.log(Chalk.green(`We found ${Chalk.bold(versionsCount)} ${versionsPluralization} for the module: ${Chalk.bold(args.name)}`));
+        console.error(Chalk.green(`We found ${Chalk.bold(versionsCount)} ${versionsPluralization} for the module: ${Chalk.bold(args.name)}`));
 
         modules.forEach(module => {
             const color = stateToColor[module.state] || Chalk.white;

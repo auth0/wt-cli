@@ -11,7 +11,7 @@ module.exports = Cli.createCommand('add', {
     plugins: [
         require('../_plugins/profile'),
     ],
-    handler: handleModulesSearch,
+    handler: handleModulesAdd,
     optionGroups: {
         'Modules options': {
             'env': {
@@ -19,6 +19,17 @@ module.exports = Cli.createCommand('add', {
                 defaultValue: 'node',
                 choices: ['node'],
                 description: 'Select the runtime for modules',
+            },
+            'rebuild': {
+                alias: 'r',
+                type: 'boolean',
+                description: 'Queue the modules for rebuilding by the platform (administrator only)',
+                dest: 'reset',
+            },
+            'wait': {
+                alias: 'w',
+                type: 'boolean',
+                description: 'Wait for the modules to be available',
             },
         },
         'Output options': {
@@ -42,7 +53,7 @@ module.exports = Cli.createCommand('add', {
 
 // Command handler
 
-function handleModulesSearch(args) {
+function handleModulesAdd(args) {
     const specs = args['name@version'];
     const profile = args.profile;
     const stateToColor = {
@@ -53,15 +64,23 @@ function handleModulesSearch(args) {
 
     return Bluebird
         .map(specs, Modules.parseSpec)
+        .tap(specs => {
+            console.log('Adding the following modules to the platform:');
+            specs.forEach(spec => {
+                console.log(`  ${spec.name}@${spec.range}`);
+            });
+        })
         .map(Modules.resolveSpec)
-        .then(modules => Modules.ensure(profile, modules))
+        .then(modules => args.wait
+            ?   Modules.awaitAvailable(profile, modules, { reset: args.reset })
+            :   Modules.ensure(profile, modules, { reset: args.reset }))
         .tap(modules => {
-            console.log(Chalk.green('Modules add request completed'));
+            console.log(Chalk.bold('Modules added:'));
 
             modules.forEach(module => {
                 const color = stateToColor[module.state] || Chalk.white;
 
-                console.log(`${Chalk.bold(module.name)}@${Chalk.bold(module.version)}: ${color(module.state)}`);
+                console.log(`  ${Chalk.bold(module.name)}@${Chalk.bold(module.version)}: ${color(module.state)}`);
             });
         });
 }
