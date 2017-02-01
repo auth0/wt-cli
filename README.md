@@ -117,7 +117,7 @@ The script below assumes you are creating an Auth0 hook for the `pre-user-regist
 
 ```bash
 # Scaffold sample code of an Auth0 hook:
-auth0 pre-user-registration scaffold -p tj-default > file.js
+auth0 pre-user-registration scaffold > file.js
 
 # Create a new, disabled Auth0 hook:
 auth0 pre-user-registration create file.js --name my-extension-1 -p tj-default
