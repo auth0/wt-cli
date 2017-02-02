@@ -92,6 +92,7 @@ function handler(args) {
         dependencies: {},
         description: 'Who needs servers when they have Webtask?',
         scripts: {
+            create: `wt create --secrets-file .secrets --name ${name} webtask.js`,
             debug: 'wt debug --secrets-file .secrets webtask.js',
             start: 'wt serve --secrets-file .secrets webtask.js',
         },
