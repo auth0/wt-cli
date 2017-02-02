@@ -63,6 +63,11 @@ module.exports = Cli.createCommand('scaffold', {
     handler,
     description: 'Scaffold a new webtask project',
     options: {
+        'force': {
+            alias: 'f',
+            type: 'boolean',
+            description: 'Scaffold the webtask even if the directory already exists',
+        },
         'template': {
             alias: 't',
             type: 'string',
@@ -108,7 +113,7 @@ function handler(args) {
     return stat(pathname)
         .then(stats => {
             if (!stats.isDirectory()) {
-                throw Cli.error.invalid(`The path ${pathname} already exists. `);
+                throw Cli.error.invalid(`The path ${pathname} already exists`);
             }
         }, (error) => {
             if (error.code !== 'ENOENT') throw Cli.error.invalid(`Error preparing scaffold directory: ${error.message}`);
@@ -118,17 +123,22 @@ function handler(args) {
         .tap(() => {
             console.log('Creating files...');
         })
-        .then(() => createFiles(pathname, files))
+        .then(() => createFiles(pathname, files, { force: args.force }))
         .tap(() => {
             console.log('Installing dependencies...');
         })
         .then(() => installDependencies(pathname))
         .tap(() => {
-            console.log(Chalk.green(`Successfully scaffolded a webtask project in ${pathname} using the template ${args.template}`));
+            console.log(Chalk.green(`Successfully scaffolded a webtask project in ${Chalk.bold(Path.normalize(args.path))} using the template ${Chalk.bold(args.template)}`));
+            console.log();
+            console.log('Here are a few gestures that you can start using right away.');
+            console.log(_.padStart(`${Chalk.bold('npm start')}`, 30), '- Run your webtask locally');
+            console.log(_.padStart(`${Chalk.bold('npm run debug')}`, 30), '- Run your webtask locally with the node debugger listening');
+            console.log(_.padStart(`${Chalk.bold('npm run create')}`, 30), '- Create or update the webtask in the cloud');
         });
 }
 
-function createFiles(dirname, files) {
+function createFiles(dirname, files, options) {
     const filenames = Object.keys(files);
     const close = Bluebird.promisify(Fs.close);
     const open = Bluebird.promisify(Fs.open);
@@ -139,7 +149,7 @@ function createFiles(dirname, files) {
         return Bluebird.props({
             pathname,
             content: files[filename],
-            fd: open(pathname, 'wx'),
+            fd: open(pathname, options.force ? 'w' : 'wx'),
         })
             .disposer(entry => close(entry.fd));
     });
