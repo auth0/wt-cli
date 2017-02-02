@@ -7,6 +7,9 @@ const Semver = require('semver');
 
 module.exports = Cli.createCommand('versions', {
     description: 'List the versions of of a module that are currently available on the platform',
+    profileOptions: {
+        hide: ['container'],
+    },
     plugins: [
         require('../_plugins/profile'),
     ],
@@ -56,7 +59,7 @@ function handleModuleVersions(args) {
         .then(modules => modules.sort((a, b) => Semver.rcompare(a.version, b.version)))
         .then(onListing);
 
-    
+
     function onListing(modules) {
         if (args.output === 'json') {
             console.log(JSON.stringify(modules, null, 2));

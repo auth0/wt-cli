@@ -8,6 +8,9 @@ const Modules = require('../../lib/modules');
 
 module.exports = Cli.createCommand('add', {
     description: 'Add modules to the webtask platform',
+    profileOptions: {
+        hide: ['container'],
+    },
     plugins: [
         require('../_plugins/profile'),
     ],
