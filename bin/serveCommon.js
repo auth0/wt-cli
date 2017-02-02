@@ -11,7 +11,7 @@ module.exports = () => {
                 'hostname': {
                     description: 'The hostname for the http listener',
                     type: 'string',
-                    defaultValue: '0.0.0.0',
+                    defaultValue: '127.0.0.1',
                 },
             },
             'Webtask creation': {
