@@ -2,7 +2,7 @@ const Cli = require('structured-cli');
 const Chalk = require('chalk');
 
 
-module.exports = function (extensionName, action) {
+module.exports = function (action) {
     return Cli.createCommand(action, {
         description: (action === 'enable' ? 'Enable' : 'Disable') + ' a hook',
         plugins: [
@@ -15,13 +15,13 @@ module.exports = function (extensionName, action) {
                 required: true,
             }
         },
-        handler: createHandleUpdate(extensionName, action),
+        handler: createHandleUpdate(action),
     });
 };
 
 // Command handler
 
-function createHandleUpdate(extensionName, action) {
+function createHandleUpdate(action) {
     return function handleUpdate(args) {
 
         var profile = args.profile;
@@ -37,20 +37,19 @@ function createHandleUpdate(extensionName, action) {
             // Set the user-defined options from the inspected webtask's claims
             if (!claims.meta || claims.meta['auth0-extension'] !== 'runtime')
                 return Cli.error.invalid('The ' + args.name + ' webtask is not an Auth0 hook.');
-            if (claims.meta['auth0-extension-name'] !== extensionName)
-                return Cli.error.invalid('The ' + args.name + ' webtask is not a ' + extensionName + ' hook. It is ' + claims.meta['auth0-extension-name'] + ' hook.');
+            var extensionName = claims.meta['auth0-extension-name'];
+            if (!extensionName)
+                return Cli.error.invalid('The ' + args.name + ' webtask is not a an Auth0 hook.');
             if (action === 'enable' && !claims.meta['auth0-extension-disabled'])
-                return console.log(Chalk.green('The ' + args.name + ' hook is already enabled.'));
-            if (action === 'enable' && !claims.meta['auth0-extension-disabled'])
-                return console.log(Chalk.green('The ' + args.name + ' hook is already enabled.'));
+                return console.log(Chalk.green('The ' + args.name + ' (' + extensionName + ') hook is already enabled.'));
             if (action === 'disable' && claims.meta['auth0-extension-disabled'])
-                return console.log(Chalk.green('The ' + args.name + ' hook is already disabled.'));
+                return console.log(Chalk.green('The ' + args.name + ' (' + extensionName + ') hook is already disabled.'));
 
             if (action === 'disable') {
                 claims = adjustExtensionClaims(claims, false);
                 return profile.createTokenRaw(claims)
                 .then(function () {
-                    return console.log(Chalk.green('The ' + args.name + ' hook has been disabled.'));
+                    return console.log(Chalk.green('The ' + args.name + ' (' + extensionName + ') hook has been disabled.'));
                 });
             }
             else { // enable
@@ -71,7 +70,7 @@ function createHandleUpdate(extensionName, action) {
                     claims = adjustExtensionClaims(claims, true);
                     return profile.createTokenRaw(claims)
                     .then(function () {
-                        return console.log(Chalk.green('The ' + args.name + ' hook has been enabled.'));
+                        return console.log(Chalk.green('The ' + args.name + ' (' + extensionName + ') hook has been enabled.'));
                     });
                 });
             }

@@ -117,20 +117,20 @@ The script below assumes you are creating an Auth0 hook for the `pre-user-regist
 
 ```bash
 # Scaffold sample code of an Auth0 hook:
-auth0 pre-user-registration scaffold > file.js
+auth0 scaffold -t pre-user-registration > file.js
 
 # Create a new, disabled Auth0 hook:
-auth0 pre-user-registration create file.js --name my-extension-1 -p tj-default
+auth0 create -t pre-user-registration --name my-extension-1 -p tj-default file.js 
 
 # Edit code of the Auth0 hook:
 auth0 edit my-extension-1
 
 # Enable the newly created extensibility point (all other hooks associated 
 # with the same extensibility point will be disabled): 
-auth0 pre-user-registration enable my-extension-1 -p tj-default
+auth0 enable my-extension-1 -p tj-default
 
 # List hooks for a specific extensibility point: 
-auth0 pre-user-registration ls -p tj-default
+auth0 ls -t pre-user-registration -p tj-default
 
 # List all Auth0 hooks on your account: 
 auth0 ls -p tj-default
@@ -139,7 +139,7 @@ auth0 ls -p tj-default
 auth0 logs -p tj-default
 
 # Disable a hook:
-auth0 pre-user-registration disable my-extension-1 -p tj-default
+auth0 disable my-extension-1 -p tj-default
 
 # Delete a hook: 
 auth0 rm my-extension-1 -p tj-default

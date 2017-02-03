@@ -3,7 +3,6 @@ var Chalk = require('chalk');
 var Cli = require('structured-cli');
 var Package = require('../package.json');
 var Updates = require('update-notifier');
-var Auth0Extensions = require('./auth0_extensions');
 var _ = require('lodash');
 
 
@@ -22,19 +21,11 @@ var cli = Cli.createApp({
     version: Package.version
 });
 
-Object.keys(Auth0Extensions).sort().forEach(function (extensionName) {
-    var extensionCategory = new Cli.createCategory(extensionName, {
-        description: Auth0Extensions[extensionName].description
-    });
-    extensionCategory.addChild(require('./auth0_ls')(extensionName));
-    extensionCategory.addChild(require('./auth0_create')(extensionName));
-    extensionCategory.addChild(require('./auth0_toggle')(extensionName, 'enable'));
-    extensionCategory.addChild(require('./auth0_toggle')(extensionName, 'disable'));
-    extensionCategory.addChild(require('./auth0_scaffold')(extensionName));
-    cli.addChild(extensionCategory);
-});
-
-cli.addChild(require('./auth0_ls')());
+cli.addChild(require('./auth0_scaffold'));
+cli.addChild(require('./auth0_create'));
+cli.addChild(require('./auth0_ls'));
+cli.addChild(require('./auth0_toggle')('enable'));
+cli.addChild(require('./auth0_toggle')('disable'));
 cli.addChild(require('./edit'));
 cli.addChild(require('./rm'));
 cli.addChild(require('./logs'));
