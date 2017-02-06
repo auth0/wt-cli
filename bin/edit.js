@@ -15,6 +15,15 @@ module.exports = Cli.createCommand('edit', {
             required: false
         },
     },
+    optionGroups: {
+        'Output options': {
+            'previous-version': {
+                description: 'Use the previous version of the editor',
+                dest: 'previousVersion',
+                type: 'boolean',
+            },
+        }
+    },
     handler: handleEdit,
 });
 
@@ -25,6 +34,10 @@ function handleEdit(args) {
     var profile = args.profile;
     var wtName  = args.name ? args.name + '/' : '';
     var url     = profile.url + '/edit/' + profile.container + '#/' + wtName + profile.token;
+
+    if (args.previousVersion) {
+        url = profile.url + '/prev/edit/' + profile.container + '#/' + wtName + profile.token;
+    }
 
     console.log('Attempting to open the following url in your browser: ');
     console.log();
