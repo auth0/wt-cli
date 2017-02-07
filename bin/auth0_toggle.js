@@ -86,9 +86,11 @@ function createHandleUpdate(action) {
 
         function adjustExtensionClaims(claims, enable) {
             if (enable) {
+                console.log('Enabling hook ' + claims.jtn + '.');
                 delete claims.meta['auth0-extension-disabled'];
             }
             else {
+                console.log('Disabling hook ' + claims.jtn + '.');
                 claims.meta['auth0-extension-disabled'] = '1';   
             }
             ['jti','ca','iat','webtask_url'].forEach(function (c) { delete claims[c]; });
