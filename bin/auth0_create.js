@@ -3,7 +3,7 @@ var Cli = require('structured-cli');
 var CreateWebtask = require('../lib/createWebtask');
 var ValidateCreateArgs = require('../lib/validateCreateArgs');
 var Crypto = require('crypto');
-var auth0Extensions = require('./auth0_extensions');
+var auth0Extensions = require('auth0-hooks-templates');
 var extensionTypes = Object.keys(auth0Extensions).sort();
 
 module.exports = Cli.createCommand('create', {
@@ -121,7 +121,7 @@ function handleCreate(args) {
 
         // If wt-compiler specified explicitly, use it. Otherwise use the default per hook type.
         if (!args.meta['wt-compiler'])
-            args.meta['wt-compiler'] = require('./auth0_extensions')[args.extensionName].compiler;
+            args.meta['wt-compiler'] = auth0Extensions[args.extensionName].wtCompiler;
 
         // If updating existing hook, preserve the authentication secret
         var authSecret = claims && claims.meta['auth0-extension-secret'] || Crypto.randomBytes(32).toString('hex');

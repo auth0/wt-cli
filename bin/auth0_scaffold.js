@@ -2,7 +2,7 @@ var Chalk = require('chalk');
 var Cli = require('structured-cli');
 var _ = require('lodash');
 var keyValList2Object = require('../lib/keyValList2Object');
-var auth0Extensions = require('./auth0_extensions');
+var auth0Extensions = require('auth0-hooks-templates');
 var extensionTypes = Object.keys(auth0Extensions).sort();
 
 
@@ -21,6 +21,6 @@ module.exports = Cli.createCommand('scaffold', {
             },
         }
     },
-    handler: (args) => console.log(auth0Extensions[args.extensionName].template),
+    handler: (args) => console.log(auth0Extensions[args.extensionName].sample),
 });
 
