@@ -16,11 +16,10 @@ module.exports = Cli.createCommand('edit', {
         },
     },
     optionGroups: {
-        'Output options': {
-            'version': {
-                alias: 'v',
-                description: 'Use the previous version of the editor',
-                dest: 'version',
+        'Editor options': {
+            'editor-version': {
+                description: 'Open the webtask in a specific version of the Webtask Editor',
+                dest: 'editorVersion',
                 choices: ['v1', 'v2'],
                 type: 'string',
             },
@@ -36,8 +35,8 @@ function handleEdit(args) {
     var wtName  = args.name ? args.name + '/' : '';
     var url     = profile.url + '/edit/' + profile.container + '#/' + wtName + profile.token;
 
-    if (args.version) {
-        url = profile.url + (args.version === `v1` ? '/prev' : '') + '/edit/' + profile.container + '#/' + wtName + profile.token;
+    if (args.editorVersion) {
+        url = profile.url + '/edit/' + args.editorVersion + '/' + profile.container + '#/' + wtName + profile.token;
     }
 
     console.log('Attempting to open the following url in your browser: ');
