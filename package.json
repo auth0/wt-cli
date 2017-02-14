@@ -45,7 +45,7 @@
     "opn": "^4.0.2",
     "pad": "^1.0.0",
     "promptly": "^0.2.1",
-    "sandboxjs": "^3.2.0",
+    "sandboxjs": "^3.4.1",
     "structured-cli": "^1.0.5",
     "superagent": "^1.7.2",
     "through2": "^2.0.1",
