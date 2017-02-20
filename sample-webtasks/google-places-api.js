@@ -21,8 +21,9 @@ const output = 'json';
  * 2. Create the webtask profile: `wt init` or `wt init <your account name/email>`
  * 2.a. Check your email and enter verification code if necessary
  * 3. Create a Google Places API Key here: https://developers.google.com/places/web-service/get-api-key
- * 4. Push your webhook to the server using: wt create -s gpakey=<API_KEY> --name google-places-api --prod https://raw.githubusercontent.com/Ryan-Knowles/wt-cli/master/sample-webtasks/github-tag-hook.js
+ * 4. Push your webhook to the server using (while in same directory): `wt create -s gpakey=<API_KEY> --name google-places-api google-places-api.js`
  * 4.a. Substitute <API_KEY> with the Google Places API Key from Step 3
+ * 5. Inspect error/debug using `wt logs`
  * 
  * @webtask_data latitude   - Latitude of the center point of the search area (default 0.0)
  * @webtask_data longitude  - Longitude of the center point of the search area (default 0.0)
