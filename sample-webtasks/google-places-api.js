@@ -23,7 +23,10 @@ const output = 'json';
  * 3. Create a Google Places API Key here: https://developers.google.com/places/web-service/get-api-key
  * 4. Push your webhook to the server using (while in same directory): `wt create -s gpakey=<API_KEY> --name google-places-api google-places-api.js`
  * 4.a. Substitute <API_KEY> with the Google Places API Key from Step 3
- * 5. Inspect error/debug using `wt logs`
+ * 5. Test webhook using: `curl -d longitude=100.5017651 -d latitude=13.7563309 -d radius=100 <WEBHOOK_URL>`
+ * 5.a. Substitute <WEBHOOK_URL> with the url contained in the response from Step 4
+ * 5.b. Need curl to be installed. Type (On Ubuntu): `sudo apt-get install -y curl`
+ * 6. Inspect error/debug using `wt logs`
  * 
  * @webtask_data latitude   - Latitude of the center point of the search area (default 0.0)
  * @webtask_data longitude  - Longitude of the center point of the search area (default 0.0)
