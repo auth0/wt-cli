@@ -35,18 +35,17 @@ const output = 'json';
  */
 
 module.exports = function(context, cb) {
-    let lat = context.data.latitude || 0.0;
-    let long = context.data.longitude || 0.0;
+    let lat = context.body.latitude || '0.0';
+    let long = context.body.longitude || '0.0';
 
-    let radius = context.data.radius || 100;
+    let radius = context.body.radius || '100';
     let location = `${lat},${long}`;
-    let key = context.data.gpakey;
+    let key = context.secrets.gpakey;
 
     let request_url = `${googlePlacesUrl}${output}?location=${location}&radius=${radius}&keyword=${keyword}&key=${key}&opennow=true`;
     
-    request(request_url)
+    request(request_url, { json: true })
         .then( function(data) {
-            data = JSON.parse(data);
             if(data && (data.status == 'OK' || data.status == 'ZERO_RESULTS') ) {
                 let response = {
                     timestamp: new Date(),
