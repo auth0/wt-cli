@@ -28,7 +28,7 @@
     "coverage": "lab -v -r html -o coverage/index.html ./test/bin/"
   },
   "dependencies": {
-    "auth0-hooks-templates": "^1.2.0",
+    "auth0-hooks-templates": "^1.2.1",
     "bluebird": "^2.10.2",
     "boom": "^2.8.0",
     "bunyan": "^1.5.1",
