@@ -5,7 +5,7 @@
     "url": "https://github.com/ggoodman",
     "twitter": "filearts"
   },
-  "version": "4.0.5",
+  "version": "4.0.6",
   "description": "Webtask Command Line Interface",
   "tags": [
     "nodejs",
@@ -28,7 +28,7 @@
     "coverage": "lab -v -r html -o coverage/index.html ./test/bin/"
   },
   "dependencies": {
-    "auth0-hooks-templates": "^1.2.0",
+    "auth0-hooks-templates": "^1.2.2",
     "bluebird": "^2.10.2",
     "boom": "^2.8.0",
     "bunyan-prettystream": "^0.1.3",
