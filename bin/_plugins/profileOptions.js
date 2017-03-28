@@ -1,12 +1,16 @@
+'use strict';
+
+const _ = require('lodash');
+
+
 module.exports = {
-    onBeforeConfigure: onBeforeConfigure,
+    onBeforeConfigure,
 };
 
 
 function onBeforeConfigure(context) {
-    var node = context.node;
-    
-    node.addOptionGroup('Webtask profile', {
+    const node = context.node;
+    const options = {
         profile: {
             alias: 'p',
             description: 'Default to the webtask container, token, and URL from a stored profile.',
@@ -25,5 +29,7 @@ function onBeforeConfigure(context) {
             description: 'Set your authorizing webtask token. If you do not have a webtask token, one can be provisioned using `wt init`.',
             type: 'string',
         },
-    });
+    };
+
+    node.addOptionGroup('Webtask profile', _.omit(options, _.get(context.node.config, 'profileOptions.hide', [])));
 }
