@@ -23,6 +23,20 @@ module.exports = Cli.createCommand('update', {
             },
         },
         'Webtask creation': {
+            'dependency': {
+                action: 'append',
+                alias: 'd',
+                defaultValue: [],
+                description: 'Specify a dependency on a node module. The best matching version of this node module (at the time of webtask creation) will be available in your webtask code via `require()`. You can use this option more than once to add mutliple dependencies.',
+                dest: 'dependencies',
+                metavar: 'NAME@VERSION',
+                type: 'string',
+            },
+            'ignore-package-json': {
+                description: 'Ignore any dependencies found in a package.json file adjacent to your webtask.',
+                dest: 'ignorePackageJson',
+                type: 'boolean',
+            },
             'watch': {
                 alias: 'w',
                 description: 'Automatically watch and reprovision the webtask on local file changes. This will also subscribe you to logs as if you had done `wt logs` to provide an intuitive development experience without requiring multiple active terminals.',
