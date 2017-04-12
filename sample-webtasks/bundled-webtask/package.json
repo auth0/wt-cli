@@ -9,9 +9,9 @@
   "keywords": [],
   "author": "",
   "dependencies": {
-    "body-parser": "1.12.4",
-    "express": "4.12.4",
-    "webtask-tools": "1.2.0"
+    "body-parser": "^1.17.1",
+    "express": "^4.15.2",
+    "webtask-tools": "^3.2.0"
   },
   "license": "ISC"
 }

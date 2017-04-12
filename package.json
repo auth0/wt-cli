@@ -52,7 +52,7 @@
     "superagent": "^1.7.2",
     "through2": "^2.0.1",
     "update-notifier": "^0.6.1",
-    "webtask-bundle": "^2.3.0",
+    "webtask-bundle": "^3.0.0",
     "webtask-runtime": "^1.6.0",
     "wreck": "^10.0.0"
   },
