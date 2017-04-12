@@ -1,11 +1,9 @@
-var Chalk = require('chalk');
-var Checker = require('webtask-bundle/lib/checker');
 var Cli = require('structured-cli');
 var Path = require('path');
 
 
 module.exports = Cli.createCommand('sync', {
-    description: 'Update the version of each module in your package.json with the closest version available on webtask.io',
+    description: '[DEPRECATED] Specify dependencies via package.json',
     plugins: [
         // require('../_plugins/profile'),
     ],
@@ -32,10 +30,5 @@ module.exports = Cli.createCommand('sync', {
 // Command handler
 
 function handleBundleAnalyze(args) {
-    var sync$ = Checker.sync({
-        entry: args.filename,
-        interactive: args.interactive,
-    });
-    
-    return sync$.toPromise();
+    return Cli.errors.invalid('This command is deprecated');
 }
