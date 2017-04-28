@@ -4,7 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "start":"wt create --bundle --watch"
+    "start":"wt create --bundle --watch ."
   },
   "keywords": [],
   "author": "",
