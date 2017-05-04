@@ -36,10 +36,35 @@ module.exports = Cli.createCommand('logs', {
 
 function handleLogs(args) {
     var profile = args.profile;
-    
-    Logs.createLogStream(profile, args);
-    
-    return Bluebird.resolve()
-        .delay(30 * 60 * 1000, Cli.error.timeout('Command timed out after 30 min'));
+
+    return new Bluebird((resolve, reject) => {
+        const logs = Logs.createLogStream(profile, args);
+        const timeout = setTimeout(() => {
+            const error = Cli.error.timeout('Automatically disconnecting from logs after 30min');
+
+            return reject(error);
+        }, 30 * 60 * 1000);
+
+        logs.once('close', () => {
+            clearTimeout(timeout);
+
+            const error = Cli.error.cancelled('Connection to streaming log endpoint lost');
+
+            return reject(error);
+        });
+
+        logs.once('error', (error) => {
+            logs.error(error.message);
+
+            clearTimeout(timeout);
+
+            return reject(Cli.error.serverError(`Error connecting to streaming log endpoint: ${ error.message }`));
+        });
+
+        process.once('SIGINT', () => {
+            logs.warn('Received SIGINT; disconnecting from logs');
+            return resolve();
+        });
+    });
 }
 
