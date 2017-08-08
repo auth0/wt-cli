@@ -21,7 +21,7 @@ var intervals = {
                 :   mod > 0
                     ?  (curr % frequencyValue) + '-' + (59) + '/' + (frequencyValue)
                     :   '*/' + (frequencyValue);
-            
+
             return cron.join(' ');
         },
     },
@@ -39,7 +39,7 @@ var intervals = {
                 :   mod > 0
                     ?  (curr % frequencyValue) + '-' + (23) + '/' + (frequencyValue)
                     :   '*/' + (frequencyValue);
-            
+
             return cron.join(' ');
         },
     },
@@ -60,10 +60,17 @@ module.exports = Cli.createCommand('schedule', {
         require('../_plugins/profile'),
     ],
     optionGroups: _.extend({}, createCommand.optionGroups, {
-        
+        'Cron options': {
+            'state': {
+                description: 'Set the cron job\'s state',
+                choices: ['active', 'inactive'],
+                defaultValue: 'active',
+                type: 'string',
+            },
+        },
     }),
     options: _.extend({}, createCommand.options, {
-        
+
     }),
     params: _.extend({}, {
         'schedule': {
@@ -87,11 +94,11 @@ module.exports = Cli.createCommand('schedule', {
 
 function handleCronSchedule(args) {
     var profile = args.profile;
-    
+
     args = ValidateCreateArgs(args);
-    
+
     var schedule = args.schedule;
-    
+
     if (schedule.split(' ').length !== 5) {
         var minutesRx = new RegExp('^\s*([0-9]{1,2})\s*(' + intervals.minutes.abbrev.join('|') + ')\s*$', 'i');
         var hoursRx = new RegExp('^\s*([0-9]{1,2})\s*(' + intervals.hours.abbrev.join('|') + ')\s*$', 'i');
@@ -99,7 +106,7 @@ function handleCronSchedule(args) {
         var frequencyValue;
         var type;
         var matches;
-        
+
         if ((matches = schedule.match(minutesRx))) {
             type = intervals.minutes;
             frequencyValue = parseInt(matches[1], 10);
@@ -112,11 +119,11 @@ function handleCronSchedule(args) {
         } else {
             throw new Cli.error.invalid('The schedule `' + schedule + '` is not valid.');
         }
-        
+
         if (type.values.indexOf(frequencyValue) === -1) {
             throw new Cli.error.invalid('For intervals in ' + type.abbrev[type.abbrev.length - 1] + ', the following intervals are supported: ' + type.values.join(', '));
         }
-        
+
         schedule = type.encode(frequencyValue);
     }
 
@@ -126,17 +133,17 @@ function handleCronSchedule(args) {
     var logger = createLogger(args, profile);
 
     return createWebtask(profile);
-        
-        
+
+
     function onGeneration(build) {
         if (args.watch) {
             logger.log({ generation: build.generation, container: build.webtask.container }, 'Webtask created: %s. Scheduling cron job...', build.webtask.url);
         }
-        
-        return build.webtask.createCronJob({ schedule, meta: args.meta })
+
+        return build.webtask.createCronJob({ schedule, state: args.state, meta: args.meta })
             .then(onCronScheduled, onCronError);
-            
-        
+
+
         function onCronScheduled(job) {
             args.watch
                 ?   logger.log({
@@ -152,7 +159,7 @@ function handleCronSchedule(args) {
                     }, 'Cron job scheduled')
                 :   PrintCronJob(job, logger);
         }
-        
+
         function onCronError(err) {
             switch (err.statusCode) {
                 case 400: throw Cli.error.invalid('Invalid cron job; please check that the schedule is a valid cron schedule');
@@ -165,7 +172,7 @@ function handleCronSchedule(args) {
 function createLogger(args, profile) {
     if (args.watch) {
         var logs = Logs.createLogStream(profile);
-        
+
         return {
             log: _.bindKey(logs, 'info'),
             error: _.bindKey(logs, 'error'),
