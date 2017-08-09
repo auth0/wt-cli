@@ -37,6 +37,19 @@ function sandboxFromArguments(args, options) {
                 url: args.url || 'https://webtask.it.auth0.com',
             };
 
+            if (args.container && args.token) {
+                try {
+                    return resolve(Sandbox.init({
+                        onBeforeRequest,
+                        container: args.container,
+                        token: args.token,
+                        url: args.url,
+                    }));
+                } catch (e) {
+                    return reject(e);
+                }
+            }
+
             if (args.container) sandboxOptions.container = args.container;
 
             try {
