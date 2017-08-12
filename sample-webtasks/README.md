@@ -61,7 +61,7 @@ $ wt create express.js --no-parse --no-merge
 Get a history of all the runs of a specific cron.
 
 ```bash
-$ wt cron history mongogron
+$ wt cron history mongocron
 ```
 
 ### Crons
