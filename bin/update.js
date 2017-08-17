@@ -93,6 +93,7 @@ function handleUpdate(args) {
 
     function onClaims(claims) {
         // Set the user-defined options from the inspected webtask's claims
+        args.host = claims.host;
         args.merge = claims.mb;
         args.parse = claims.pb;
         args.secrets = claims.ectx;
