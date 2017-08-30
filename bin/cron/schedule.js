@@ -7,8 +7,8 @@ const ValidateCreateArgs = require('../../lib/validateCreateArgs');
 const WebtaskCreator = require('../../lib/webtaskCreator');
 const _ = require('lodash');
 
-const CRON_AUTH_COMPILER = 'webtask-hacks/middleware';
-const CRON_AUTH_COMPILER_VERSION = '^2.1.0';
+const CRON_AUTH_MIDDLEWARE = '@webtask/cron-auth-middleware';
+const CRON_AUTH_MIDDLEWARE_VERSION = '^1.1.1';
 
 
 const intervals = {
@@ -107,33 +107,18 @@ module.exports = Cli.createCommand('schedule', {
 function handleCronSchedule(args) {
     const profile = args.profile;
 
-    args = ValidateCreateArgs(args);
-
     if (!args.noAuth) {
-        if (args.meta && args.meta['wt-compiler'] && args.meta['wt-compiler'] !== CRON_AUTH_COMPILER) {
-            throw Cli.error.invalid('Cron authentication is incompatible with a custom webtask compiler. If you wish to disable cron authentication, please pass `--no-auth`.');
-        }
-
-        const parts = (args.meta['wt-middleware'] || '').split(/[;,]/).filter(Boolean);
-        const middleware = 'webtask-hacks/authenticateCron';
-
-        // Inject the cron authentication middleware as the first middleware if it
-        // is not already present.
-        if (parts.indexOf(middleware) === -1) {
-            parts.unshift(middleware);
-        }
-
-        args.meta['wt-middleware'] = parts.join(',');
-        args.meta['wt-compiler'] = 'webtask-hacks/middleware';
-        args.virtualDependencies = { 'webtask-hacks': CRON_AUTH_COMPILER_VERSION };
+        args.middleware.push(`${CRON_AUTH_MIDDLEWARE}@${CRON_AUTH_MIDDLEWARE_VERSION}`);
     }
+
+    args = ValidateCreateArgs(args);
 
     let schedule = args.schedule;
 
     if (schedule.split(' ').length !== 5) {
-        const minutesRx = new RegExp('^\s*([0-9]{1,2})\s*(' + intervals.minutes.abbrev.join('|') + ')\s*$', 'i');
-        const hoursRx = new RegExp('^\s*([0-9]{1,2})\s*(' + intervals.hours.abbrev.join('|') + ')\s*$', 'i');
-        const daysRx = new RegExp('^\s*([0-9]{1,2})\s*(' + intervals.days.abbrev.join('|') + ')\s*$', 'i');
+        const minutesRx = new RegExp('^\\s*([0-9]{1,2})\\s*(' + intervals.minutes.abbrev.join('|') + ')\\s*$', 'i');
+        const hoursRx = new RegExp('^\\s*([0-9]{1,2})\\s*(' + intervals.hours.abbrev.join('|') + ')\\s*$', 'i');
+        const daysRx = new RegExp('^\\s*([0-9]{1,2})\\s*(' + intervals.days.abbrev.join('|') + ')\\s*$', 'i');
         let frequencyValue;
         let type;
         let matches;
