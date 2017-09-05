@@ -2,6 +2,7 @@
 
 const Cli = require('structured-cli');
 const Logs = require('../../lib/logs');
+const Moment = require('moment-timezone');
 const PrintCronJob = require('../../lib/printCronJob');
 const ValidateCreateArgs = require('../../lib/validateCreateArgs');
 const WebtaskCreator = require('../../lib/webtaskCreator');
@@ -79,6 +80,11 @@ module.exports = Cli.createCommand('schedule', {
                 defaultValue: 'active',
                 type: 'string',
             },
+            'tz': {
+                description: `An IANA timezone name (see: https://en.wikipedia.org/wiki/List_of_tz_database_time_zones), relative to which the cron schedule will be calculated. If not specified, the webtask cluster's default timezone is used.`,
+                metavar: 'TIMEZONE',
+                type: 'string',
+            },
         },
     }),
     options: _.extend({}, createCommand.options, {
@@ -109,6 +115,10 @@ function handleCronSchedule(args) {
 
     if (!args.noAuth) {
         args.middleware.push(`${CRON_AUTH_MIDDLEWARE}@${CRON_AUTH_MIDDLEWARE_VERSION}`);
+    }
+
+    if (args.tz && !Moment.tz.zone(args.tz)) {
+        throw new Cli.error.invalid(`The timezone "${args.tz}" is not recognized. Please specify a valid IANA timezone name (see: https://en.wikipedia.org/wiki/List_of_tz_database_time_zones).`);
     }
 
     args = ValidateCreateArgs(args);
@@ -156,7 +166,7 @@ function handleCronSchedule(args) {
             logger.log({ generation: build.generation, container: build.webtask.container }, 'Webtask created: %s. Scheduling cron job...', build.webtask.url);
         }
 
-        return build.webtask.createCronJob({ schedule, state: args.state, meta: args.meta })
+        return build.webtask.createCronJob({ schedule, state: args.state, meta: args.meta, tz: args.tz })
             .then(onCronScheduled, onCronError);
 
 
@@ -167,6 +177,7 @@ function handleCronSchedule(args) {
                         container: job.container,
                         state: job.state,
                         schedule: job.schedule,
+                        timezone: job.tz,
                         next_available_at: new Date(job.next_available_at).toLocaleString(),
                         created_at: new Date(job.created_at).toLocaleString(),
                         run_count: job.run_count,
