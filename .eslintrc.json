@@ -6,10 +6,6 @@
   "extends": "eslint:recommended",
   "rules": {
     "no-console": "off",
-    "indent": [
-      "error",
-      4
-    ],
     "linebreak-style": [
       "error",
       "unix"

@@ -74,6 +74,13 @@ module.exports = Cli.createCommand('create', {
                 dest: 'ignorePackageJson',
                 type: 'boolean',
             },
+            'middleware': {
+                action: 'append',
+                defaultValue: [],
+                description: 'Specify a webtask middleware that should be run prior to (or in lieu of) your underlying webtask code. Middleware specified in this way will automatically be added as dependencies. Use of middleware implies the @webtask/middleware-compiler which will also automatically be added to dependencies. For more information on middleware, see: https://goo.gl/yh3VAB',
+                metavar: 'NAME@VERSION/EXPORT',
+                type: 'string',
+            },
             'watch': {
                 alias: 'w',
                 description: 'Automatically watch and reprovision the webtask on local file changes. This will also subscribe you to logs as if you had done `wt logs` to provide an intuitive development experience without requiring multiple active terminals.',

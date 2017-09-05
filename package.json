@@ -72,6 +72,7 @@
   },
   "devDependencies": {
     "code": "^4.0.0",
+    "eslint": "^4.5.0",
     "lab": "^11.1.0",
     "mailinator": "^1.0.2",
     "proxyquire": "^1.7.10",

@@ -1,20 +1,25 @@
-var Cli = require('structured-cli');
-var Logs = require('../../lib/logs');
-var PrintCronJob = require('../../lib/printCronJob');
-var ValidateCreateArgs = require('../../lib/validateCreateArgs');
-var WebtaskCreator = require('../../lib/webtaskCreator');
-var _ = require('lodash');
+'use strict';
+
+const Cli = require('structured-cli');
+const Logs = require('../../lib/logs');
+const PrintCronJob = require('../../lib/printCronJob');
+const ValidateCreateArgs = require('../../lib/validateCreateArgs');
+const WebtaskCreator = require('../../lib/webtaskCreator');
+const _ = require('lodash');
+
+const CRON_AUTH_MIDDLEWARE = '@webtask/cron-auth-middleware';
+const CRON_AUTH_MIDDLEWARE_VERSION = '^1.2.1';
 
 
-var intervals = {
+const intervals = {
     minutes: {
         abbrev: ['m', 'min', 'mins', 'minute', 'minutes'],
         values: [ 1, 2, 3, 4, 5, 6, 10, 15, 20, 30, 60 ],
-        encode: function (frequencyValue) {
-            var now = new Date();
-            var cron = ['*', '*', '*', '*', '*'];
-            var curr = now.getMinutes();
-            var mod = curr % frequencyValue;
+        encode(frequencyValue) {
+            const now = new Date();
+            const cron = ['*', '*', '*', '*', '*'];
+            const curr = now.getMinutes();
+            const mod = curr % frequencyValue;
 
             cron[0] = frequencyValue === 60
                 ?   curr
@@ -28,11 +33,11 @@ var intervals = {
     hours: {
         abbrev: ['h', 'hour', 'hours' ],
         values: [ 1, 2, 3, 4, 6, 8, 12, 24],
-        encode: function (frequencyValue) {
-            var now = new Date();
-            var cron = [now.getMinutes(), '*', '*', '*', '*'];
-            var curr = now.getHours();
-            var mod = curr % frequencyValue;
+        encode(frequencyValue) {
+            const now = new Date();
+            const cron = [now.getMinutes(), '*', '*', '*', '*'];
+            const curr = now.getHours();
+            const mod = curr % frequencyValue;
 
             cron[1] = frequencyValue === 24
                 ?   curr
@@ -46,12 +51,14 @@ var intervals = {
     days: {
         abbrev: ['d', 'day', 'days'],
         values: [ 1 ],
-        encode: function () { return intervals.hours.encode(24); },
+        encode() {
+            return intervals.hours.encode(24);
+        },
     },
 };
 
 
-var createCommand = require('../create');
+const createCommand = require('../create');
 
 
 module.exports = Cli.createCommand('schedule', {
@@ -61,6 +68,11 @@ module.exports = Cli.createCommand('schedule', {
     ],
     optionGroups: _.extend({}, createCommand.optionGroups, {
         'Cron options': {
+            'no-auth': {
+                description: 'Disable cron webtask authentication',
+                dest: 'noAuth',
+                type: 'boolean',
+            },
             'state': {
                 description: 'Set the cron job\'s state',
                 choices: ['active', 'inactive'],
@@ -93,19 +105,23 @@ module.exports = Cli.createCommand('schedule', {
 // Command handler
 
 function handleCronSchedule(args) {
-    var profile = args.profile;
+    const profile = args.profile;
+
+    if (!args.noAuth) {
+        args.middleware.push(`${CRON_AUTH_MIDDLEWARE}@${CRON_AUTH_MIDDLEWARE_VERSION}`);
+    }
 
     args = ValidateCreateArgs(args);
 
-    var schedule = args.schedule;
+    let schedule = args.schedule;
 
     if (schedule.split(' ').length !== 5) {
-        var minutesRx = new RegExp('^\s*([0-9]{1,2})\s*(' + intervals.minutes.abbrev.join('|') + ')\s*$', 'i');
-        var hoursRx = new RegExp('^\s*([0-9]{1,2})\s*(' + intervals.hours.abbrev.join('|') + ')\s*$', 'i');
-        var daysRx = new RegExp('^\s*([0-9]{1,2})\s*(' + intervals.days.abbrev.join('|') + ')\s*$', 'i');
-        var frequencyValue;
-        var type;
-        var matches;
+        const minutesRx = new RegExp('^\\s*([0-9]{1,2})\\s*(' + intervals.minutes.abbrev.join('|') + ')\\s*$', 'i');
+        const hoursRx = new RegExp('^\\s*([0-9]{1,2})\\s*(' + intervals.hours.abbrev.join('|') + ')\\s*$', 'i');
+        const daysRx = new RegExp('^\\s*([0-9]{1,2})\\s*(' + intervals.days.abbrev.join('|') + ')\\s*$', 'i');
+        let frequencyValue;
+        let type;
+        let matches;
 
         if ((matches = schedule.match(minutesRx))) {
             type = intervals.minutes;
@@ -127,10 +143,10 @@ function handleCronSchedule(args) {
         schedule = type.encode(frequencyValue);
     }
 
-    var createWebtask = WebtaskCreator(args, {
+    const createWebtask = WebtaskCreator(args, {
         onGeneration: onGeneration,
     });
-    var logger = createLogger(args, profile);
+    const logger = createLogger(args, profile);
 
     return createWebtask(profile);
 
@@ -171,7 +187,7 @@ function handleCronSchedule(args) {
 
 function createLogger(args, profile) {
     if (args.watch) {
-        var logs = Logs.createLogStream(profile);
+        const logs = Logs.createLogStream(profile);
 
         return {
             log: _.bindKey(logs, 'info'),

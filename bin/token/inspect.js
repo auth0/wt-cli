@@ -51,7 +51,7 @@ function handleTokenInspect(args) {
     } catch (__) { }
 
     var inspection$ = claims
-        ?   profile.inspectToken({ token: args.subject, decrypt: args.decrypt, fetch_code: args.fetchCode, meta: 1 })
+        ?   profile.inspectToken({ token: args.subject, decrypt: args.decrypt, fetch_code: args.fetchCode, meta: +!!claims.jtn })
         :   profile.inspectWebtask({ name: args.subject, decrypt: args.decrypt, fetch_code: args.fetchCode, meta: 1 });
 
     return inspection$
