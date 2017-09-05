@@ -2,7 +2,6 @@
 
 const Cli = require('structured-cli');
 const Logs = require('../../lib/logs');
-const Moment = require('moment-timezone');
 const PrintCronJob = require('../../lib/printCronJob');
 const ValidateCreateArgs = require('../../lib/validateCreateArgs');
 const WebtaskCreator = require('../../lib/webtaskCreator');
@@ -117,8 +116,12 @@ function handleCronSchedule(args) {
         args.middleware.push(`${CRON_AUTH_MIDDLEWARE}@${CRON_AUTH_MIDDLEWARE_VERSION}`);
     }
 
-    if (args.tz && !Moment.tz.zone(args.tz)) {
-        throw new Cli.error.invalid(`The timezone "${args.tz}" is not recognized. Please specify a valid IANA timezone name (see: https://en.wikipedia.org/wiki/List_of_tz_database_time_zones).`);
+    if (args.tz) {
+        const Moment = require('moment-timezone');
+
+        if (!Moment.tz.zone(args.tz)) {
+            throw new Cli.error.invalid(`The timezone "${args.tz}" is not recognized. Please specify a valid IANA timezone name (see: https://en.wikipedia.org/wiki/List_of_tz_database_time_zones).`);
+        }
     }
 
     args = ValidateCreateArgs(args);
