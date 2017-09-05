@@ -8,7 +8,7 @@ const WebtaskCreator = require('../../lib/webtaskCreator');
 const _ = require('lodash');
 
 const CRON_AUTH_MIDDLEWARE = '@webtask/cron-auth-middleware';
-const CRON_AUTH_MIDDLEWARE_VERSION = '^1.1.1';
+const CRON_AUTH_MIDDLEWARE_VERSION = '^1.2.1';
 
 
 const intervals = {
