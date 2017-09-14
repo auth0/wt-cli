@@ -31,13 +31,7 @@ function sandboxFromArguments(args, options) {
 
         if (args.token) {
             if (args.profile && !options.allowProfile) return resolve(new Cli.error.invalid('--profile should not be specified with custom tokens'));
-
-            var sandboxOptions = {
-                onBeforeRequest,
-                url: args.url || 'https://webtask.it.auth0.com',
-            };
-
-            if (args.container && args.token) {
+            if (args.container && args.url) {
                 try {
                     return resolve(Sandbox.init({
                         onBeforeRequest,
@@ -49,17 +43,7 @@ function sandboxFromArguments(args, options) {
                     return reject(e);
                 }
             }
-
-            if (args.container) sandboxOptions.container = args.container;
-
-            try {
-                return resolve(Sandbox.fromToken(args.token, sandboxOptions));
-            } catch (e) {
-                return reject(e);
-            }
         }
-
-        if (args.url) return reject(Cli.error.invalid('--token must be specified with --url'));
 
         var config = new ConfigFile();
         var profile$ = config.load()
@@ -88,6 +72,8 @@ function sandboxFromArguments(args, options) {
 
         function onProfileLoaded(profile) {
             if (args.container) profile.container = args.container;
+            if (args.url) profile.url = args.url;
+            if (args.token) profile.token = args.token;
 
             return profile;
         }
