@@ -21,6 +21,7 @@ module.exports = Cli.createCommand('serve', config);
 function handleWebtaskServe(args) {
     keyValList2Object(args, 'secrets');
     keyValList2Object(args, 'params');
+    keyValList2Object(args, 'meta');
 
     if (args.secretsFile) {
         try {
@@ -35,6 +36,22 @@ function handleWebtaskServe(args) {
             }
         } catch (e) {
             throw Cli.error.invalid(`Error loading secrets file: ${e.message}`);
+        }
+    }
+
+    if (args.metaFile) {
+        try {
+            const filename = Path.resolve(process.cwd(), args.metaFile);
+            const content = Fs.readFileSync(filename, 'utf8');
+            const meta = Dotenv.parse(content);
+
+            for (let key in meta) {
+                if (!args.meta.hasOwnProperty(key)) {
+                    args.meta[meta] = meta[key];
+                }
+            }
+        } catch (e) {
+            throw Cli.error.invalid(`Error loading meta file: ${e.message}`);
         }
     }
     return Bluebird.using(createServer(), server => {
@@ -58,6 +75,7 @@ function handleWebtaskServe(args) {
                     parseBody: args.parseBody ? Runtime.PARSE_ALWAYS : undefined,
                     mergeBody: args.mergeBody,
                     secrets: args.secrets,
+                    meta: args.meta,
                     params: args.params,
                     shortcutFavicon: true,
                     storageFile: args.storageFile,
