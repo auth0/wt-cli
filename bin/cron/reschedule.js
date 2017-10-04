@@ -5,20 +5,14 @@ const Cron = require('../../lib/cron');
 const PrintCronJob = require('../../lib/printCronJob');
 
 module.exports = Cli.createCommand('reschedule', {
-    description: 'Create a cron webtask',
+    description: 'Change the timing of a cron job',
     plugins: [require('../_plugins/profile')],
     optionGroups: {
         'Cron options': {
-            'no-auth': {
-                description: 'Disable cron webtask authentication',
-                dest: 'noAuth',
-                type: 'boolean',
-            },
             schedule: {
                 description:
                     'Either a cron-formatted schedule (see: http://crontab.guru/) or an interval of hours ("h") or minutes ("m"). Note that not all intervals are possible.',
                 type: 'string',
-                required: true,
             },
             state: {
                 description: "Set the cron job's state",
@@ -56,6 +50,18 @@ function handleCronReschedule(args) {
     if (args.tz) updateOptions.tz = Cron.parseTimezone(args.tz);
 
     return profile
-        .updateCronJob(updateOptions)
+        .getCronJob({ name: args.name })
+        .then(cronJob =>
+            profile.createCronJob({
+                meta: cronJob.meta,
+                name: args.name,
+                schedule: args.schedule
+                    ? Cron.parseSchedule(args.schedule)
+                    : cronJob.schedule,
+                state: args.state || cronJob.state,
+                token: cronJob.token,
+                tz: args.tz ? Cron.parseTimezone(args.tz) : cronJob.tz,
+            })
+        )
         .tap(cronJob => PrintCronJob(cronJob));
 }
