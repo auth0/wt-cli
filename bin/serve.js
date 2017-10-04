@@ -47,7 +47,7 @@ function handleWebtaskServe(args) {
 
             for (let key in meta) {
                 if (!args.meta.hasOwnProperty(key)) {
-                    args.meta[meta] = meta[key];
+                    args.meta[key] = meta[key];
                 }
             }
         } catch (e) {
