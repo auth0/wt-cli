@@ -1,9 +1,9 @@
 'use strict';
 
 const Cli = require('structured-cli');
-const CreateWebtask = require('../../lib/createWebtask');
 const PrintCronJob = require('../../lib/printCronJob');
 const ValidateCreateArgs = require('../../lib/validateCreateArgs');
+const WebtaskCreator = require('../../lib/webtaskCreator');
 
 const updateCommand = require('../update');
 
@@ -26,7 +26,7 @@ function handleCronUpdate(args) {
     return profile.getCronJob({ name: args.name }).then(cronJob =>
         profile
             .inspectToken({ token: cronJob.token, decrypt: true, meta: true })
-            .then(claims => {
+            .then(claims => new Promise((resolve, reject) => {
                 // Set the user-defined options from the inspected webtask's claims
                 args.host = claims.host;
                 args.merge = claims.mb;
@@ -35,9 +35,13 @@ function handleCronUpdate(args) {
                 args.params = claims.pctx;
                 args.meta = claims.meta;
 
-                // Defer to the functionality of the create command
-                return CreateWebtask(args, { action: 'updated' });
-            })
+                const createWebtask = WebtaskCreator(args, {
+                    onError: error => reject(error),
+                    onGeneration: build => resolve(build.webtask),
+                });
+
+                return createWebtask(profile);
+            }))
             .then(webtask =>
                 webtask.createCronJob({
                     schedule: cronJob.schedule,
