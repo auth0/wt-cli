@@ -30,6 +30,21 @@ module.exports = () => {
                     metavar: 'FILENAME',
                     type: 'string',
                 },
+                'meta': {
+                    action: 'append',
+                    alias: 'm',
+                    defaultValue: [],
+                    description: 'Metadata describing the webtask. This is a set of string key value pairs.',
+                    dest: 'meta',
+                    metavar: 'KEY=VALUE',
+                    type: 'string',
+                },
+                'meta-file': {
+                    description: 'A file containing one meta per line in KEY=VALUE format',
+                    dest: 'metaFile',
+                    metavar: 'FILENAME',
+                    type: 'string',
+                },                
                 'param': {
                     action: 'append',
                     defaultValue: [],
