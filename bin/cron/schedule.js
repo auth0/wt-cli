@@ -3,7 +3,7 @@
 const Cli = require('structured-cli');
 
 module.exports = Cli.createCommand('schedule', {
-    description: '[DEPRECATED] Please use wt cron create or wt cron update',
+    description: `[DEPRECATED] Please use 'wt cron create' or 'wt cron update'`,
     handler: handleCronSchedule,
 });
 

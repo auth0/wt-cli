@@ -47,9 +47,11 @@ module.exports = Cli.createCommand('create', {
     epilog: [
         'Examples:',
         '1. Create a webtask that runs every five minutes:',
-        '  $ wt cron schedule --schedule 5m ./sample-webtasks/hello-world.js',
+        '  $ wt cron create --schedule 5m ./sample-webtasks/hello-world.js',
         '2. Create a webtask that runs every Tuesday at 09:05:',
-        '  $ wt cron schedule --schedule "5 9 * * 2" ./sample-webtasks/hello-world.js',
+        '  $ wt cron create --schedule "5 9 * * 2" ./sample-webtasks/hello-world.js',
+        '3. Create a webtask that runs every Tuesday at 09:05 UTC:',
+        '  $ wt cron create --schedule "5 9 * * 2" --tz UTC ./sample-webtasks/hello-world.js',
     ].join('\n'),
     handler: handleCronCreate,
 });

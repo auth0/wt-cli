@@ -28,7 +28,7 @@ module.exports = Cli.createCommand('reschedule', {
     },
     params: {
         name: {
-            description: 'The name of the cron job to update.',
+            description: 'The name of the cron job.',
             type: 'string',
             required: true,
         },
