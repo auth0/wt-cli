@@ -39,7 +39,12 @@ function handleDebug(args) {
 }
 
 function debugNode(resolve, reject) {
-    newArgs = ['--debug'].concat(newArgs); 
+    const version = parseInt(process.version.replace('v', ''));
+    if(version < 8) {
+        newArgs = ['--debug'].concat(newArgs); 
+    } else {
+        newArgs = ['--inspect'].concat(newArgs); 
+    }
     spawnProcess(process.execPath, newArgs, resolve);
 }
 
