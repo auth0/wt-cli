@@ -39,7 +39,7 @@ function handleDebug(args) {
 }
 
 function debugNode(resolve, reject) {
-    var version = parseInt(process.version.replace('v', ''));
+    const version = parseInt(process.version.replace('v', ''));
     if(version < 8) {
         newArgs = ['--debug'].concat(newArgs); 
     } else {
