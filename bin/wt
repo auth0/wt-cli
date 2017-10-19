@@ -41,7 +41,6 @@ cli.addChild(require('./profile'));
 cli.addChild(require('./cron'));
 cli.addChild(require('./logs'));
 cli.addChild(require('./token'));
-cli.addChild(require('./bundle'));
 cli.addChild(require('./modules'));
 
 
