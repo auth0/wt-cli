@@ -66,10 +66,10 @@ wt logs
 ### Cron a webtask (long running)
 
 ```bash
-wt cron schedule -n mongocron \
-                 -s MONGO_URL=mongodb://webtask:supersecret@ds047592.mongolab.com:47592/webtask-examples \
-                 "*/10 * * * *" \
-                 https://raw.githubusercontent.com/auth0/wt-cli/master/sample-webtasks/mongodb.js
+wt cron create -n mongocron \
+               -s MONGO_URL=mongodb://webtask:supersecret@ds047592.mongolab.com:47592/webtask-examples \
+               --schedule 10m  \
+               https://raw.githubusercontent.com/auth0/wt-cli/master/sample-webtasks/mongodb.js
 ```
 
 > This cron will insert a document in a mongo collection every 10 minutes
