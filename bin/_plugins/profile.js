@@ -4,6 +4,7 @@ var Cli = require('structured-cli');
 var ConfigFile = require('../../lib/config');
 var Sandbox = require('sandboxjs');
 var SuperagentProxy = require('superagent-proxy');
+var UserAuthenticator = require('../../lib/userAuthenticator');
 var _ = require('lodash');
 
 
@@ -22,6 +23,48 @@ function onBeforeHandler(context) {
 
     function onProfile(profile) {
         args.profile = profile;
+
+        // Ensure V2 access token is fresh enough
+
+        if (!args.profile.openid) return; // V1 webtask token, nothing to do
+
+        // If V2 access token expires in less than 5 mins, get a new one
+
+        var validUntil = new Date(args.profile.openid.valid_until);
+        var now = Date.now();
+        if ((validUntil - now) < 5 * 60 * 1000) {        
+            var userAuthenticator = new UserAuthenticator({ 
+                sandboxUrl: args.profile.url,
+                authorizationServer: args.profile.openid.authorization_server,
+                clientId: args.profile.openid.client_id,
+                refreshToken: args.profile.openid.refresh_token,             
+            });
+
+            return userAuthenticator
+                .login({ 
+                    container: args.profile.container, 
+                    admin: args.profile.openid.scopes.indexOf('wt:admin') > -1,
+                    profileName: args.profile.name,
+                    requestedScopes: args.profile.openid.scope,
+                })
+                .then(function (profile) {
+                    args.profile = profile;
+                    var config = new ConfigFile();
+                    config.load();
+                    return config.setProfile(profile.name, {
+                        url: profile.url,
+                        token: profile.token,
+                        container: profile.container,
+                        openid: profile.openid,
+                    })
+                    .tap(function () {
+                        return config.save();
+                    });
+                });
+        }
+        else {
+            return; // access token still valid more than 5 mins
+        }
     }
 }
 

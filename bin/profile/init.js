@@ -6,6 +6,7 @@ var PrintProfile = require('../../lib/printProfile');
 var Promptly = Bluebird.promisifyAll(require('promptly'));
 var Sandbox = require('sandboxjs');
 var UserVerifier = require('../../lib/userVerifier');
+var UserAuthenticator = require('../../lib/userAuthenticator');
 var _ = require('lodash');
 
 
@@ -14,6 +15,13 @@ module.exports = Cli.createCommand('init', {
     plugins: [
         require('../_plugins/profileOptions'),
     ],
+    options: { 
+        'admin': {
+            description: 'Request admin permissions',
+            dest: 'admin',
+            type: 'boolean',
+        },
+    },
     params: {
         'email_or_phone': {
             description: 'Email or phone number that will be used to configure a new webtask profile.',
@@ -58,7 +66,7 @@ function handleProfileInit(args) {
     function verifyUserOrReturnProfile() {
         return (args.token && args.container && args.url)
             ?   Sandbox.init(args)
-            :   getVerifiedProfile(args);
+            : detectAuthMode(args);
     }
     
     function updateProfile(profile) {
@@ -66,6 +74,7 @@ function handleProfileInit(args) {
             url: profile.url,
             token: profile.token,
             container: profile.container,
+            openid: profile.openid,
         })
             .tap(function () {
                 return config.save();
@@ -81,6 +90,19 @@ function handleProfileInit(args) {
 
 
 // Private helper functions
+
+function detectAuthMode(args) {
+    return UserAuthenticator.create(args.url)
+        .then(userAuthenticator => {
+            if (!userAuthenticator) {
+                if (args.admin) {
+                    throw Cli.error.invalid('Server does not support --admin flag.');
+                }
+                return getVerifiedProfile();
+            }
+            return userAuthenticator.login({ container: args.container, admin: args.admin });
+        });
+}
 
 function getVerifiedProfile (args) {
     var profile$ = args.email_or_phone
