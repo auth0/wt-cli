@@ -36,6 +36,7 @@ function onBeforeHandler(context) {
             var userAuthenticator = new UserAuthenticator({ 
                 sandboxUrl: args.profile.url,
                 authorizationServer: args.profile.openid.authorization_server,
+                audience: args.profile.openid.audience,
                 clientId: args.profile.openid.client_id,
                 refreshToken: args.profile.openid.refresh_token,             
             });
