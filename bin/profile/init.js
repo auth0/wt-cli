@@ -98,7 +98,7 @@ function detectAuthMode(args) {
                 if (args.admin) {
                     throw Cli.error.invalid('Server does not support --admin flag.');
                 }
-                return getVerifiedProfile();
+                return getVerifiedProfile(args);
             }
             return userAuthenticator.login({ container: args.container, admin: args.admin });
         });
