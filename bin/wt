@@ -42,6 +42,8 @@ cli.addChild(require('./cron'));
 cli.addChild(require('./logs'));
 cli.addChild(require('./token'));
 cli.addChild(require('./modules'));
+cli.addChild(require('./user'));
+cli.addChild(require('./group'));
 
 
 Cli.run(cli)
