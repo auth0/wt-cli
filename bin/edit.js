@@ -23,6 +23,11 @@ module.exports = Cli.createCommand('edit', {
                 choices: ['v1', 'v2'],
                 type: 'string',
             },
+            'canary': {
+                description: 'Open the canary build of the Webtask Editor',
+                dest: 'canary',
+                type: 'boolean',
+            }
         }
     },
     handler: handleEdit,
@@ -37,6 +42,10 @@ function handleEdit(args) {
 
     if (args.editorVersion) {
         url = profile.url + '/edit/' + args.editorVersion + '/' + profile.container + '#/' + wtName + profile.token;
+    }
+
+    if (args.canary) {
+        url = profile.url + '/edit/canary/' + profile.container + '#/' + wtName + profile.token;
     }
 
     console.log('Attempting to open the following url in your browser: ');
