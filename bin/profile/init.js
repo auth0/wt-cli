@@ -21,6 +21,11 @@ module.exports = Cli.createCommand('init', {
             dest: 'admin',
             type: 'boolean',
         },
+        'auth0': {
+            description: 'Intialize Auth0 account profile',
+            dest: 'auth0',
+            type: 'boolean',
+        },
     },
     params: {
         'email_or_phone': {
@@ -92,7 +97,7 @@ function handleProfileInit(args) {
 // Private helper functions
 
 function detectAuthMode(args) {
-    return UserAuthenticator.create(args.url)
+    return UserAuthenticator.create(args.url, args.auth0)
         .then(userAuthenticator => {
             if (!userAuthenticator) {
                 if (args.admin) {
@@ -100,7 +105,10 @@ function detectAuthMode(args) {
                 }
                 return getVerifiedProfile(args);
             }
-            return userAuthenticator.login({ container: args.container, admin: args.admin });
+            else if (args.auth0 && !args.container) {
+                throw Cli.error.invalid('When --auth0 is specified, the --container must also be provided.');
+            }
+            return userAuthenticator.login({ auth0: args.auth0, container: args.container, admin: args.admin });
         });
 }
 
