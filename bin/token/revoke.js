@@ -32,6 +32,10 @@ module.exports = Cli.createCommand('revoke', {
 
 function handleTokenRevoke(args) {
     var profile = args.profile;
+
+    if (profile.securityVersion !== 'v1') {
+        throw Cli.error.invalid('The `wt token revoke` command is not supported in the target service security configuration.');
+    }
     
     return profile.revokeToken(args.subject)
         .catch(function (err) {

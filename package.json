@@ -5,7 +5,7 @@
     "url": "https://github.com/ggoodman",
     "twitter": "filearts"
   },
-  "version": "8.3.0",
+  "version": "9.0.0",
   "description": "Webtask Command Line Interface",
   "tags": [
     "nodejs",
@@ -47,7 +47,7 @@
     "opn": "^4.0.2",
     "pad": "^1.0.0",
     "promptly": "^0.2.1",
-    "sandboxjs": "^4.0.0",
+    "sandboxjs": "^4.1.0",
     "semver": "^5.3.0",
     "structured-cli": "^1.0.5",
     "superagent": "^3.5.2",

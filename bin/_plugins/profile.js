@@ -45,6 +45,7 @@ function onBeforeHandler(context) {
                 .login({ 
                     container: args.profile.container, 
                     admin: args.profile.openid.scopes.indexOf('wt:admin') > -1,
+                    auth0: args.profile.openid.auth0,
                     profileName: args.profile.name,
                     requestedScopes: args.profile.openid.scope,
                 })

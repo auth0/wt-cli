@@ -1,6 +1,7 @@
 var Cli = require('structured-cli');
 var Decode = require('jwt-decode');
 var PrintTokenDetails = require('../../lib/printTokenDetails');
+var PrintWebtaskDetails = require('../../lib/printWebtaskDetails');
 
 
 module.exports = Cli.createCommand('inspect', {
@@ -44,6 +45,11 @@ module.exports = Cli.createCommand('inspect', {
 
 function handleTokenInspect(args) {
     var profile = args.profile;
+
+    if (profile.securityVersion !== 'v1') {
+        throw Cli.error.invalid('The `wt token inspect` command is not supported in the target service security configuration.');
+    }
+
     var claims;
 
     try {
@@ -67,8 +73,11 @@ function handleTokenInspect(args) {
     function onTokenData(data) {
         if (args.output === 'json') {
             console.log(JSON.stringify(data, null, 2));
-        } else {
+        } else if (data.token) {
             PrintTokenDetails(data);
+        }
+        else {
+            PrintWebtaskDetails(data);
         }
     }
 }

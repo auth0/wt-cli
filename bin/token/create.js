@@ -119,6 +119,11 @@ module.exports = Cli.createCommand('create', {
 
 function handleTokenCreate(args) {
     var profile = args.profile;
+
+    if (profile.securityVersion !== 'v1') {
+        throw Cli.error.invalid('The `wt token create` command is not supported in the target service security configuration.');
+    }
+
     var claims = _.pick(_.pickBy(args, v => v !== null), Object.keys(RAW_CLAIMS));
     
     if (claims['code-url']) {
