@@ -47,7 +47,7 @@ function handleTokenInspect(args) {
     var profile = args.profile;
 
     if (profile.securityVersion !== 'v1') {
-        throw Cli.error.invalid('The `wt token inspect` command is not supported in the target service security configuration.');
+        throw Cli.error.invalid('The `wt token inspect` command is not supported by the target service security configuration.');
     }
 
     var claims;

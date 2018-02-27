@@ -105,10 +105,8 @@ function detectAuthMode(args) {
                 }
                 return getVerifiedProfile(args);
             }
-            else {
-                if (args.auth0 && !args.container) {
-                    throw Cli.error.invalid('When --auth0 is specified, the --container must also be provided.');
-                }
+            else if (args.auth0 && !args.container) {
+                throw Cli.error.invalid('When --auth0 is specified, the --container must also be provided.');
             }
             return userAuthenticator.login({ auth0: args.auth0, container: args.container, admin: args.admin });
         });
