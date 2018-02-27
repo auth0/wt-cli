@@ -75,7 +75,7 @@ function sandboxFromArguments(args, options) {
         if (!options) options = {};
 
         if (args.token) {
-            if (args.profile && !options.allowProfile) return resolve(new Cli.error.invalid('--profile should not be specified with custom tokens'));
+            if (args.profile && !options.allowProfile) return reject(new Cli.error.invalid('--profile should not be specified with custom tokens'));
             if (args.container && args.url) {
                 try {
                     return resolve(Sandbox.init({
