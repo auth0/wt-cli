@@ -46,15 +46,15 @@ module.exports = Cli.createCommand('inspect', {
 function handleTokenInspect(args) {
     var profile = args.profile;
 
-    if (profile.securityVersion !== 'v1') {
-        throw Cli.error.invalid('The `wt token inspect` command is not supported by the target service security configuration.');
-    }
-
     var claims;
 
     try {
         claims = Decode(args.subject);
     } catch (__) { }
+
+    if (claims && profile.securityVersion !== 'v1') {
+        throw Cli.error.invalid('The `wt token inspect` command for webtask tokens is not supported by the target service security configuration.');
+    }
 
     var inspection$ = claims
         ?   profile.inspectToken({ token: args.subject, decrypt: args.decrypt, fetch_code: args.fetchCode, meta: +!!claims.jtn })
@@ -73,7 +73,7 @@ function handleTokenInspect(args) {
     function onTokenData(data) {
         if (args.output === 'json') {
             console.log(JSON.stringify(data, null, 2));
-        } else if (data.token) {
+        } else if (profile.securityVersion === 'v1') {
             PrintTokenDetails(data);
         }
         else {
