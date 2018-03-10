@@ -5,7 +5,6 @@ const Cli = require('structured-cli');
 const spawn = require('child_process').spawn;
 const _ = require('lodash');
 const config = require('./serveCommon')();
-var newArgs = null;;
 
 config.description = "Debug a webtask";
 config.handler = handleDebug;
@@ -17,39 +16,72 @@ config.optionGroups.ExecutionOptions =
             choices: ['devtool', 'node'],
             dest: 'debugger',
             defaultValue: 'node'
-        }
+        },
+        'debugger-port': {
+            description: 'When using "node", the port to expose',
+            dest: 'debuggerPort',
+            type: 'int',
+        },
     };
 
 module.exports = Cli.createCommand('debug', config);
 
 function handleDebug(args) {
-    newArgs = [process.argv[1], 'serve']
+    const newArgs = [process.argv[1], 'serve'];
+
+    let skipArg = false;
     _.each(process.argv.slice(3), (value)=> {
-        var arg = value.toLowerCase();
-        if (!(arg === 'debug' || (arg.startsWith('--debugger=') || arg.startsWith('-d')))) {
-            newArgs.push(arg);
+        if (skipArg === true) {
+            skipArg = false;
+            return;
         }
+
+        const arg = value.toLowerCase();
+
+        if (arg.startsWith('--debugger')) {
+            skipArg = !arg.includes('=');
+            return;
+        }
+
+        if (arg.startsWith('-d')) {
+            skipArg = arg === '-d';
+            return;
+        }
+
+        newArgs.push(value);
     });
+
     if (args.debugger === 'node') {
-        return new Bluebird(debugNode);
+        return new Bluebird(debugNode(newArgs, args.debuggerPort));
     }
     else if (args.debugger === 'devtool') {
-        return new Bluebird(debugDevtool);
+        return new Bluebird(debugDevtool(newArgs));
     }
 }
 
-function debugNode(resolve, reject) {
+function debugNode(newArgs, debuggerPort) {
+    const validPort = debuggerPort && (1024 < debuggerPort || (debuggerPort <= 1024 && process.getuid && process.getuid() === 0));
     const version = parseInt(process.version.replace('v', ''));
+
     if(version < 8) {
-        newArgs = ['--debug'].concat(newArgs); 
+        if (validPort)
+            newArgs = ['--debug-port=' + debuggerPort].concat(newArgs);
+        newArgs = ['--debug'].concat(newArgs);
     } else {
+        if (validPort)
+            newArgs = ['--inspect-port=' + debuggerPort].concat(newArgs);
         newArgs = ['--inspect'].concat(newArgs); 
     }
-    spawnProcess(process.execPath, newArgs, resolve);
+
+    return function(resolve, reject) {
+        spawnProcess(process.execPath, newArgs, resolve);
+    }
 }
 
-function debugDevtool(resolve, reject) {
-    spawnProcess('devtool', newArgs, resolve);
+function debugDevtool(newArgs) {
+    return function(resolve, reject) {
+        spawnProcess('devtool', newArgs, resolve);
+    }
 }
 
 function spawnProcess(launcher, args, resolve) {
