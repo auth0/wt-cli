@@ -45,21 +45,24 @@ function handleLogs(args) {
             return reject(error);
         }, 30 * 60 * 1000);
 
-        logs.once('close', () => {
-            clearTimeout(timeout);
+        if(!args.raw) {
+            logs.once('close', () => {
+                clearTimeout(timeout);
+    
+                const error = Cli.error.cancelled('Connection to streaming log endpoint lost');
+    
+                return reject(error);
+            });
+    
+            logs.once('error', (error) => {
+                logs.error(error.message);
+    
+                clearTimeout(timeout);
+    
+                return reject(Cli.error.serverError(`Error connecting to streaming log endpoint: ${ error.message }`));
+            });
+        }
 
-            const error = Cli.error.cancelled('Connection to streaming log endpoint lost');
-
-            return reject(error);
-        });
-
-        logs.once('error', (error) => {
-            logs.error(error.message);
-
-            clearTimeout(timeout);
-
-            return reject(Cli.error.serverError(`Error connecting to streaming log endpoint: ${ error.message }`));
-        });
 
         process.once('SIGINT', () => {
             logs.warn('Received SIGINT; disconnecting from logs');
