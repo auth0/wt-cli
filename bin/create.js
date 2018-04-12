@@ -136,6 +136,14 @@ module.exports = Cli.createCommand('create', {
                 description: 'Allow the webtask to be called using a custom domain name. Using this option requires proof of domain ownership. This can be done by adding a TXT record type to the DNS of the chosen domain. The value of the record must be `webtask:container:{container}`, where {container} is the webtask container name to be associated with the custom domain. Many such TXT records can be created as needed.',
                 type: 'string'
             },
+            'secure': {
+                description: 'Allow securing of the execution of a webtask.  See https://www.npmjs.com/package/@webtask/jwt-middleware for more details.',
+                type: 'boolean'
+            },
+            'execution-scope': {
+                description: 'Set the wt-execution-scope metadata property to the name of a custom scope that can be used for authorization of webtask execution. Requires --secure flag to be set.',
+                type: 'string'
+            }
         },
     },
     params: {
