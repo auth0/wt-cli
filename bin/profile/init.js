@@ -26,6 +26,11 @@ module.exports = Cli.createCommand('init', {
             dest: 'auth0',
             type: 'boolean',
         },
+        'node8': {
+            description: 'Permanently switch to Node 8 environment if previously initialized with Node 4 environment',
+            dest: 'node8',
+            type: 'boolean',
+        },
     },
     params: {
         'email_or_phone': {
@@ -40,6 +45,11 @@ module.exports = Cli.createCommand('init', {
 // Command handler
 
 function handleProfileInit(args) {
+
+    if (args.node8 && (args.url || args.token || args.container)) {
+        throw Cli.error.invalid(Chalk.red('The --node8 option cannot be used with --url, --token, or --container.'));
+    }
+
     var config = new ConfigFile();
 
     return config.getProfile(args.profile)
@@ -154,25 +164,25 @@ function getVerifiedProfile (args) {
             .then(sendVerificationCode);
     }
 
+    function sendVerificationCode (phoneOrEmail) {
+        var verifier = new UserVerifier({ node8: args.node8 });
+        var FIVE_MINUTES = 1000 * 60 * 5;
+    
+        return verifier.requestVerificationCode(phoneOrEmail)
+            .then(promptForVerificationCode);
+        
+        
+        function promptForVerificationCode(verifyFunc) {
+            console.log('Please enter the verification code we sent to '
+                + phoneOrEmail + ' below.');
+    
+            return Promptly.promptAsync('Verification code:')
+                .then(verifyFunc)
+                .timeout(FIVE_MINUTES, 'Verification code expired')
+                .catch(function (e) {
+                    console.log('\n' + Chalk.red(e.message) + '\n');
+                });
+        }
+    }    
 }
 
-function sendVerificationCode (phoneOrEmail) {
-    var verifier = new UserVerifier();
-    var FIVE_MINUTES = 1000 * 60 * 5;
-
-    return verifier.requestVerificationCode(phoneOrEmail)
-        .then(promptForVerificationCode);
-    
-    
-    function promptForVerificationCode(verifyFunc) {
-        console.log('Please enter the verification code we sent to '
-            + phoneOrEmail + ' below.');
-
-        return Promptly.promptAsync('Verification code:')
-            .then(verifyFunc)
-            .timeout(FIVE_MINUTES, 'Verification code expired')
-            .catch(function (e) {
-                console.log('\n' + Chalk.red(e.message) + '\n');
-            });
-    }
-}

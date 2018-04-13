@@ -4,6 +4,8 @@ var Cli = require('structured-cli');
 var Package = require('../package.json');
 var Updates = require('update-notifier');
 var _ = require('lodash');
+var ConfigFile = require('../lib/config');
+var node4Migration = require('../lib/node4Migration');
 
 
 var notifier = Updates({
@@ -47,6 +49,26 @@ cli.addChild(require('./modules'));
 
 Cli.run(cli)
     .timeout(1000 * 60 * 30, Cli.error.timeout('Command timed out after 30 min'))
+    .tap(() => {
+        if (global.preventMigrationNotice) return;
+        var config = new ConfigFile();
+        return config.load().then(() => {
+            var node4Profiles = [];
+            for (var p in config.profiles) {
+                if (node4Migration.isNode4Profile(config.profiles[p])) {
+                    node4Profiles.push(p);
+                }
+            }
+            if (node4Profiles.length > 0) {
+                node4Profiles.sort();
+                console.log();
+                console.log(Chalk.red.bold('WARNING:'), Chalk.red(`The wt-cli profiles listed below manage webtasks running in Node 4 which reaches ${Chalk.bold('end of life on 4/30/2018')}. Please migrate webtasks from all those profiles from Node 4 to Node 8 following the instructions at https://github.com/auth0/wt-cli/wiki/Node8:`));
+                console.log();
+                console.log(Chalk.red(node4Profiles.join(', ')));
+                console.log();
+            }
+        });
+    })
     // Code: 1
     .catch(_.matchesProperty('code', 'E_CANCELLED'), function (err) {
         console.error(err.message);

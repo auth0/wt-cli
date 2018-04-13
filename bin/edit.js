@@ -1,6 +1,7 @@
 var Chalk = require('chalk');
 var Cli = require('structured-cli');
 var Open = require('opn');
+var node4Migration = require('../lib/node4Migration');
 
 
 module.exports = Cli.createCommand('edit', {
@@ -27,6 +28,11 @@ module.exports = Cli.createCommand('edit', {
                 description: 'Open the canary build of the Webtask Editor',
                 dest: 'canary',
                 type: 'boolean',
+            },
+            'node8': {
+                description: 'Edit a copy of the webtask in Node 8',
+                dest: 'node8',
+                type: 'boolean',                
             }
         }
     },
@@ -37,6 +43,16 @@ module.exports = Cli.createCommand('edit', {
 // Command handler
 function handleEdit(args) {
     var profile = args.profile;
+
+    if (args.node8) {
+        if (node4Migration.isNode4Profile(profile)) {
+            args.profile.url = node4Migration.node8BaseUrl;
+        }
+        else {
+            throw new Cli.error.invalid('The --node8 option can only be used with webtasks created in the legacy Node 4 webtask.io environment.');
+        }
+    }
+
     var wtName  = args.name ? args.name + '/' : '';
     var url     = profile.url + '/edit/' + profile.container + '#/' + wtName + profile.token;
 
