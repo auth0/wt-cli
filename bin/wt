@@ -32,7 +32,6 @@ var cli = Cli.createApp({
 cli.addChild(require('./init'));
 cli.addChild(require('./create'));
 cli.addChild(require('./ls'));
-cli.addChild(require('./mv'));
 cli.addChild(require('./rm'));
 cli.addChild(require('./serve'));
 cli.addChild(require('./debug'));
