@@ -103,7 +103,7 @@ function handleProfileMigrate(args) {
                         }, (e,m) => {
                             var warnings;
                             if (Array.isArray(m)) {
-                                m.forEach(w => warnings = warnings ? `${warnings}\n* ${w}` : `* ${w}`);
+                                m.forEach(w => warnings = warnings ? `${warnings}\n* ${w.message}` : `* ${w.message}`);
                             }
                             if (e) {
                                 console.log(Chalk.red(`...Error: ${e.message}`));
