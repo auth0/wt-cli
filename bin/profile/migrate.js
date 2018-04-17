@@ -64,6 +64,10 @@ function handleProfileMigrate(args) {
                 throw new Cli.error.invalid(Chalk.red(`This profile is not a Node 4 webtask.io profile and cannot be migrated.`));
             }
 
+            if (!args.yes) {
+                console.log(Chalk.yellow('This is a simulation, no changes are made. To perform actual migration to Node 8, specify the --yes switch.\n'));
+            }
+
             return new Promise((resolve, reject) => {
                 return Async.waterfall([
                     (cb) => getWebtasks({}, profile.url, 'node4', cb),
@@ -84,26 +88,37 @@ function handleProfileMigrate(args) {
                     var performMigration = true;
                     if (tx.node8.indexOf(w) > -1) {
                         if (args.force) {
-                            console.log(Chalk.blue(`${w}:`), Chalk.yellow(`overriding existing Node 8 webtask...`));
+                            console.log(Chalk.blue(`${w}:`), Chalk.yellow(
+                                args.yes
+                                    ? `overriding existing Node 8 webtask...`
+                                    : `an existing Node 8 webtask would be overriden...`)
+                            );
                         }
                         else {
                             performMigration = false;
-                            console.log(Chalk.blue(`${w}:`), Chalk.yellow(`Node 8 webtask already exists, skipping.`));
+                            console.log(Chalk.blue(`${w}:`), Chalk.yellow(
+                                args.yes
+                                    ? `Node 8 webtask already exists, skipping.`
+                                    : `migration would be skipped because a Node 8 webtask already exists.`));
                         }
                     }
                     else {
-                        console.log(Chalk.blue(`${w}:`), Chalk.green(`migrating...`));
+                        console.log(Chalk.blue(`${w}:`), Chalk.green(
+                            args.yes 
+                                ? `migrating...`
+                                : `webtask would be migrated...`));
                     }
 
-                    if (performMigration && args.yes) {
+                    if (performMigration) {
                         return node4Migration.migrate({ 
                             containerName: profile.container,
                             webtaskName: w,
-                            token: profile.token
+                            token: profile.token,
+                            dryRun: !args.yes
                         }, (e,m) => {
                             var warnings;
                             if (Array.isArray(m)) {
-                                m.forEach(w => warnings = warnings ? `${warnings}\n* ${w.message}` : `* ${w.message}`);
+                                m.forEach(w => warnings = warnings ? `${warnings}\n* ${w.warningType}: ${w.message}` : `* ${w.warningType}: ${w.message}`);
                             }
                             if (e) {
                                 console.log(Chalk.red(`...Error: ${e.message}`));
@@ -125,7 +140,7 @@ function handleProfileMigrate(args) {
                     if (e) return cb(e);
                     console.log();
                     if (!args.yes) {
-                        console.log(Chalk.yellow('This is simulation, no changes were made. To perform actual migration to Node 8, specify the --yes switch.'));
+                        console.log(Chalk.yellow('This was a simulation, no changes were made. To perform actual migration to Node 8, rerun this command and specify the --yes switch.'));
                     }
                     console.log('To complete the migration to Node 8, please see further migration instructions at https://github.com/auth0/wt-cli/wiki/Node8.')
                     cb();
