@@ -8,6 +8,7 @@ var Sandbox = require('sandboxjs');
 var UserVerifier = require('../../lib/userVerifier');
 var UserAuthenticator = require('../../lib/userAuthenticator');
 var _ = require('lodash');
+var node4Migration = require('../../lib/node4Migration');
 
 
 module.exports = Cli.createCommand('init', {
@@ -29,6 +30,14 @@ module.exports = Cli.createCommand('init', {
         'node8': {
             description: 'Permanently switch to Node 8 environment if previously initialized with Node 4 environment',
             dest: 'node8',
+            type: 'boolean',
+        },
+        keepNode4Webtask: {
+            description: 'Do not delete Node 4 webtask after successful migration to Node 8 (valid only with --node8 option)',
+            type: 'boolean',
+        },
+        keepNode4Cron: {
+            description: 'Do not delete or disable Node 4 CRON job after successful migration to Node 8 (valid only with --node8 option)',
             type: 'boolean',
         },
     },
@@ -58,6 +67,7 @@ function handleProfileInit(args) {
         // not exist.
         .catch(_.matchesProperty('code', 'E_NOTFOUND'), _.identity)
         .then(verifyUserOrReturnProfile)
+        .tap(deleteNode4WebtasksOnPromote)
         .tap(updateProfile)
         .tap(showCompleteMessage);
     
@@ -76,6 +86,25 @@ function handleProfileInit(args) {
                     throw Cli.error.cancelled('Cancelled', profile);
                 }
             });
+    }
+
+    function deleteNode4WebtasksOnPromote(profile) {
+        if (!node4Migration.isNode4Profile(profile)) {
+            return null;
+        }
+        if (!args.node8 || args.keepNode4Cron && args.keepNode4Webtask) {
+            console.log();
+            console.log(Chalk.yellow(`${Chalk.bold('WARNING')} You have chosen to leave your Node 4 webtasks and CRON jobs intact.`));
+            console.log();
+            return null;
+        }
+
+        return node4Migration.deleteNode4Assets({
+            container: profile.container,
+            token: profile.token,
+            keepNode4Cron: args.keepNode4Cron,
+            keepNode4Webtask: args.keepNode4Webtask
+        });
     }
     
     function verifyUserOrReturnProfile() {

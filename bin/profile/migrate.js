@@ -39,7 +39,7 @@ module.exports = Cli.createCommand('migrate', {
                 alias: 'y',
                 description: 'Perform actual migration instead of a simulation',
                 type: 'boolean',
-            }
+            },
         },
     },
     params: {
@@ -85,62 +85,71 @@ function handleProfileMigrate(args) {
                 tx.node4.sort();
                 console.log('Your webtasks:\n')
                 return Async.eachSeries(tx.node4, (w, cb) => {
-                    var performMigration = true;
-                    if (tx.node8.indexOf(w) > -1) {
-                        if (args.force) {
-                            console.log(Chalk.blue(`${w}:`), Chalk.yellow(
-                                args.yes
-                                    ? `overriding existing Node 8 webtask...`
-                                    : `an existing Node 8 webtask would be overriden...`)
-                            );
-                        }
-                        else {
-                            performMigration = false;
-                            console.log(Chalk.blue(`${w}:`), Chalk.yellow(
-                                args.yes
-                                    ? `Node 8 webtask already exists, skipping.`
-                                    : `migration would be skipped because a Node 8 webtask already exists.`));
-                        }
-                    }
-                    else {
-                        console.log(Chalk.blue(`${w}:`), Chalk.green(
-                            args.yes 
-                                ? `migrating...`
-                                : `webtask would be migrated...`));
-                    }
+                    return Async.waterfall([
+                        (cb) => migrateOne(cb),
+                    ], cb);
 
-                    if (performMigration) {
-                        return node4Migration.migrate({ 
-                            containerName: profile.container,
-                            webtaskName: w,
-                            token: profile.token,
-                            dryRun: !args.yes
-                        }, (e,m) => {
-                            var warnings;
-                            if (Array.isArray(m)) {
-                                m.forEach(w => warnings = warnings ? `${warnings}\n* ${w.warningType}: ${w.message}` : `* ${w.warningType}: ${w.message}`);
-                            }
-                            if (e) {
-                                console.log(Chalk.red(`...Error: ${e.message}`));
-                                if (warnings) console.log(Chalk.red(warnings));
-                            }
-                            else if (warnings) {
-                                console.log(Chalk.yellow(`...Succeeded with warnings:\n${warnings}`));
+                    function migrateOne(cb) {
+                        var performMigration = true;
+                        if (tx.node8.indexOf(w) > -1) {
+                            if (args.force) {
+                                console.log(Chalk.blue(`${w}:`), Chalk.yellow(
+                                    args.yes
+                                        ? `overriding existing Node 8 webtask...`
+                                        : `an existing Node 8 webtask would be overriden...`)
+                                );
                             }
                             else {
-                                console.log(Chalk.green(`...Success`));
+                                performMigration = false;
+                                console.log(Chalk.blue(`${w}:`), Chalk.yellow(
+                                    args.yes
+                                        ? `Node 8 webtask already exists, skipping.`
+                                        : `migration would be skipped because a Node 8 webtask already exists.`));
                             }
-                            return cb();
-                        });
+                        }
+                        else {
+                            console.log(Chalk.blue(`${w}:`), Chalk.green(
+                                args.yes 
+                                    ? `migrating...`
+                                    : `webtask would be migrated...`));
+                        }
+
+                        if (performMigration) {
+                            return node4Migration.migrate({ 
+                                containerName: profile.container,
+                                webtaskName: w,
+                                token: profile.token,
+                                dryRun: !args.yes
+                            }, (e,m) => {
+                                var warnings;
+                                if (Array.isArray(m)) {
+                                    m.forEach(w => warnings = warnings ? `${warnings}\n* ${w.warningType}: ${w.message}` : `* ${w.warningType}: ${w.message}`);
+                                }
+                                if (e) {
+                                    console.log(Chalk.red(`...Error: ${e.message}`));
+                                    if (warnings) console.log(Chalk.red(warnings));
+                                    return cb(null, false);
+                                }
+                                else if (warnings) {
+                                    console.log(Chalk.yellow(`...Succeeded with warnings:\n${warnings}`));
+                                    return cb(null, true);
+                                }
+                                else {
+                                    console.log(Chalk.green(`...Success`));
+                                    return cb(null, true);
+                                }
+                            });
+                        }
+                        else {
+                            return cb(null, false);
+                        }
                     }
-                    else {
-                        return cb();
-                    }
-                }, (e) => {
+                }, (e) => { // Async.eachSeries
                     if (e) return cb(e);
                     console.log();
                     if (!args.yes) {
-                        console.log(Chalk.yellow('This was a simulation, no changes were made. To perform actual migration to Node 8, rerun this command and specify the --yes switch.'));
+                        console.log(Chalk.yellow(`${Chalk.bold('NOTE')} This was a simulation, no changes were made. To perform actual migration to Node 8, rerun this command and specify the --yes switch.`));
+                        console.log();
                     }
                     console.log('To complete the migration to Node 8, please see further migration instructions at https://github.com/auth0/wt-cli/wiki/Node8.')
                     cb();
