@@ -61,7 +61,7 @@ Cli.run(cli)
             if (node4Profiles.length > 0) {
                 node4Profiles.sort();
                 console.log();
-                console.log(Chalk.yellow.bold('WARNING'), Chalk.yellow(`The wt-cli profiles listed below manage webtasks running in Node 4 which reaches ${Chalk.bold('end of life on 4/30/2018')}. Please migrate webtasks from all those profiles from Node 4 to Node 8 following the instructions at https://github.com/auth0/wt-cli/wiki/Node8:`));
+                console.log(Chalk.yellow.bold('WARNING'), Chalk.yellow(`The wt-cli profiles listed below manage webtasks running in Node 4 which reaches ${Chalk.bold('end of life on 4/30/2018')}. Please migrate webtasks from all those profiles from Node 4 to Node 8 following the instructions at https://bit.ly/2HdA3rl`));
                 console.log();
                 console.log(Chalk.yellow(node4Profiles.join(', ')));
                 console.log();
