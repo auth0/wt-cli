@@ -83,6 +83,7 @@ function handleProfileMigrate(args) {
                     return cb();
                 }
                 tx.node4.sort();
+                var reportUrl;
                 console.log('Your webtasks:\n')
                 return Async.eachSeries(tx.node4, (w, cb) => {
                     return Async.waterfall([
@@ -120,7 +121,11 @@ function handleProfileMigrate(args) {
                                 webtaskName: w,
                                 token: profile.token,
                                 dryRun: !args.yes
-                            }, (e,m) => {
+                            }, (e,b) => {
+                                if (!reportUrl && b && b.reportUrl) {
+                                    reportUrl = b.reportUrl;
+                                }
+                                var m = b && b.warnings || [];
                                 var warnings;
                                 if (Array.isArray(m)) {
                                     m.forEach(w => warnings = warnings ? `${warnings}\n* ${w.warningType}: ${w.message}` : `* ${w.warningType}: ${w.message}`);
@@ -147,6 +152,10 @@ function handleProfileMigrate(args) {
                 }, (e) => { // Async.eachSeries
                     if (e) return cb(e);
                     console.log();
+                    if (reportUrl) {
+                        console.log(`Migration report is available at: ${reportUrl}`);
+                        console.log();
+                    }
                     if (!args.yes) {
                         console.log(Chalk.yellow(`${Chalk.bold('NOTE')} This was a simulation, no changes were made. To perform actual migration to Node 8, rerun this command and specify the --yes switch.`));
                         console.log();

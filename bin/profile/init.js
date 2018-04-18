@@ -32,14 +32,6 @@ module.exports = Cli.createCommand('init', {
             dest: 'node8',
             type: 'boolean',
         },
-        keepNode4Webtask: {
-            description: 'Do not delete Node 4 webtask after successful migration to Node 8 (valid only with --node8 option)',
-            type: 'boolean',
-        },
-        keepNode4Cron: {
-            description: 'Do not delete or disable Node 4 CRON job after successful migration to Node 8 (valid only with --node8 option)',
-            type: 'boolean',
-        },
     },
     params: {
         'email_or_phone': {
@@ -89,13 +81,7 @@ function handleProfileInit(args) {
     }
 
     function deleteNode4WebtasksOnPromote(profile) {
-        if (!node4Migration.isNode4Profile(profile)) {
-            return null;
-        }
-        if (!args.node8 || args.keepNode4Cron && args.keepNode4Webtask) {
-            console.log();
-            console.log(Chalk.yellow(`${Chalk.bold('WARNING')} You have chosen to leave your Node 4 webtasks and CRON jobs intact.`));
-            console.log();
+        if (!args.node8) {
             return null;
         }
 
