@@ -3,6 +3,7 @@ var Cli = require('structured-cli');
 var PrintWebtask = require('../lib/printWebtask');
 var _ = require('lodash');
 var keyValList2Object = require('../lib/keyValList2Object');
+var node4Migration = require('../lib/node4Migration');
 
 
 module.exports = Cli.createCommand('ls', {
@@ -51,7 +52,13 @@ module.exports = Cli.createCommand('ls', {
                 description: 'Show the webtask tokens',
                 dest: 'showToken',
                 type: 'boolean',
+            },
+            'node8': {
+                description: 'List webtasks copied to Node 8 environment',
+                dest: 'node8',
+                type: 'boolean',
             }
+
         },
     },
 });
@@ -61,6 +68,15 @@ module.exports = Cli.createCommand('ls', {
 
 function handleTokenCreate(args) {
     var profile = args.profile;
+
+    if (args.node8) {
+        if (node4Migration.isNode4Profile(profile)) {
+            profile.url = node4Migration.node8BaseUrl;
+        }
+        else {
+            throw new Cli.error.invalid(Chalk.red(`The --node8 option can only be used with wt-cli profiles configured to use webtask.io Node 4 environment.`));
+        }
+    }
 
     keyValList2Object(args, 'meta');
     
@@ -107,11 +123,13 @@ function handleTokenCreate(args) {
                         + Chalk.bold('$ echo "module.exports = function (cb) { cb(null, \'Hello\'); }" > hello.js\n')
                         + Chalk.bold('$ wt create hello.js\n')));
                 }
-            } else if (webtasks.length === args.limit) {
-                console.log(Chalk.green('Successfully listed named webtasks %s to %s. To list more try:'), Chalk.bold(args.offset + 1), Chalk.bold(args.offset + webtasks.length));
-                console.log(Chalk.bold('$ wt ls --offset %d'), args.offset + args.limit);
             } else {
-                console.log(Chalk.green('Successfully listed named webtasks %s to %s.'), Chalk.bold(args.offset + 1), Chalk.bold(args.offset + webtasks.length));
+                if (webtasks.length === args.limit) {
+                    console.log(Chalk.green('Successfully listed named webtasks %s to %s. To list more try:'), Chalk.bold(args.offset + 1), Chalk.bold(args.offset + webtasks.length));
+                    console.log(Chalk.bold('$ wt ls --offset %d'), args.offset + args.limit);
+                } else {
+                    console.log(Chalk.green('Successfully listed named webtasks %s to %s.'), Chalk.bold(args.offset + 1), Chalk.bold(args.offset + webtasks.length));
+                }
             }
         }
     }

@@ -22,7 +22,7 @@ function onBeforeConfigure(context) {
             type: 'string',
         },
         url: {
-            description: 'Set the webtask server url. Defaults to https://webtask.it.auth0.com',
+            description: 'Set the webtask server url. Defaults to https://sandbox.auth0-extend.com',
             type: 'string',
         },
         token: {

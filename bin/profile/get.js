@@ -3,7 +3,7 @@ var Cli = require('structured-cli');
 var ConfigFile = require('../../lib/config');
 var PrintProfile = require('../../lib/printProfile');
 var _ = require('lodash');
-
+var node4Migration = require('../../lib/node4Migration');
 
 
 

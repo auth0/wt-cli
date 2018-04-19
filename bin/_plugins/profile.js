@@ -13,7 +13,6 @@ module.exports = {
     onBeforeHandler: onBeforeHandler,
 };
 
-
 function onBeforeHandler(context) {
     var args = context.args;
 

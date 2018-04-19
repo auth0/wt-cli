@@ -8,6 +8,7 @@ var Sandbox = require('sandboxjs');
 var UserVerifier = require('../../lib/userVerifier');
 var UserAuthenticator = require('../../lib/userAuthenticator');
 var _ = require('lodash');
+var node4Migration = require('../../lib/node4Migration');
 
 
 module.exports = Cli.createCommand('init', {
@@ -40,6 +41,7 @@ module.exports = Cli.createCommand('init', {
 // Command handler
 
 function handleProfileInit(args) {
+
     var config = new ConfigFile();
 
     return config.getProfile(args.profile)
@@ -48,6 +50,7 @@ function handleProfileInit(args) {
         // not exist.
         .catch(_.matchesProperty('code', 'E_NOTFOUND'), _.identity)
         .then(verifyUserOrReturnProfile)
+        .tap(deleteNode4WebtasksOnPromote)
         .tap(updateProfile)
         .tap(showCompleteMessage);
     
@@ -66,6 +69,17 @@ function handleProfileInit(args) {
                     throw Cli.error.cancelled('Cancelled', profile);
                 }
             });
+    }
+
+    function deleteNode4WebtasksOnPromote(profile) {
+        if (!args.node8) {
+            return null;
+        }
+
+        return node4Migration.deleteNode4Assets({
+            container: profile.container,
+            token: profile.token,
+        });
     }
     
     function verifyUserOrReturnProfile() {
@@ -154,25 +168,26 @@ function getVerifiedProfile (args) {
             .then(sendVerificationCode);
     }
 
+    function sendVerificationCode (phoneOrEmail) {
+        var verifier = new UserVerifier({ node8: args.node8 });
+        var FIVE_MINUTES = 1000 * 60 * 5;
+    
+        return verifier.requestVerificationCode(phoneOrEmail)
+            .then(promptForVerificationCode);
+        
+        
+        function promptForVerificationCode(verifyFunc) {
+            console.log('Please enter the verification code we sent to '
+                + phoneOrEmail + ' below.');
+    
+            return Promptly.promptAsync('Verification code:')
+                .then(verifyFunc)
+                .timeout(FIVE_MINUTES, 'Verification code expired')
+                .catch(function (e) {
+                    console.log('\n' + Chalk.red(e.message) + '\n');
+                });
+        }
+    }    
 }
 
-function sendVerificationCode (phoneOrEmail) {
-    var verifier = new UserVerifier();
-    var FIVE_MINUTES = 1000 * 60 * 5;
-
-    return verifier.requestVerificationCode(phoneOrEmail)
-        .then(promptForVerificationCode);
-    
-    
-    function promptForVerificationCode(verifyFunc) {
-        console.log('Please enter the verification code we sent to '
-            + phoneOrEmail + ' below.');
-
-        return Promptly.promptAsync('Verification code:')
-            .then(verifyFunc)
-            .timeout(FIVE_MINUTES, 'Verification code expired')
-            .catch(function (e) {
-                console.log('\n' + Chalk.red(e.message) + '\n');
-            });
-    }
-}
+module.exports.handleProfileInit = handleProfileInit;
