@@ -6,6 +6,7 @@ var _ = require('lodash');
 var node4Migration = require('../../lib/node4Migration');
 var Async = require('async');
 var Sandbox = require('sandboxjs');
+var Init = require('./init');
 
 
 
@@ -40,6 +41,10 @@ module.exports = Cli.createCommand('migrate', {
                 description: 'Perform actual migration instead of a simulation',
                 type: 'boolean',
             },
+            finalize: {
+                description: 'Permanently switch from webtask.io Node 4 profile to Node 8',
+                type: 'boolean',
+            },
         },
     },
     params: {
@@ -54,6 +59,11 @@ module.exports = Cli.createCommand('migrate', {
 // Command handler
 
 function handleProfileMigrate(args) {
+
+    if (args.finalize && args.yes) {
+        throw new Cli.error.invalid(Chalk.red(`The --yes and --finalize options cannot be used together.`));
+    }
+
     var config = new ConfigFile();
 
     global.preventMigrationNotice = true;
@@ -62,6 +72,11 @@ function handleProfileMigrate(args) {
         .then(function (profile) {
             if (!node4Migration.isNode4Profile(profile)) {
                 throw new Cli.error.invalid(Chalk.red(`This profile is not a Node 4 webtask.io profile and cannot be migrated.`));
+            }
+
+            if (args.finalize) {
+                args.node8 = true;
+                return Init.handleProfileInit(args, profile);
             }
 
             if (!args.yes) {
@@ -120,6 +135,7 @@ function handleProfileMigrate(args) {
                                 containerName: profile.container,
                                 webtaskName: w,
                                 token: profile.token,
+                                force: args.force,
                                 dryRun: !args.yes
                             }, (e,b) => {
                                 if (!reportUrl && b && b.reportUrl) {
@@ -209,4 +225,3 @@ function handleProfileMigrate(args) {
             }
         });
 }
-

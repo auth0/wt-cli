@@ -27,11 +27,6 @@ module.exports = Cli.createCommand('init', {
             dest: 'auth0',
             type: 'boolean',
         },
-        'node8': {
-            description: 'Permanently switch to Node 8 environment if previously initialized with Node 4 environment',
-            dest: 'node8',
-            type: 'boolean',
-        },
     },
     params: {
         'email_or_phone': {
@@ -46,10 +41,6 @@ module.exports = Cli.createCommand('init', {
 // Command handler
 
 function handleProfileInit(args) {
-
-    if (args.node8 && (args.url || args.token || args.container)) {
-        throw Cli.error.invalid(Chalk.red('The --node8 option cannot be used with --url, --token, or --container.'));
-    }
 
     var config = new ConfigFile();
 
@@ -199,3 +190,4 @@ function getVerifiedProfile (args) {
     }    
 }
 
+module.exports.handleProfileInit = handleProfileInit;
