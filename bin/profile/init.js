@@ -88,8 +88,6 @@ function handleProfileInit(args) {
         return node4Migration.deleteNode4Assets({
             container: profile.container,
             token: profile.token,
-            keepNode4Cron: args.keepNode4Cron,
-            keepNode4Webtask: args.keepNode4Webtask
         });
     }
     
