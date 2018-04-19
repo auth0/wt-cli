@@ -74,7 +74,7 @@ function handleTokenCreate(args) {
             profile.url = node4Migration.node8BaseUrl;
         }
         else {
-            throw new Cli.error.invalid(Chalk.red(`The --node8 option can only be used with wt-cli profiles configured to use webtasl.io Node 4 environment.`));
+            throw new Cli.error.invalid(Chalk.red(`The --node8 option can only be used with wt-cli profiles configured to use webtask.io Node 4 environment.`));
         }
     }
 

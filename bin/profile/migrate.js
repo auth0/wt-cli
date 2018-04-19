@@ -157,7 +157,7 @@ function handleProfileMigrate(args) {
                         console.log();
                     }
                     if (!args.yes) {
-                        console.log(Chalk.yellow(`${Chalk.bold('NOTE')} This was a simulation, no changes were made. To perform actual migration to Node 8, rerun this command and specify the --yes switch.`));
+                        console.log(Chalk.yellow(`${Chalk.bold('NOTE')} This was a simulation, no changes were made. To perform the actual migration to Node 8, rerun this command and specify the --yes switch.`));
                         console.log();
                     }
                     console.log('To complete the migration to Node 8, please see further migration instructions at https://bit.ly/2HdA3rl.')
