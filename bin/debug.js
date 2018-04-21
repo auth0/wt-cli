@@ -5,7 +5,7 @@ const Cli = require('structured-cli');
 const spawn = require('child_process').spawn;
 const _ = require('lodash');
 const config = require('./serveCommon')();
-var newArgs = null;;
+var newArgs = null;
 
 config.description = "Debug a webtask";
 config.handler = handleDebug;
@@ -14,7 +14,7 @@ config.optionGroups.ExecutionOptions =
         'debugger': {
             alias: 'd',
             description: 'Debugger to use. "devtool" requires installing the devtool cli (npm install devtool -g)',
-            choices: ['devtool', 'node'],
+            choices: ['devtool', 'node', 'inspect'],
             dest: 'debugger',
             defaultValue: 'node'
         }
@@ -36,6 +36,14 @@ function handleDebug(args) {
     else if (args.debugger === 'devtool') {
         return new Bluebird(debugDevtool);
     }
+    else if(args.debugger === 'inspect'){
+        return new Bluebird(debugNodeInspectMode);
+    }
+}
+
+function debugNodeInspectMode(resolve, reject) {
+    newArgs = ['--inspect'].concat(newArgs);
+    spawnProcess(process.execPath, newArgs, resolve);
 }
 
 function debugNode(resolve, reject) {
