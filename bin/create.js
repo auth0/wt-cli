@@ -143,6 +143,14 @@ module.exports = Cli.createCommand('create', {
             'execution-scope': {
                 description: 'Set the wt-execution-scope metadata property to the name of a custom scope that can be used for authorization of webtask execution. Requires --secure flag to be set.',
                 type: 'string'
+            },
+            'jwt-audience': {
+                description: 'Set the wt-execution-aud metadata property which identifies the recipients that the JWT is intended for.',
+                type: 'string'
+            },
+            'jwt-issuer': {
+                description: 'Set the wt-execution-iss metadata property which identifies the principal that issued the JWT.',
+                type: 'string'
             }
         },
     },
