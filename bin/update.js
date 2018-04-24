@@ -62,22 +62,6 @@ module.exports = Cli.createCommand('update', {
             'capture': {
                 description: 'Download and use the current code indicated by `url`. When you are developing a webtask whose code is remotely hosted, this option will automatically download the remote code before creating the webtask. This means that the webtask will continue to run even if the remote url becomes unavailable.',
                 type: 'boolean',
-            },
-            'secure': {
-                description: 'Allow securing of the execution of a webtask.  See https://www.npmjs.com/package/@webtask/jwt-middleware for more details.',
-                type: 'boolean'
-            },
-            'execution-scope': {
-                description: 'Set the wt-execution-scope metadata property to the name of a custom scope that can be used for authorization of webtask execution. Requires --secure flag to be set.',
-                type: 'string'
-            },
-            'jwt-audience': {
-                description: 'Set the wt-execution-aud metadata property which identifies the recipients that the JWT is intended for.',
-                type: 'string'
-            },
-            'jwt-issuer': {
-                description: 'Set the wt-execution-iss metadata property which identifies the principal that issued the JWT.',
-                type: 'string'
             }
         },
     },
