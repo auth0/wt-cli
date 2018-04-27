@@ -48,7 +48,6 @@
     "opn": "^4.0.2",
     "pad": "^1.0.0",
     "promptly": "^0.2.1",
-    "request": "^2.85.0",
     "sandboxjs": "^4.2.2",
     "semver": "^5.3.0",
     "structured-cli": "^1.0.5",
