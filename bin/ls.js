@@ -22,7 +22,7 @@ module.exports = Cli.createCommand('ls', {
             'limit': {
                 type: 'int',
                 description: 'Limit the results to this many named webtasks',
-                defaultValue: 10,
+                defaultValue: 100,
             },
         },
         'Filtering': {
@@ -56,6 +56,11 @@ module.exports = Cli.createCommand('ls', {
             'node8': {
                 description: 'List webtasks copied to Node 8 environment',
                 dest: 'node8',
+                type: 'boolean',
+            },
+            'verbose': {
+                description: 'Display full details',
+                dest: 'verbose',
                 type: 'boolean',
             }
 
@@ -100,7 +105,7 @@ function handleTokenCreate(args) {
                     url: webtask.url,
                 };
                 if (webtask.meta) {
-                    record.meta = webtask.meta
+                    record.meta = webtask.meta;
                 }
                 
                 if (args.showToken) record.token = json.token;
@@ -111,7 +116,7 @@ function handleTokenCreate(args) {
             console.log(JSON.stringify(output, null, 2));
         } else {
             _.forEach(webtasks, function (webtask) {
-                PrintWebtask(webtask, { details: args.details, token: args.showToken });
+                PrintWebtask(webtask, { details: args.details, token: args.showToken, verbose: args.verbose });
                 console.log();
             });
             
@@ -125,11 +130,12 @@ function handleTokenCreate(args) {
                 }
             } else {
                 if (webtasks.length === args.limit) {
-                    console.log(Chalk.green('Successfully listed named webtasks %s to %s. To list more try:'), Chalk.bold(args.offset + 1), Chalk.bold(args.offset + webtasks.length));
+                    console.log(Chalk.green('Successfully listed named webtasks %s to %s.\nTo list more try:'), Chalk.bold(args.offset + 1), Chalk.bold(args.offset + webtasks.length));
                     console.log(Chalk.bold('$ wt ls --offset %d'), args.offset + args.limit);
                 } else {
                     console.log(Chalk.green('Successfully listed named webtasks %s to %s.'), Chalk.bold(args.offset + 1), Chalk.bold(args.offset + webtasks.length));
                 }
+                console.log(Chalk.green('Use --verbose to display full details.'));
             }
         }
     }
