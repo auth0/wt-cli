@@ -2,7 +2,6 @@ var Cli = require('structured-cli');
 var Decode = require('jwt-decode');
 var PrintTokenDetails = require('../../lib/printTokenDetails');
 var PrintWebtaskDetails = require('../../lib/printWebtaskDetails');
-var node4Migration = require('../../lib/node4Migration');
 
 
 module.exports = Cli.createCommand('inspect', {
@@ -21,11 +20,6 @@ module.exports = Cli.createCommand('inspect', {
                 type: 'boolean',
                 description: 'Return the webtask code',
                 dest: 'fetchCode',
-            },
-            'node8': {
-                description: 'Edit a copy of the webtask in Node 8',
-                dest: 'node8',
-                type: 'boolean',                
             },
         },
         'Output options': {
@@ -51,16 +45,6 @@ module.exports = Cli.createCommand('inspect', {
 
 function handleTokenInspect(args) {
     var profile = args.profile;
-
-    if (args.node8) {
-        if (node4Migration.isNode4Profile(profile)) {
-            args.profile.url = node4Migration.node8BaseUrl;
-        }
-        else {
-            throw new Cli.error.invalid('The --node8 option can only be used with webtasks created in the legacy Node 4 webtask.io environment.');
-        }
-    }
-
     var claims;
 
     try {
