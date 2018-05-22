@@ -8,7 +8,6 @@ var Sandbox = require('sandboxjs');
 var UserVerifier = require('../../lib/userVerifier');
 var UserAuthenticator = require('../../lib/userAuthenticator');
 var _ = require('lodash');
-var node4Migration = require('../../lib/node4Migration');
 
 
 module.exports = Cli.createCommand('init', {
@@ -50,7 +49,6 @@ function handleProfileInit(args) {
         // not exist.
         .catch(_.matchesProperty('code', 'E_NOTFOUND'), _.identity)
         .then(verifyUserOrReturnProfile)
-        .tap(deleteNode4WebtasksOnPromote)
         .tap(updateProfile)
         .tap(showCompleteMessage);
     
@@ -69,17 +67,6 @@ function handleProfileInit(args) {
                     throw Cli.error.cancelled('Cancelled', profile);
                 }
             });
-    }
-
-    function deleteNode4WebtasksOnPromote(profile) {
-        if (!args.node8) {
-            return null;
-        }
-
-        return node4Migration.deleteNode4Assets({
-            container: profile.container,
-            token: profile.token,
-        });
     }
     
     function verifyUserOrReturnProfile() {
@@ -169,7 +156,7 @@ function getVerifiedProfile (args) {
     }
 
     function sendVerificationCode (phoneOrEmail) {
-        var verifier = new UserVerifier({ node8: args.node8 });
+        var verifier = new UserVerifier({});
         var FIVE_MINUTES = 1000 * 60 * 5;
     
         return verifier.requestVerificationCode(phoneOrEmail)

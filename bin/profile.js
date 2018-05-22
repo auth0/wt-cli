@@ -10,4 +10,3 @@ category.addChild(require('./profile/ls'));
 category.addChild(require('./profile/get'));
 category.addChild(require('./profile/rm'));
 category.addChild(require('./profile/nuke'));
-category.addChild(require('./profile/migrate'));

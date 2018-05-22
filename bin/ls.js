@@ -3,7 +3,6 @@ var Cli = require('structured-cli');
 var PrintWebtask = require('../lib/printWebtask');
 var _ = require('lodash');
 var keyValList2Object = require('../lib/keyValList2Object');
-var node4Migration = require('../lib/node4Migration');
 
 
 module.exports = Cli.createCommand('ls', {
@@ -53,11 +52,6 @@ module.exports = Cli.createCommand('ls', {
                 dest: 'showToken',
                 type: 'boolean',
             },
-            'node8': {
-                description: 'List webtasks copied to Node 8 environment',
-                dest: 'node8',
-                type: 'boolean',
-            },
             'verbose': {
                 description: 'Display full details',
                 dest: 'verbose',
@@ -73,15 +67,6 @@ module.exports = Cli.createCommand('ls', {
 
 function handleTokenCreate(args) {
     var profile = args.profile;
-
-    if (args.node8) {
-        if (node4Migration.isNode4Profile(profile)) {
-            profile.url = node4Migration.node8BaseUrl;
-        }
-        else {
-            throw new Cli.error.invalid(Chalk.red(`The --node8 option can only be used with wt-cli profiles configured to use webtask.io Node 4 environment.`));
-        }
-    }
 
     keyValList2Object(args, 'meta');
     
