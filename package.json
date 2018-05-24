@@ -5,7 +5,7 @@
     "url": "https://github.com/ggoodman",
     "twitter": "filearts"
   },
-  "version": "9.5.0",
+  "version": "9.5.1",
   "description": "Webtask Command Line Interface",
   "tags": [
     "nodejs",
