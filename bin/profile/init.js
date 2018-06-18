@@ -98,7 +98,8 @@ function handleProfileInit(args) {
 // Private helper functions
 
 function detectAuthMode(args) {
-    return UserAuthenticator.create(args.url, args.auth0)
+    var url = args.url ? args.url : 'https://sandbox.auth0-extend.com';
+    return UserAuthenticator.create(url, args.auth0)
         .then(userAuthenticator => {
             if (!userAuthenticator) {
                 if (args.admin) {
