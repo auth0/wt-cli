@@ -56,7 +56,7 @@
     "superagent-proxy": "^1.0.2",
     "through2": "^2.0.1",
     "update-notifier": "^0.6.1",
-    "webtask-bundle": "^3.2.1",
+    "webtask-bundle": "^3.2.2",
     "webtask-runtime": "^1.7.0",
     "wreck": "^10.0.0"
   },
