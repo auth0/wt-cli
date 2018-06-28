@@ -15,7 +15,7 @@ module.exports = Cli.createCommand('init', {
     plugins: [
         require('../_plugins/profileOptions'),
     ],
-    options: { 
+    options: {
         'admin': {
             description: 'Request admin permissions',
             dest: 'admin',
@@ -51,8 +51,8 @@ function handleProfileInit(args) {
         .then(verifyUserOrReturnProfile)
         .tap(updateProfile)
         .tap(showCompleteMessage);
-    
-    
+
+
     function confirmProfileOverwrite(profile) {
         console.log('You already have the `' + profile.name
             + '` profile:');
@@ -68,13 +68,13 @@ function handleProfileInit(args) {
                 }
             });
     }
-    
+
     function verifyUserOrReturnProfile() {
         return (args.token && args.container && args.url)
             ?   Sandbox.init(args)
             : detectAuthMode(args);
     }
-    
+
     function updateProfile(profile) {
         return config.setProfile(args.profile, {
             url: profile.url,
@@ -86,7 +86,7 @@ function handleProfileInit(args) {
                 return config.save();
             });
     }
-    
+
     function showCompleteMessage(profile) {
         console.log(Chalk.green('Welcome to webtasks! Create your first one as follows:\n\n'
             + Chalk.bold('$ echo "module.exports = function (cb) { cb(null, \'Hello\'); }" > hello.js\n')
@@ -111,6 +111,17 @@ function detectAuthMode(args) {
                 throw Cli.error.invalid('When --auth0 is specified, the --container must also be provided.');
             }
             return userAuthenticator.login({ auth0: args.auth0, container: args.container, admin: args.admin });
+        })
+        .catch(error => {
+            var message = `Initialization Failed. Error: ${error.message}`;
+            if (message.indexOf('access_denied')) {
+                message = args.auth0 ?
+                    'The given subscription does not support the Webtask CLI.' :
+                    'Initialization failed due to invalid credentials.'
+            }
+
+
+            throw Cli.error.invalid(message);
         });
 }
 
@@ -123,7 +134,7 @@ function getVerifiedProfile (args) {
     return profile$
         .catch(_.matchesProperty('code', 'E_INVALID'), function (err) {
             console.log(Chalk.red(err.message));
-            
+
             return promptForEmailOrPhone();
         })
         .then(function (profile) {
@@ -148,7 +159,7 @@ function getVerifiedProfile (args) {
                 });
         });
 
-    
+
     function promptForEmailOrPhone() {
         console.log('Please enter your e-mail or phone number, we will send you a verification code.');
 
@@ -159,15 +170,15 @@ function getVerifiedProfile (args) {
     function sendVerificationCode (phoneOrEmail) {
         var verifier = new UserVerifier({});
         var FIVE_MINUTES = 1000 * 60 * 5;
-    
+
         return verifier.requestVerificationCode(phoneOrEmail)
             .then(promptForVerificationCode);
-        
-        
+
+
         function promptForVerificationCode(verifyFunc) {
             console.log('Please enter the verification code we sent to '
                 + phoneOrEmail + ' below.');
-    
+
             return Promptly.promptAsync('Verification code:')
                 .then(verifyFunc)
                 .timeout(FIVE_MINUTES, 'Verification code expired')
@@ -175,7 +186,7 @@ function getVerifiedProfile (args) {
                     console.log('\n' + Chalk.red(e.message) + '\n');
                 });
         }
-    }    
+    }
 }
 
 module.exports.handleProfileInit = handleProfileInit;
