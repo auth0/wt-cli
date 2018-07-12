@@ -6,7 +6,6 @@ var _ = require('lodash');
 
 
 
-
 module.exports = Cli.createCommand('get', {
     description: 'Get information about an existing webtask profile',
     handler: handleProfileGet,

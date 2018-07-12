@@ -45,7 +45,6 @@ module.exports = Cli.createCommand('inspect', {
 
 function handleTokenInspect(args) {
     var profile = args.profile;
-
     var claims;
 
     try {

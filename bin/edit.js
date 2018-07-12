@@ -27,7 +27,7 @@ module.exports = Cli.createCommand('edit', {
                 description: 'Open the canary build of the Webtask Editor',
                 dest: 'canary',
                 type: 'boolean',
-            }
+            },
         }
     },
     handler: handleEdit,

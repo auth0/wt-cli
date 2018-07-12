@@ -28,3 +28,9 @@ app.post('/', function (req, res) {
         secrets: req.webtaskContext.secrets,
     });
 });
+
+app.get('/async', async (req, res) => {
+    await new Promise(resolve => setTimeout(resolve, 2000));
+
+    res.end('OK');
+});
