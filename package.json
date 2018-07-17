@@ -28,35 +28,31 @@
     "coverage": "lab -v -r html -o coverage/index.html ./test/bin/"
   },
   "dependencies": {
-    "async": "^2.6.0",
     "auth0-hooks-templates": "^1.2.2",
     "bluebird": "^2.11.0",
     "boom": "^2.8.0",
     "bunyan-prettystream": "^0.1.3",
     "chalk": "^1.1.1",
     "concat-stream": "^1.5.1",
-    "cron-parser": "^0.6.3",
-    "debug": "^2.2.0",
-    "dedent": "^0.7.0",
     "dotenv": "^1.2.0",
     "filewatcher": "^3.0.0",
-    "jws": "^3.1.3",
+    "jws": "^3.1.5",
     "jwt-decode": "^1.5.1",
     "linewrap": "^0.2.1",
-    "lodash": "^4.5.0",
+    "lodash": "^4.17.10",
+    "minimatch": "^3.0.2",
     "moment-timezone": "^0.5.14",
-    "open": "0.0.5",
     "opn": "^4.0.2",
-    "pad": "^1.0.0",
+    "pad": "2.1.0",
     "promptly": "^0.2.1",
     "sandboxjs": "^4.2.2",
     "semver": "^5.3.0",
     "structured-cli": "^1.0.5",
-    "superagent": "^3.5.2",
-    "superagent-proxy": "^1.0.2",
+    "superagent": "^3.8.3",
+    "superagent-proxy": "^1.0.3",
     "through2": "^2.0.1",
     "update-notifier": "^0.6.1",
-    "webtask-bundle": "^3.2.1",
+    "webtask-bundle": "^3.2.2",
     "webtask-runtime": "^1.7.0",
     "wreck": "^10.0.0"
   },
@@ -74,11 +70,6 @@
     "url": "http://github.com/auth0/wt-cli/issues"
   },
   "devDependencies": {
-    "code": "^4.0.0",
-    "eslint": "^4.5.0",
-    "lab": "^11.1.0",
-    "mailinator": "^1.0.2",
-    "proxyquire": "^1.7.10",
-    "sinon": "^1.17.6"
+    "eslint": "4.19.1"
   }
 }
