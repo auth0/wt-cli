@@ -136,6 +136,10 @@ module.exports = Cli.createCommand('create', {
                 description: 'Allow the webtask to be called using a custom domain name. Using this option requires proof of domain ownership. This can be done by adding a TXT record type to the DNS of the chosen domain. The value of the record must be `webtask:container:{container}`, where {container} is the webtask container name to be associated with the custom domain. Many such TXT records can be created as needed.',
                 type: 'string'
             },
+            'auth': {
+                description: `Enable securing of the execution of a webtask using the specified methodology for example '--auth jwt'.\n\nAdditional metadata can be specified when using this flag:\n- Set the 'wt-execution-scope' metadata property to the name of a custom scope that can be used for authorization of webtask execution.\n- Set the 'wt-execution-aud' metadata property which identifies the recipients that the JWT is intended for (requires 'wt-execution-iss' to be specified as well).\n- Set the 'wt-execution-iss' metadata property which identifies the principal that issued the JWT (requires 'wt-execution-aud' to be specified as well). \n\n’wt-execution-aud' and ‘wt-execution-iss’ can be omitted if using Extend API V2.`,
+                type: 'string'
+            }
         },
     },
     params: {

@@ -62,7 +62,7 @@ module.exports = Cli.createCommand('update', {
             'capture': {
                 description: 'Download and use the current code indicated by `url`. When you are developing a webtask whose code is remotely hosted, this option will automatically download the remote code before creating the webtask. This means that the webtask will continue to run even if the remote url becomes unavailable.',
                 type: 'boolean',
-            },
+            }
         },
     },
     params: {
