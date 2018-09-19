@@ -66,7 +66,7 @@ function checkResponse (res, body) {
     if (res.statusCode >= 300) {
         console.log('Unexpected response from url `' + res.url + '`:', body);
         
-        throw Boom.create(res.statusCode, (body && body.message) || 'Unexpected response from the server', body);
+        throw new Boom((body && body.message) || 'Unexpected response from the server', {statusCode: res.statusCode, data: body});
     }
     
     return body;

@@ -213,23 +213,29 @@ WebtaskProfile.prototype.createLogStream = function (options, cb) {
         };
         
         self._wreck.request('get', url, reqOptions, function (err, res) {
-            if (err) return reject(err.isBoom ? err : Boom.wrap(err, 502,
-                'Error communicating with webtask cluster: ' + err.message));
+            if (err) {
+                return reject(err.isBoom ?
+                    err :
+                    Boom.boomify(err, {
+                        statusCode: 502,
+                        message: 'Error communicating with webtask cluster: ' + err.message
+                    })
+                );
+            }
             
             if (res.statusCode >= 400) {
                 // Error response from webtask cluster
                 return Wreck.read(res, null, function (err, body) {
-                    if (err) return reject(Boom.create(res.statusCode,
-                        'Error reading error from webtask cluster.'));
+                    if (err) return reject(new Boom('Error reading error from webtask cluster.',
+                        {statusCode: res.statusCode}));
                         
-                    return reject(Boom.create(res.statusCode,
-                        'Error `' + res.statusCode + '` returned by webtask cluster: ' + body.toString('utf8')));
+                    return reject(new Boom(
+                        'Error `' + res.statusCode + '` returned by webtask cluster: ' + body.toString('utf8'),
+                        {statusCode: res.statusCode}));
                 });
             } else if (res.statusCode >= 300) {
                 // Unresolved redirect from webtask cluster
-                return reject(Boom.create(502,
-                    'Unexpected response-type from webtask cluster: '
-                    + err.message));
+                return reject(new Boom('Unexpected response-type from webtask cluster: '+ err.message, {statusCode: 502}));
             }
             
             var lastId = '';
@@ -394,19 +400,29 @@ function request (wreck, method, path, query, payload, options) {
     
     return new Bluebird(function (resolve, reject) {
         wreck[method](path, options, function (err, res, body) {
-            if (err) return reject(err.isBoom ? err : Boom.wrap(err, 502,
-                'Error communicating with webtask cluster: ' + err.message));
+            if (err) {
+                return reject(err.isBoom ?
+                    err :
+                    Boom.boomify(err, {
+                        statusCode: 502,
+                        message: 'Error communicating with webtask cluster: ' + err.message
+                    })
+                );
+            }
             
             if (res.statusCode >= 400) {
                 // Error response from webtask cluster
-                return reject(Boom.create(res.statusCode,
-                    'Error returned by webtask cluster: ' + JSON.stringify(body, null, 2)),
-                    Buffer.isBuffer(body) ? body.toString() : body);
+                return reject(new Boom(
+                    'Error returned by webtask cluster: ' + JSON.stringify(body, null, 2),
+                    {
+                        statusCode: res.statusCode,
+                        data: Buffer.isBuffer(body) ? body.toString() : body
+                    }
+                ));
             } else if (res.statusCode >= 300) {
                 // Unresolved redirect from webtask cluster
-                return reject(Boom.create(502,
-                    'Unexpected response-type from webtask cluster: '
-                    + err.message));
+                return reject(new Boom('Unexpected response-type from webtask cluster: ' + err.message, 
+                    {statusCode: 502}));
             }
 
             resolve([res, body]);
