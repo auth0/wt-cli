@@ -1,6 +1,6 @@
 var Chalk = require('chalk');
 var Cli = require('structured-cli');
-var Open = require('open');
+var Open = require('opn');
 
 
 module.exports = Cli.createCommand('browse', {
@@ -28,5 +28,5 @@ function handleBrowse(args) {
 
     console.log('Browsing ' + Chalk.underline(args.name) + ' in your browser...');
 
-    Open(url);
+    Open(url, { wait: false });
 }
