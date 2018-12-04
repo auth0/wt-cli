@@ -53,7 +53,8 @@ wt create https://raw.githubusercontent.com/auth0/wt-cli/master/sample-webtasks/
 ```bash
 wt create https://raw.githubusercontent.com/auth0/wt-cli/master/sample-webtasks/express.js \
           --name express \
-          --no-parse --no-merge
+          --dependency express \
+          --dependency body-parser
 ```
 
 
