@@ -5,7 +5,7 @@ const Cli = require('structured-cli');
 const spawn = require('child_process').spawn;
 const _ = require('lodash');
 const config = require('./serveCommon')();
-var newArgs = null;;
+var newArgs = null;
 
 config.description = "Debug a webtask";
 config.handler = handleDebug;
