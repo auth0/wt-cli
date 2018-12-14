@@ -34,7 +34,7 @@ function handleDebug(args) {
                 skip = true;
                 return;
             }
-            if (!arg.startsWith('--debugger=')) {
+            if (!arg.startsWith('--debugger=') && !arg.startsWith('-d=')) {
                 newArgs.push(value);
             }
         } else {
