@@ -23,11 +23,22 @@ config.optionGroups.ExecutionOptions =
 module.exports = Cli.createCommand('debug', config);
 
 function handleDebug(args) {
-    newArgs = [process.argv[1], 'serve']
-    _.each(process.argv.slice(3), (value)=> {
-        var arg = value.toLowerCase();
-        if (!(arg === 'debug' || (arg.startsWith('--debugger=') || arg.startsWith('-d')))) {
-            newArgs.push(arg);
+    var skip = false;
+    newArgs = [process.argv[1], 'serve'];
+
+    _.each(process.argv.slice(3), (value) => {
+        if (!skip) {
+            var arg = value.toLowerCase();
+            if (arg === '-d' || arg === '--debugger') {
+                // next arg will be debugger parameter, so skip it
+                skip = true;
+                return;
+            }
+            if (!arg.startsWith('--debugger=') && !arg.startsWith('-d=')) {
+                newArgs.push(value);
+            }
+        } else {
+            skip = false;
         }
     });
     if (args.debugger === 'node') {
@@ -41,9 +52,9 @@ function handleDebug(args) {
 function debugNode(resolve, reject) {
     const version = parseInt(process.version.replace('v', ''));
     if(version < 8) {
-        newArgs = ['--debug'].concat(newArgs); 
+        newArgs = ['--debug'].concat(newArgs);
     } else {
-        newArgs = ['--inspect'].concat(newArgs); 
+        newArgs = ['--inspect'].concat(newArgs);
     }
     spawnProcess(process.execPath, newArgs, resolve);
 }
@@ -54,7 +65,7 @@ function debugDevtool(resolve, reject) {
 
 function spawnProcess(launcher, args, resolve) {
     var node = spawn(launcher, args);
-    
+
     node.stdout.on('data', (data) => {
         console.log(`${data}`);
     });
