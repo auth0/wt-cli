@@ -18,7 +18,7 @@ function onBeforeConfigure(context) {
         },
         container: {
             alias: 'c',
-            description: 'Set the webtask container. This can be combined with --profile if you want to override the container or can be used with --url and --token to speficy the webtask profile inline.',
+            description: 'Set the webtask container. This can be combined with --profile if you want to override the container or can be used with --url and --token to specify the webtask profile inline.',
             type: 'string',
         },
         url: {
