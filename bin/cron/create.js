@@ -72,10 +72,11 @@ function handleCronCreate(args) {
 
     args = ValidateCreateArgs(args);
 
+    const logger = createLogger(args, profile);
     const createWebtask = WebtaskCreator(args, {
+        logger,
         onGeneration: onGeneration,
     });
-    const logger = createLogger(args, profile);
 
     return createWebtask(profile);
 
@@ -137,16 +138,12 @@ function handleCronCreate(args) {
 
 function createLogger(args, profile) {
     if (args.watch) {
-        const logs = Logs.createLogStream(profile);
-
-        return {
-            log: _.bindKey(logs, 'info'),
-            error: _.bindKey(logs, 'error'),
-        };
+        return Logs.createLogStream(profile);
     } else {
         return {
-            log: _.bindKey(console, 'log'),
-            error: _.bindKey(console, 'error'),
+            info: function info() { return console.log.apply(console, Array.prototype.slice.call(arguments)); }, // eslint-disable-line no-console
+            warn: function warn() { return console.log.apply(console, Array.prototype.slice.call(arguments)); }, // eslint-disable-line no-console
+            error: function error() { return console.log.apply(console, Array.prototype.slice.call(arguments)); }, // eslint-disable-line no-console
         };
     }
 }
