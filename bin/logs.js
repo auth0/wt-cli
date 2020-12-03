@@ -38,7 +38,10 @@ function handleLogs(args) {
     var profile = args.profile;
 
     return new Bluebird((resolve, reject) => {
-        const logs = Logs.createLogStream(profile, args);
+        const logs = profile.createLogStream({ json: true });
+        const logger = Logs.createLogStream(logs, Object.assign({
+            container: profile.container,
+        }, args));
         const timeout = setTimeout(() => {
             const error = Cli.error.timeout('Automatically disconnecting from logs after 30min');
 
@@ -54,7 +57,7 @@ function handleLogs(args) {
         });
 
         logs.once('error', (error) => {
-            logs.error(error.message);
+            logger.error(error.message);
 
             clearTimeout(timeout);
 
@@ -62,7 +65,7 @@ function handleLogs(args) {
         });
 
         process.once('SIGINT', () => {
-            logs.warn('Received SIGINT; disconnecting from logs');
+            logger.warn('Received SIGINT; disconnecting from logs');
             return resolve();
         });
     });
