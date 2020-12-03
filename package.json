@@ -33,7 +33,7 @@
     "jws": "3.1.5",
     "jwt-decode": "1.5.1",
     "linewrap": "0.2.1",
-    "lodash": "4.17.10",
+    "lodash": "4.17.19",
     "moment-timezone": "0.5.21",
     "opn": "4.0.2",
     "pad": "2.1.0",
