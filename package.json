@@ -51,8 +51,7 @@
   },
   "bin": {
     "wt": "./bin/wt",
-    "wt-cli": "./bin/wt",
-    "auth0": "./bin/auth0"
+    "wt-cli": "./bin/wt"
   },
   "homepage": "http://github.com/auth0/wt-cli",
   "repository": {
