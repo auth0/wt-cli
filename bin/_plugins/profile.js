@@ -31,18 +31,18 @@ function onBeforeHandler(context) {
 
         var validUntil = new Date(args.profile.openid.valid_until);
         var now = Date.now();
-        if ((validUntil - now) < 5 * 60 * 1000) {        
-            var userAuthenticator = new UserAuthenticator({ 
+        if ((validUntil - now) < 5 * 60 * 1000) {
+            var userAuthenticator = new UserAuthenticator({
                 sandboxUrl: args.profile.url,
                 authorizationServer: args.profile.openid.authorization_server,
                 audience: args.profile.openid.audience,
                 clientId: args.profile.openid.client_id,
-                refreshToken: args.profile.openid.refresh_token,             
+                refreshToken: args.profile.openid.refresh_token,
             });
 
             return userAuthenticator
-                .login({ 
-                    container: args.profile.container, 
+                .login({
+                    container: args.profile.container,
                     admin: args.profile.openid.scopes.indexOf('wt:admin') > -1,
                     auth0: args.profile.openid.auth0,
                     profileName: args.profile.name,
@@ -78,7 +78,10 @@ function sandboxFromArguments(args, options) {
             if (args.container && args.url) {
                 try {
                     return resolve(Sandbox.init({
-                        onBeforeRequest,
+                        onBeforeRequest: [
+                            onBeforeRequestProxy,
+                            onBeforeRequestRuntime
+                        ],
                         container: args.container,
                         token: args.token,
                         url: args.url,
@@ -105,7 +108,7 @@ function sandboxFromArguments(args, options) {
             return config.getProfile(args.profile);
         }
 
-        function onBeforeRequest(request) {
+        function onBeforeRequestProxy(request) {
             const proxy = process.env.http_proxy || process.env.HTTP_PROXY;
             const result = proxy
                 ?   SuperagentProxy(request, proxy)
@@ -114,10 +117,24 @@ function sandboxFromArguments(args, options) {
             return result;
         }
 
+        function onBeforeRequestRuntime(request) {
+            if (args.runtime) {
+                return request.set('x-wt-runtime', args.runtime);
+            }
+
+            return request;
+        }
+
         function onProfileLoaded(profile) {
             if (args.container) profile.container = args.container;
             if (args.url) profile.url = args.url;
             if (args.token) profile.token = args.token;
+
+            if (args.runtime) {
+                profile.onBeforeRequest = (profile.onBeforeRequest || []).concat(
+                    onBeforeRequestRuntime
+                );
+            }
 
             return profile;
         }
