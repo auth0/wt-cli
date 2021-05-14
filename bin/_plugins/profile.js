@@ -131,9 +131,9 @@ function sandboxFromArguments(args, options) {
             if (args.token) profile.token = args.token;
 
             if (args.runtime) {
-                profile.onBeforeRequest = (profile.onBeforeRequest || []).concat(
-                    onBeforeRequestRuntime
-                );
+                profile.onBeforeRequest = Array.isArray(profile.onBeforeRequest)
+                    ? profile.onBeforeRequest.concat(onBeforeRequestRuntime)
+                    : [onBeforeRequestRuntime];
             }
 
             return profile;
