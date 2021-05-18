@@ -29,6 +29,10 @@ function onBeforeConfigure(context) {
             description: 'Set your authorizing webtask token. If you do not have a webtask token, one can be provisioned using `wt init`.',
             type: 'string',
         },
+        runtime: {
+            description: 'Runtime version used during execution and persisting of webtasks. Example: node8|node12',
+            type: 'string'
+        },
     };
 
     node.addOptionGroup('Webtask profile', _.omit(options, _.get(context.node.config, 'profileOptions.hide', [])));
