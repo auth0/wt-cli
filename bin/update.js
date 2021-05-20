@@ -63,6 +63,10 @@ module.exports = Cli.createCommand('update', {
                 description: 'Download and use the current code indicated by `url`. When you are developing a webtask whose code is remotely hosted, this option will automatically download the remote code before creating the webtask. This means that the webtask will continue to run even if the remote url becomes unavailable.',
                 type: 'boolean',
             },
+            'host': {
+                description: 'Allow the webtask to be called using a custom domain name. Using this option requires proof of domain ownership. This can be done by adding a TXT record type to the DNS of the chosen domain. The value of the record must be `webtask:container:{container}`, where {container} is the webtask container name to be associated with the custom domain. Many such TXT records can be created as needed.',
+                type: 'string'
+            },
         },
     },
     params: {
@@ -99,10 +103,9 @@ function handleUpdate(args) {
         args.secrets = claims.ectx;
         args.params = claims.pctx;
         args.meta = claims.meta;
+        args.host = args.host || claims.host;
 
         // Defer to the functionality of the create command
         return CreateWebtask(args, { action: 'updated' });
     }
 }
-
-
