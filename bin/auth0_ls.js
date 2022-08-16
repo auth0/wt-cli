@@ -83,7 +83,7 @@ function handleListAuth0Extensions(args) {
             var record = {
                 name: json.name,
                 type: args.extensionName || (webtask.meta && webtask.meta['auth0-extension-name']) || 'N/A',
-                enabled: !!(webtask.meta && !webtask.meta['auth0-extension-disabled'])
+                enabled: !!(webtask.meta && webtask.meta['auth0-extension-disabled'] !== "1")
             };                        
             if (!types[record.type]) {
                 types[record.type] = [ record ];

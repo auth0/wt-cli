@@ -114,10 +114,7 @@ function handleCreate(args) {
         args.params = [];
         args.meta['auth0-extension'] = 'runtime';
         args.meta['auth0-extension-name'] = args.extensionName;
-
-        // If updating exising hook, preserve the enabled/disabled state
-        if (!claims || claims.meta['auth0-extension-disabled'])
-            args.meta['auth0-extension-disabled'] = '1';
+        args.meta['auth0-extension-disabled'] = claims ? claims.meta['auth0-extension-disabled'] : '1';
 
         // If wt-compiler specified explicitly, use it. Otherwise use the default per hook type.
         if (!args.meta['wt-compiler'])
@@ -132,7 +129,7 @@ function handleCreate(args) {
             action: 'created', 
             onOutput: function (log, build, url) {
                 var action = claims ? 'updated' : 'created';
-                var state = args.meta['auth0-extension-disabled'] ? 'disabled' : 'enabled';
+                var state = args.meta['auth0-extension-disabled'] === "1" ? 'disabled' : 'enabled';
                 log(Chalk.green('Auth0 hook ' + action + ' in ' + state + ' state.') + 
                     (state == 'disabled' ? (' To enable this hook to run in production, call:\n\n'
                     + Chalk.green('$ auth0 enable ' + args.name)) : ''));
