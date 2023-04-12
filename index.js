@@ -123,6 +123,16 @@ function WebtaskProfile (options) {
     this.token = options.token;
 
     this.hasCreated = options.hasCreated;
+
+    const httpProxy = process.env.http_proxy || process.env.HTTP_PROXY;
+    let agent = undefined;
+
+    if (httpProxy) {
+        // Lazy load module
+        const HttpsProxyAgent = require('https-proxy-agent');
+
+        agent = new HttpsProxyAgent(httpProxy);
+    }
     
     Object.defineProperty(this, '_wreck', {
         value: Wreck.defaults({
@@ -131,6 +141,13 @@ function WebtaskProfile (options) {
                 'Authorization': 'Bearer ' + this.token,
             },
             json: true,
+            agent: agent 
+                ? {
+                    http: agent,
+                    https: agent,
+                    httpsAllowUnauthorized: agent,
+                }
+                : undefined,
         })
     });
 }

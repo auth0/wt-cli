@@ -30,6 +30,7 @@
     "concat-stream": "1.6.2",
     "dotenv": "1.2.0",
     "filewatcher": "3.0.1",
+    "https-proxy-agent": "^5.0.1",
     "jws": "3.1.5",
     "jwt-decode": "1.5.1",
     "linewrap": "0.2.1",
@@ -62,6 +63,11 @@
     "url": "http://github.com/auth0/wt-cli/issues"
   },
   "devDependencies": {
-    "eslint": "5.3.0"
+    "eslint": "5.3.0",
+    "proxy-agent": "^5.0.0"
+  },
+  "volta": {
+    "node": "16.20.0",
+    "npm": "8.19.4"
   }
 }
