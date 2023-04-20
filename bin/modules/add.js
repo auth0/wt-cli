@@ -73,7 +73,7 @@ function handleModulesAdd(args) {
                 console.log(`  ${spec.name}@${spec.range}`);
             });
         })
-        .map(Modules.resolveSpec)
+        .map(spec => Modules.resolveSpec(profile, spec))
         .then(modules => args.wait
             ?   Modules.awaitAvailable(profile, modules, { reset: args.reset })
             :   Modules.ensure(profile, modules, { reset: args.reset }))

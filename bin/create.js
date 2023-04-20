@@ -102,6 +102,11 @@ module.exports = Cli.createCommand('create', {
                 description: 'Deprecated and ignored.',
                 type: 'boolean'
             },
+            'no-transpile': {
+                description: 'Disable transpilation (lowering) of code syntax during bundling.',
+                dest: 'noTranspile',
+                type: 'boolean',
+            },
             'parse-body': {
                 description: 'Automatically parse JSON and application/x-www-form-urlencoded request bodies. Use this with (ctx, req, res) webtask signatures if you want webtask runtime to parse the request body and store it in ctx.body.',
                 type: 'boolean',
