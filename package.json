@@ -32,7 +32,7 @@
     "jwt-decode": "1.5.1",
     "linewrap": "0.2.1",
     "lodash": "4.17.21",
-    "moment-timezone": "0.5.21",
+    "moment-timezone": "0.5.35",
     "opn": "4.0.2",
     "pad": "2.1.0",
     "promptly": "0.2.1",
