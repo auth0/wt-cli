@@ -41,7 +41,7 @@
     "structured-cli": "1.0.5",
     "superagent": "3.8.3",
     "superagent-proxy": "2.0.0",
-    "update-notifier": "2.5.0",
+    "update-notifier": "6.0.2",
     "webtask-bundle": "^3.4.0",
     "webtask-runtime": "2.0.0"
   },
