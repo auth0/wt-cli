@@ -37,7 +37,7 @@
     "pad": "2.1.0",
     "promptly": "0.2.1",
     "sandboxjs": "5.0.0",
-    "semver": "5.5.0",
+    "semver": "7.5.2",
     "structured-cli": "1.0.5",
     "superagent": "3.8.3",
     "superagent-proxy": "2.0.0",
