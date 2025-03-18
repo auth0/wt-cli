@@ -1,3 +1,7 @@
+# ⚠️ Deprecated ⚠️
+
+**This repository is deprecated and is no longer receiving support or maintenance**
+
 # Webtask CLI: all you need is code
 
 Command line tool for using [webtasks](https://webtask.io) to create microservices in seconds.
